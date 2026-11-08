@@ -178,6 +178,7 @@ td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:h
 <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15v3M12 10v8M17 6v12"/></symbol>
 <symbol id="i-mega" viewBox="0 0 24 24"><path d="M3 11v2a1 1 0 0 0 1 1h3l5 4V6L7 10H4a1 1 0 0 0-1 1z"/><path d="M16 8a5 5 0 0 1 0 8M19 5a9 9 0 0 1 0 14"/></symbol>
 <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></symbol>
+<symbol id="i-film" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M7 3v18M17 3v18M2 9h5M2 15h5M17 9h5M17 15h5"/></symbol>
 <symbol id="i-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="5.5"/><path d="M21 2l-9.6 9.6M15.5 7.5l3 3L22 7l-3-3"/></symbol>
 </defs></svg>
 <script>const I=n=>`<svg class="i"><use href="#i-${n}"/></svg>`</script>
@@ -215,6 +216,7 @@ td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:h
     <a data-p="students" data-l="beyaz"><svg class="i"><use href="#i-shield"/></svg>Beyaz Liste<span class="n" id="n_beyaz">0</span></a>
     <a data-p="students" data-l="kara"><svg class="i"><use href="#i-ban"/></svg>Kara Liste<span class="n" id="n_kara">0</span></a>
     <a data-p="enroll" data-min="mudur_yrd"><svg class="i"><use href="#i-scan"/></svg>Yüz Kaydet</a>
+    <a data-p="video" data-min="mudur_yrd"><svg class="i"><use href="#i-film"/></svg>Video Analiz</a>
     <div class="sec">Raporlar & Veli</div>
     <a data-p="reports"><svg class="i"><use href="#i-chart"/></svg>Raporlar</a>
     <a data-p="broadcast"><svg class="i"><use href="#i-mega"/></svg>Toplu Duyuru</a>
@@ -321,6 +323,11 @@ td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:h
     <div class="card"><h2><svg class="i"><use href="#i-cam"/></svg>Kameradan görüntü al</h2>
       <div class="row"><select id="snapcam" style="max-width:200px"></select><button class="btn dk" onclick="takeSnap()"><svg class="i"><use href="#i-cam"/></svg>RTSP'den görüntü al</button><button class="btn gr" onclick="capture()"><svg class="i"><use href="#i-check"/></svg>Bu kareyi kaydet</button><span></span></div>
       <div class="vid"><img id="snap" alt=""><div class="ph0" id="sph"><div><div>Önizleme yok</div><div class="m">Kamera bağlı olmalı · karedeki en büyük yüz kaydedilir</div></div></div></div></div>
+    <div class="card"><h2><svg class="i"><use href="#i-film"/></svg>Videodan kayıt <span class="tag p-ok">önerilen</span></h2>
+      <div class="m" style="margin-bottom:10px">Öğrenciyi kameraya doğru 5-10 sn yürürken / başını hafif sağa-sola çevirirken çek (telefon ya da kapı kamerası kaydı). Sistem en net ve birbirinden farklı açıdaki kareleri seçer.</div>
+      <div class="row"><select id="vcount" class="fx" style="width:150px"><option value="3">3 kare seç</option><option value="5" selected>5 kare seç</option><option value="8">8 kare seç</option></select>
+        <label class="btn dk fx"><input type="file" id="vfile" accept="video/*,.dav,.h264,.mkv,.ts" hidden onchange="vEnroll()"><svg class="i"><use href="#i-up"/></svg>Video yükle</label><span id="vstat" class="m"></span></div>
+      <div id="vpicks"></div></div>
     <div class="card"><h2><svg class="i"><use href="#i-up"/></svg>Fotoğraf yükle</h2>
       <label class="drop"><input type="file" id="files" multiple accept="image/*" onchange="upload()" hidden><svg class="i" style="width:28px;height:28px"><use href="#i-up"/></svg><div><b>Fotoğraf seç</b> — birden fazla seçebilirsin</div></label></div>
   </div><div>
@@ -337,6 +344,27 @@ td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:h
     </div>
     <div class="card"><h2><svg class="i"><use href="#i-img"/></svg>Fotoğraflar <span class="tag" id="pc">0</span></h2><div class="thumbs" id="thumbs"></div></div>
   </div></div>
+</section>
+
+<!-- VIDEO ANALIZ -->
+<section class="page" id="p-video">
+  <div class="ph"><div><h1>Video Analiz</h1><p>Kayıtlı bir kamera videosunu yükle; sistem kimleri hangi saniyede tanıdığını listeler. <b>Yoklamaya kayıt düşmez, veliye mesaj gitmez.</b></p></div></div>
+  <div class="fbar">
+    <div class="fi"><label>Kare atlama</label><select id="va_every"><option value="1">Her kare (en doğru, yavaş)</option><option value="2" selected>2 karede 1</option><option value="3">3 karede 1</option><option value="5">5 karede 1 (hızlı)</option></select></div>
+    <div class="fi" style="min-width:0"><label>&nbsp;</label><label class="btn dk"><input type="file" id="va_file" accept="video/*,.dav,.h264,.mkv,.ts" hidden onchange="vaStart()"><svg class="i"><use href="#i-up"/></svg>Video yükle ve analiz et</label></div>
+    <div class="fi" style="flex:1;min-width:220px"><label>Durum</label><div id="va_stat" class="m" style="padding:9px 0">Video yüklenmedi</div></div>
+    <div class="fi" style="min-width:0"><label>&nbsp;</label><button class="btn danger" id="va_cancel" style="display:none" onclick="vaCancel()">Durdur</button></div>
+  </div>
+  <div id="va_bar" style="display:none;height:8px;background:#eef2f6;border-radius:99px;overflow:hidden;margin:-8px 0 20px"><i id="va_prog" style="display:block;height:100%;width:0;background:linear-gradient(90deg,var(--a2),var(--a));transition:width .4s"></i></div>
+  <div class="stats" id="va_stats" style="display:none">
+    <div class="st"><div class="ic c-ok"><svg class="i"><use href="#i-check"/></svg></div><b id="va_n1">0</b><span>Tanındı</span></div>
+    <div class="st"><div class="ic c-v"><svg class="i"><use href="#i-users"/></svg></div><b id="va_n2">0</b><span>Farklı kişi</span></div>
+    <div class="st"><div class="ic c-w"><svg class="i"><use href="#i-q"/></svg></div><b id="va_n3">0</b><span>Emin değil</span></div>
+    <div class="st"><div class="ic c-r"><svg class="i"><use href="#i-ban"/></svg></div><b id="va_n4">0</b><span>Bilinmeyen</span></div></div>
+  <div class="card" style="padding:0;overflow:hidden" id="va_card" hidden>
+    <div class="row" style="padding:14px 14px 4px"><div class="seg fx" id="va_f"><a data-f="" class="on" onclick="vaFilter('')">Tümü</a><a data-f="tanindi" onclick="vaFilter('tanindi')">Tanındı</a><a data-f="emin_degil" onclick="vaFilter('emin_degil')">Emin değil</a><a data-f="bilinmeyen" onclick="vaFilter('bilinmeyen')">Bilinmeyen</a></div><span></span>
+      <button class="btn sm fx" onclick="vaCsv()"><svg class="i"><use href="#i-down"/></svg>CSV</button></div>
+    <div style="overflow-x:auto"><table><thead><tr><th></th><th>Videoda</th><th>Kişi</th><th>Skor</th><th>Kare</th><th>Sonuç</th><th></th></tr></thead><tbody id="va_body"></tbody></table></div></div>
 </section>
 
 <!-- KAMERALAR -->
@@ -500,14 +528,14 @@ async function doLogin(e){e.preventDefault();$('lerr').textContent='';try{await 
 async function logout(){await post('/api/logout',{});location.reload()}
 
 document.querySelectorAll('nav a').forEach(a=>a.onclick=()=>go(a.dataset.p,a.dataset.l));
-const PT={live:'Canlı İzleme',att:'Yoklama',pending:'Onay Bekleyen',students:'Öğrenciler',enroll:'Yüz Kaydet',reports:'Raporlar',broadcast:'Toplu Duyuru',messages:'Mesajlar',cameras:'Kameralar',users:'Kullanıcılar',audit:'İşlem Kaydı',settings:'Ayarlar'};
+const PT={live:'Canlı İzleme',att:'Yoklama',pending:'Onay Bekleyen',students:'Öğrenciler',enroll:'Yüz Kaydet',video:'Video Analiz',reports:'Raporlar',broadcast:'Toplu Duyuru',messages:'Mesajlar',cameras:'Kameralar',users:'Kullanıcılar',audit:'İşlem Kaydı',settings:'Ayarlar'};
 window.addEventListener('hashchange',()=>{const [p,l]=location.hash.slice(1).split('/');if(PT[p]&&ME)go(p,l,1)});
 function go(p,l,fromHash){if(l)LIST=l;
   const t=p==='students'?{ogrenci:'Öğrenciler',beyaz:'Beyaz Liste',kara:'Kara Liste'}[LIST]:PT[p];document.title=(t?t+' · ':'')+'Hype Vision';
   if(!fromHash)history.replaceState(null,'','#'+p+(p==='students'?'/'+LIST:''));
   document.querySelectorAll('nav a').forEach(x=>x.classList.toggle('on',x.dataset.p===p&&(!x.dataset.l||x.dataset.l===LIST)));
   document.querySelectorAll('.page').forEach(x=>x.classList.toggle('on',x.id==='p-'+p));
-  ({att:loadAtt,pending:loadPending,students:loadPeople,enroll:loadPeople,messages:loadMsgs,users:loadUsers,cameras:loadCams,reports:loadReports,broadcast:loadBroadcast,audit:loadAudit})[p]?.()}
+  ({att:loadAtt,pending:loadPending,students:loadPeople,enroll:loadPeople,messages:loadMsgs,users:loadUsers,cameras:loadCams,reports:loadReports,broadcast:loadBroadcast,audit:loadAudit,video:loadPeople})[p]?.()}
 
 // ---------- canli
 let CAMS=[];
@@ -759,6 +787,46 @@ async function loadAudit(){AUD=await api(`/api/audit?qs=${enc($('au_q').value)}&
   if(!$('au_u').dataset.o){const us=await api('/api/users');$('au_u').innerHTML='<option value="">Tüm kullanıcılar</option><option>sistem</option>'+us.map(u=>`<option>${esc(u.user)}</option>`).join('');$('au_u').dataset.o=1}
   $('aubody').innerHTML=AUD.map(a=>`<tr><td class=m style="white-space:nowrap">${a.time.slice(0,16)}</td><td><b>${esc(a.user)}</b></td><td><span class="tag ${/sil|reddedildi|kopt/.test(a.action)?'p-r':/onay|elle/.test(a.action)?'p-ok':''}">${esc(a.action)}</span></td><td>${esc(a.target)}</td><td class=m>${esc(a.detail)}</td></tr>`).join('')||'<tr><td colspan=5 class=empty>Kayıt yok</td></tr>'}
 function exportAudit(){dl('islem-kaydi.csv','Zaman;Kullanıcı;İşlem;Hedef;Detay\n'+AUD.map(a=>csvRow([a.time,a.user,a.action,a.target,a.detail])).join('\n'))}
+
+// ---------- video: kayit
+let VTOK=null;
+async function vEnroll(){const f=$('vfile').files[0];if(!f)return;let n;try{n=await ensure()}catch(e){toast(e.message,1)}if(!n){$('vfile').value='';return}
+  const fd=new FormData();fd.append('name',n);fd.append('count',$('vcount').value);fd.append('file',f);
+  $('vstat').textContent=`Yükleniyor ve işleniyor (${(f.size/1048576).toFixed(1)} MB)…`;$('vpicks').innerHTML='';
+  try{const r=await api('/api/video/enroll',{method:'POST',body:fd});VTOK=r.token;
+    $('vstat').textContent=`${r.frames} karede yüz bulundu, en iyi ${r.picks.length} kare seçildi`;
+    $('vpicks').innerHTML=(r.warn?`<div class="warn" style="margin:10px 0">${esc(r.warn)}</div>`:'')+`<div class="thumbs" style="margin-top:10px">${r.picks.map(p=>`<label style="position:relative;cursor:pointer"><img src="${p.img}" style="outline:3px solid var(--ok);outline-offset:-3px" id="vp_${p.i}"><input type="checkbox" checked data-i="${p.i}" style="position:absolute;top:4px;left:4px;width:18px;height:18px;accent-color:var(--ok)" onchange="$('vp_${p.i}').style.outline=this.checked?'3px solid var(--ok)':'none'"><div class=m style="text-align:center">${p.t} sn</div></label>`).join('')}</div>
+      <div class="row" style="margin-top:12px"><button class="btn gr fx" onclick="vSave()"><svg class="i"><use href="#i-check"/></svg>Seçilenleri ${esc(n)} için kaydet</button><span></span></div>`}
+  catch(e){$('vstat').textContent='';toast(e.message,1)}$('vfile').value=''}
+async function vSave(){const idx=[...document.querySelectorAll('#vpicks input[type=checkbox]:checked')].map(c=>+c.dataset.i);if(!idx.length)return toast('En az bir kare seç',1);
+  try{const r=await post('/api/video/enroll/save',{token:VTOK,idx});toast(`${r.saved} kare eklendi, model eğitiliyor`);$('vpicks').innerHTML='';$('vstat').textContent='';setTimeout(loadPeople,1500)}catch(e){toast(e.message,1)}}
+
+// ---------- video: analiz
+let VJ=null,VF='',VT=null;
+async function vaStart(){const f=$('va_file').files[0];if(!f)return;const fd=new FormData();fd.append('every',$('va_every').value);fd.append('file',f);
+  $('va_stat').textContent=`Yükleniyor (${(f.size/1048576).toFixed(1)} MB)…`;$('va_bar').style.display='';$('va_prog').style.width='0';
+  try{const r=await api('/api/video/analyze',{method:'POST',body:fd});VJ={id:r.id};$('va_cancel').style.display='';clearInterval(VT);VT=setInterval(vaPoll,1000);vaPoll()}catch(e){$('va_stat').textContent=e.message}$('va_file').value=''}
+async function vaPoll(){if(!VJ)return;try{VJ=await api('/api/video/job/'+VJ.id)}catch(e){return}
+  const pct=VJ.total?Math.min(100,VJ.done/VJ.total*100):0;$('va_prog').style.width=pct+'%';
+  const el=((VJ.end||Date.now()/1000)-VJ.start).toFixed(0);
+  $('va_stat').innerHTML=VJ.status==='isleniyor'?`<b>${esc(VJ.file)}</b> işleniyor… %${pct.toFixed(0)} · ${el} sn`:VJ.status==='bitti'?`<b>${esc(VJ.file)}</b> tamamlandı · ${el} sn`:VJ.status==='hata'?`<span style="color:var(--r)">Hata: ${esc(VJ.err)}</span>`:'Durduruldu';
+  if(VJ.status!=='isleniyor'){clearInterval(VT);$('va_cancel').style.display='none'}
+  vaRender()}
+function vaCancel(){if(VJ)api('/api/video/job/'+VJ.id,{method:'DELETE'})}
+function vaFilter(f){VF=f;document.querySelectorAll('#va_f a').forEach(a=>a.classList.toggle('on',a.dataset.f===f));vaRender()}
+const vt=s=>`${String(Math.floor(s/60)).padStart(2,'0')}:${String(Math.floor(s%60)).padStart(2,'0')}`;
+const VK={tanindi:['p-ok','Tanındı'],emin_degil:['p-w','Emin değil'],bilinmeyen:['p-r','Bilinmeyen']};
+function vaRender(){if(!VJ?.results)return;const R=VJ.results;$('va_stats').style.display='';$('va_card').hidden=false;
+  $('va_n1').textContent=R.filter(r=>r.kind==='tanindi').length;$('va_n2').textContent=new Set(R.filter(r=>r.kind==='tanindi').map(r=>r.name)).size;
+  $('va_n3').textContent=R.filter(r=>r.kind==='emin_degil').length;$('va_n4').textContent=R.filter(r=>r.kind==='bilinmeyen').length;
+  const can=RL[ME.rol]>=2;const opts=PEOPLE.map(p=>`<option value="${esc(p.name)}">`).join('');
+  $('va_body').innerHTML=R.map((r,i)=>[r,i]).filter(([r])=>!VF||r.kind===VF).map(([r,i])=>`<tr><td>${r.img?`<img class=av src="${r.img}">`:''}</td><td style="font-variant-numeric:tabular-nums">${vt(r.t0)} – ${vt(r.t1)}</td>
+    <td>${r.kind==='tanindi'?`<b>${esc(r.name)}</b> ${r.liste&&r.liste!=='ogrenci'?`<span class="tag ${LC[r.liste]}">${LN[r.liste]}</span>`:''}`:r.name?`<span class=m>en yakın:</span> ${esc(r.name)}`:'<span class=m>—</span>'}</td>
+    <td>${r.score}</td><td>${r.frames}</td><td><span class="tag ${VK[r.kind][0]}">${VK[r.kind][1]}</span></td>
+    <td style="white-space:nowrap;text-align:right">${can&&r.img?`<input list="va_pl" placeholder="kişiye ekle…" id="va_in_${i}" value="${r.kind!=='bilinmeyen'&&r.name?esc(r.name):''}" style="width:170px;padding:5px 8px;font-size:12px"> <button class="btn sm" onclick="vaAdd(${i})">Galeriye ekle</button>`:''}</td></tr>`).join('')||'<tr><td colspan=7 class=empty>Henüz yüz bulunmadı</td></tr>';
+  if(!$('va_pl')){const dl_=document.createElement('datalist');dl_.id='va_pl';document.body.appendChild(dl_)}$('va_pl').innerHTML=opts}
+async function vaAdd(i){const n=$('va_in_'+i).value.trim();if(!n)return toast('Kişi seç',1);try{await post('/api/video/result/add',{job:VJ.id,i,name:n});toast('Galeriye eklendi: '+n)}catch(e){toast(e.message,1)}}
+function vaCsv(){if(!VJ?.results)return;dl(`video-analiz-${VJ.file}.csv`,'Başlangıç;Bitiş;Kişi;Skor;Kare;Sonuç\n'+VJ.results.map(r=>csvRow([vt(r.t0),vt(r.t1),r.name||'',String(r.score).replace('.',','),r.frames,VK[r.kind][1]])).join('\n'))}
 
 // ---------- hero
 const GUN=new Intl.DateTimeFormat('tr-TR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});

@@ -1103,6 +1103,175 @@ async def restore(request: Request, file: UploadFile = File(...)):
     INFO_CACHE.clear(); G.train(); apply_cameras(); audit(request, "yedekten geri yükleme", file.filename)
     return {"ok": True, "people": len(G.names)}
 
+# ---- video: kayit ve analiz
+UPLOADS = DATA / "uploads"; UPLOADS.mkdir(exist_ok=True)
+VENROLL = {}   # token -> {"name","crops":[...], "t": time}
+VJOBS = {}     # job id -> durum
+
+async def save_upload(file: UploadFile):
+    ext = (Path(file.filename or "v.mp4").suffix or ".mp4").lower()
+    if ext not in (".mp4", ".avi", ".mov", ".mkv", ".mpg", ".mpeg", ".m4v", ".ts", ".webm", ".dav", ".h264"):
+        raise HTTPException(400, "Desteklenmeyen video türü")
+    p = UPLOADS / f"{secrets.token_hex(8)}{ext}"
+    with open(p, "wb") as fh:
+        while chunk := await file.read(1 << 20): fh.write(chunk)
+    return p
+
+def b64jpg(img, q=88): return "data:image/jpeg;base64," + base64.b64encode(cv2.imencode(".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, q])[1]).decode()
+
+def frontalness(kps):
+    """0..1: burun gozlerin ortasina ne kadar yakinsa o kadar onden."""
+    le, re_, nose = kps[0], kps[1], kps[2]
+    ed = np.linalg.norm(re_ - le) + 1e-6
+    return float(max(0.0, 1 - abs(nose[0] - (le[0] + re_[0]) / 2) / ed * 2))
+
+@app.post("/api/video/enroll")
+async def video_enroll(request: Request, name: str = Form(...), count: int = Form(5), file: UploadFile = File(...)):
+    """Videodan en net ve birbirinden farkli kareleri sec (kaydetmeden onizleme doner)."""
+    need(request, "mudur_yrd"); name = safe_name(name)
+    p = await save_upload(file)
+    try:
+        cap = cv2.VideoCapture(str(p)); n = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
+        step = max(1, n // 120) if n else 3
+        cands, i = [], 0
+        while True:
+            ok = cap.grab()
+            if not ok: break
+            if i % step == 0:
+                ok, f = cap.retrieve()
+                if ok:
+                    sc = 1.0; img = f
+                    if f.shape[1] > 1280: sc = 1280 / f.shape[1]; img = cv2.resize(f, None, fx=sc, fy=sc)
+                    faces = E.detect(img)
+                    if len(faces):
+                        fc = max(faces, key=lambda r: r[2] * r[3]).copy(); fc[:14] /= sc
+                        if min(fc[2], fc[3]) >= 40:
+                            crop = norm_crop(f, fc[4:14].reshape(5, 2))
+                            sharp = cv2.Laplacian(cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY), cv2.CV_64F).var()
+                            front = frontalness(fc[4:14].reshape(5, 2))
+                            q_ = min(sharp / 150, 1.5) * (0.4 + 0.6 * front) * min(fc[2] / 120, 1.2) * float(fc[14])
+                            cands.append({"crop": crop, "q": q_, "t": i / (cap.get(cv2.CAP_PROP_FPS) or 25), "front": front, "size": int(fc[2])})
+            i += 1
+        cap.release()
+    finally: p.unlink(missing_ok=True)
+    if not cands: raise HTTPException(400, "Videoda yüz bulunamadı")
+    cands.sort(key=lambda c: -c["q"]); cands = cands[:max(12, len(cands) // 2)]  # kaliteli yari
+    emb = E.embed([c["crop"] for c in cands])
+    # cesitlilik: en kaliteliyi al, sonra secilenlere en uzak olani ekle (kaliteyle agirlikli)
+    pick = [0]
+    while len(pick) < min(count, len(cands)):
+        d = 1 - (emb @ emb[pick].T).max(1)
+        sc = d * (0.5 + np.array([c["q"] for c in cands]) / max(c["q"] for c in cands))
+        sc[pick] = -1; pick.append(int(sc.argmax()))
+    # galeride baska biriyle karisiyor mu?
+    warn = None
+    m = G.match(emb[pick])
+    others = [(n_, s) for n_, s in m if n_ and n_ != name and s >= S["threshold"]]
+    if others: warn = f"Dikkat: bu kareler galerideki '{others[0][0]}' kişisine de benziyor ({others[0][1]:.2f}). Doğru kişi olduğundan emin ol."
+    tok = secrets.token_hex(8)
+    VENROLL[tok] = {"name": name, "crops": [cands[k]["crop"] for k in pick], "t": time.time()}
+    for k in [k for k, v in VENROLL.items() if time.time() - v["t"] > 1800]: VENROLL.pop(k, None)
+    return {"token": tok, "frames": len(cands), "warn": warn,
+            "picks": [{"i": j, "img": b64jpg(cands[k]["crop"]), "t": round(cands[k]["t"], 1), "front": round(cands[k]["front"], 2),
+                       "size": cands[k]["size"]} for j, k in enumerate(pick)]}
+
+@app.post("/api/video/enroll/save")
+def video_enroll_save(request: Request, d: dict):
+    need(request, "mudur_yrd")
+    v = VENROLL.pop(d.get("token", ""), None)
+    if not v: raise HTTPException(400, "Önizleme süresi doldu, videoyu tekrar yükle")
+    d_ = PEOPLE / v["name"]; d_.mkdir(exist_ok=True)
+    idx = [i for i in d.get("idx", []) if 0 <= i < len(v["crops"])]
+    for i in idx: imwrite_u(d_ / f"{int(time.time() * 1000)}_{i}.jpg", v["crops"][i])
+    train_bg(); audit(request, "videodan kayıt", v["name"], f"{len(idx)} kare")
+    return {"saved": len(idx)}
+
+def _analyze(jid, path, every):
+    J = VJOBS[jid]
+    try:
+        cap = cv2.VideoCapture(str(path)); fps = cap.get(cv2.CAP_PROP_FPS) or 25
+        J["total"] = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0); tracks = []; i = 0
+        def close(tr):
+            if len(tr.votes) < 2 and not tr.done: return
+            sc, nm, thumb, _ = tr.best
+            if tr.done: kind = "tanindi"
+            elif sc >= S["low_threshold"]: kind = "emin_degil"
+            else: kind = "bilinmeyen"
+            J["results"].append({"t0": round(tr.t0, 1), "t1": round(tr.last, 1), "name": tr.decided or nm, "score": round(tr.mean if tr.done else sc, 3),
+                                 "kind": kind, "liste": liste_of(tr.decided) if tr.decided else None, "frames": len(tr.votes),
+                                 "img": b64jpg(thumb, 80) if thumb is not None else None})
+        while not J.get("cancel"):
+            ok = cap.grab()
+            if not ok: break
+            if i % every == 0:
+                ok, f = cap.retrieve()
+                if not ok: break
+                ts = i / fps
+                dw = int(S["det_width"]); scale = 1.0; img = f
+                if f.shape[1] > dw: scale = dw / f.shape[1]; img = cv2.resize(f, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
+                used, need_ = set(), []
+                for fc in E.detect(img):
+                    fc = fc.copy(); fc[:14] /= scale; box = tuple(fc[:4])
+                    if min(fc[2], fc[3]) < S["min_face"]: continue
+                    tr = max((t for t in tracks if id(t) not in used), key=lambda t: iou(t.box, box), default=None)
+                    if tr is None or iou(tr.box, box) < 0.2: tr = Track(box); tr.t0 = ts; tracks.append(tr)
+                    used.add(id(tr)); tr.box = box; tr.last = ts
+                    if not tr.done: need_.append((fc, tr))
+                crops = [norm_crop(f, fc[4:14].reshape(5, 2)) for fc, _ in need_]
+                for (fc, tr), crop, (nm, sc) in zip(need_, crops, G.match(E.embed(crops))):
+                    okk = nm is not None and sc >= S["threshold"]
+                    tr.votes.append((nm if okk else None, sc)); tr.votes = tr.votes[-15:]
+                    if sc > tr.best[0]: tr.best = (sc, nm, face_thumb(f, fc), crop)
+                    if len(tr.votes) >= S["vote_frames"]:
+                        top, cnt = Counter(v[0] for v in tr.votes).most_common(1)[0]
+                        if top and cnt >= 0.6 * len(tr.votes):
+                            tr.done = True; tr.decided = top; tr.mean = float(np.mean([v[1] for v in tr.votes if v[0] == top]))
+                for tr in [t for t in tracks if ts - t.last > 1.5]: close(tr); tracks.remove(tr)
+                J["preview"] = None
+            i += 1; J["done"] = i
+        for tr in tracks: close(tr)
+        cap.release()
+        if J["done"] == 0: J["status"] = "hata"; J["err"] = "Video açılamadı ya da bozuk (desteklenen: mp4, avi, mov, mkv, ts)"
+        else: J["status"] = "iptal" if J.get("cancel") else "bitti"
+    except Exception as e: J["status"] = "hata"; J["err"] = str(e)[:200]
+    finally:
+        Path(path).unlink(missing_ok=True); J["results"].sort(key=lambda r: r["t0"]); J["end"] = time.time()
+
+@app.post("/api/video/analyze")
+async def video_analyze(request: Request, every: int = Form(2), file: UploadFile = File(...)):
+    """Kayitli videoyu analiz et. Yoklamaya kayit dusmez, mesaj gitmez."""
+    need(request, "mudur_yrd")
+    p = await save_upload(file); jid = secrets.token_hex(6)
+    VJOBS[jid] = {"id": jid, "file": file.filename, "status": "isleniyor", "done": 0, "total": 0, "results": [], "start": time.time(), "every": every}
+    threading.Thread(target=_analyze, args=(jid, p, max(1, min(every, 10))), daemon=True).start()
+    audit(request, "video analiz", file.filename)
+    return {"id": jid}
+
+@app.get("/api/video/job/{jid}")
+def video_job(jid: str):
+    J = VJOBS.get(jid)
+    if not J: raise HTTPException(404)
+    return J
+
+@app.delete("/api/video/job/{jid}")
+def video_cancel(jid: str):
+    if jid in VJOBS: VJOBS[jid]["cancel"] = True
+    return {"ok": True}
+
+@app.post("/api/video/result/add")
+def video_result_add(request: Request, d: dict):
+    """Analiz sonucundaki yuzu bir kisinin galerisine ekle."""
+    need(request, "mudur_yrd")
+    J = VJOBS.get(d.get("job", "")); i = d.get("i", -1)
+    if not J or not (0 <= i < len(J["results"])): raise HTTPException(404)
+    r = J["results"][i]; name = safe_name(d.get("name") or r["name"] or "")
+    if not (PEOPLE / name).exists(): raise HTTPException(400, "Kişi bulunamadı")
+    img = cv2.imdecode(np.frombuffer(base64.b64decode(r["img"].split(",", 1)[1]), np.uint8), cv2.IMREAD_COLOR)
+    faces = E.detect(img)
+    if not len(faces): raise HTTPException(400, "Bu karede yüz net değil")
+    _save_face(name, img, max(faces, key=lambda x: x[2] * x[3])); train_bg()
+    audit(request, "videodan galeriye eklendi", name); return {"ok": True}
+
 # ---- test
 @app.post("/api/test")
 async def test_image(file: UploadFile = File(...)):
