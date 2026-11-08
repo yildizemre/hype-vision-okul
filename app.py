@@ -220,7 +220,8 @@ def wa_send(tel_raw, name, kind, vars_or_text, ev_id=None, force_text=False):
         if S["wa_provider"] != "whapi":
             url, tok = f"https://graph.facebook.com/v21.0/{S['wa_phone_id']}/messages", S["wa_token"]
         req = urllib.request.Request(url, json.dumps(body).encode(),
-                                     {"Authorization": "Bearer " + tok, "Content-Type": "application/json", "Accept": "application/json"})
+                                     {"Authorization": "Bearer " + tok, "Content-Type": "application/json", "Accept": "application/json",
+                                      "User-Agent": "HypeVision/1.0 (+okul-giris)"})
         try:
             r = json.loads(urllib.request.urlopen(req, timeout=15).read())
             if S["wa_provider"] == "whapi":
