@@ -562,7 +562,17 @@ def change_pw(request: Request, d: dict):
 
 # ================= sayfalar =================
 @app.get("/", response_class=HTMLResponse)
-def index(): return (ROOT / "index.html").read_text("utf-8")
+def index(): return HTMLResponse((ROOT / "index.html").read_text("utf-8"), headers={"Cache-Control": "no-cache"})
+
+@app.get("/favicon.ico")
+def favicon(): return Response((ROOT / "logo" / "icon-64.png").read_bytes(), media_type="image/png")
+
+@app.get("/manifest.json")
+def manifest():
+    return JSONResponse({"name": "Hype Vision · Okul Giriş", "short_name": "Hype Vision", "start_url": "/", "display": "standalone",
+                         "background_color": "#ffffff", "theme_color": "#06b6d4",
+                         "icons": [{"src": "/logo/icon-180.png", "sizes": "180x180", "type": "image/png"},
+                                   {"src": "/logo/icon-512.png", "sizes": "512x512", "type": "image/png"}]})
 
 @app.get("/logo/{f}")
 def logo(f: str):

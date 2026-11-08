@@ -1,0 +1,20 @@
+# Ubuntu'da acilista otomatik baslatma (elektrik gidip gelse de sabah sistem hazir olur)
+#   1) Asagidaki User ve WorkingDirectory satirlarini kendi yoluna gore duzenle
+#   2) sudo cp hypevision.service /etc/systemd/system/
+#   3) sudo systemctl daemon-reload && sudo systemctl enable --now hypevision
+#   Log: journalctl -u hypevision -f
+[Unit]
+Description=Hype Vision Okul Giris
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=hype
+WorkingDirectory=/opt/hypevision
+ExecStart=/opt/hypevision/venv/bin/python app.py
+Restart=always
+RestartSec=5
+Environment=PORT=8000
+
+[Install]
+WantedBy=multi-user.target

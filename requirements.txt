@@ -1,8 +1,16 @@
-fastapi
-uvicorn
-python-multipart
-opencv-python
-numpy
-onnxruntime-gpu[cuda,cudnn]
-huggingface_hub
-openpyxl
+# Hype Vision - Okul Giris
+# Python 3.10 - 3.12 (Windows 10/11 ve Ubuntu 22.04 / 24.04)
+# NVIDIA GPU:  pip install -r requirements.txt
+# GPU yoksa:   pip install -r requirements-cpu.txt
+#
+# GPU icin sistemde sadece NVIDIA surucusu gerekir (Windows: 550+, Ubuntu: nvidia-driver-550+).
+# CUDA 13 ve cuDNN 9 kutuphaneleri asagidaki [cuda,cudnn] eki ile pip'ten gelir, ayrica kurulmaz.
+
+fastapi>=0.115,<1
+uvicorn>=0.30,<1
+python-multipart>=0.0.9
+numpy>=1.26,<3
+opencv-python-headless>=4.10
+onnxruntime-gpu[cuda,cudnn]>=1.20
+huggingface_hub>=0.24
+openpyxl>=3.1

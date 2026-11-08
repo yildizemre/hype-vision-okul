@@ -1,6 +1,9 @@
 <!doctype html>
 <html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Hype Vision · Okul Giriş</title>
+<link rel="icon" type="image/png" sizes="32x32" href="/logo/icon-32.png"><link rel="icon" type="image/png" sizes="64x64" href="/logo/icon-64.png">
+<link rel="apple-touch-icon" href="/logo/icon-180.png"><link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#06b6d4">
+<meta name="description" content="Hype Vision okul giriş sistemi — yüz tanıma ile yoklama ve veli bildirimi">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#f6f8fb;--card:#fff;--b:#e7ebf1;--t:#0f172a;--m:#64748b;--navy:#0b2d55;--a:#06b6d4;--a2:#22d3ee;--ok:#16a34a;--okbg:#ecfdf3;--w:#d97706;--wbg:#fff7ed;--r:#dc2626;--rbg:#fef2f2;--vio:#7c3aed;--vbg:#f3f0ff;--blu:#2563eb;--bbg:#eff6ff}
@@ -441,7 +444,11 @@ async function doLogin(e){e.preventDefault();$('lerr').textContent='';try{await 
 async function logout(){await post('/api/logout',{});location.reload()}
 
 document.querySelectorAll('nav a').forEach(a=>a.onclick=()=>go(a.dataset.p,a.dataset.l));
-function go(p,l){if(l)LIST=l;
+const PT={live:'Canlı İzleme',att:'Yoklama',pending:'Onay Bekleyen',students:'Öğrenciler',enroll:'Yüz Kaydet',reports:'Raporlar',broadcast:'Toplu Duyuru',messages:'Mesajlar',cameras:'Kameralar',users:'Kullanıcılar',audit:'İşlem Kaydı',settings:'Ayarlar'};
+window.addEventListener('hashchange',()=>{const [p,l]=location.hash.slice(1).split('/');if(PT[p]&&ME)go(p,l,1)});
+function go(p,l,fromHash){if(l)LIST=l;
+  const t=p==='students'?{ogrenci:'Öğrenciler',beyaz:'Beyaz Liste',kara:'Kara Liste'}[LIST]:PT[p];document.title=(t?t+' · ':'')+'Hype Vision';
+  if(!fromHash)history.replaceState(null,'','#'+p+(p==='students'?'/'+LIST:''));
   document.querySelectorAll('nav a').forEach(x=>x.classList.toggle('on',x.dataset.p===p&&(!x.dataset.l||x.dataset.l===LIST)));
   document.querySelectorAll('.page').forEach(x=>x.classList.toggle('on',x.id==='p-'+p));
   ({att:loadAtt,pending:loadPending,students:loadPeople,enroll:loadPeople,messages:loadMsgs,users:loadUsers,cameras:loadCams,reports:loadReports,broadcast:loadBroadcast,audit:loadAudit})[p]?.()}
@@ -669,6 +676,7 @@ async function refresh(force){try{const s=await api('/api/status');
 async function boot(){try{ME=await api('/api/me')}catch(e){return}
   $('login').style.display='none';$('me_n').textContent=ME.ad||ME.user;$('me_r').textContent=RN[ME.rol]+(ME.sinif?' · '+ME.sinif:'');$('me_av').textContent=(ME.ad||ME.user)[0].toUpperCase();
   document.querySelectorAll('[data-min]').forEach(e=>{if(RL[ME.rol]>=RL[e.dataset.min])e.removeAttribute('data-min')});
+  const [hp,hl]=location.hash.slice(1).split('/');if(PT[hp]&&!document.querySelector(`nav a[data-p="${hp}"][data-min]`))go(hp,hl);else go('live');
   loadPeople();loadEvents();refresh(true);setInterval(refresh,2000);setInterval(loadEvents,2500);setInterval(loadPeople,20000);
 }
 boot();
