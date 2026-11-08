@@ -916,6 +916,7 @@ async function vSave(){const idx=[...document.querySelectorAll('#vpicks input[ty
 let VJ=null,VF='',VT=null;
 async function vaStart(){const f=$('va_file').files[0];if(!f)return;const fd=new FormData();fd.append('every',$('va_every').value);fd.append('file',f);
   $('va_stat').textContent=`Yükleniyor (${(f.size/1048576).toFixed(1)} MB)…`;$('va_bar').style.display='';$('va_prog').style.width='0';
+  for(const k in VAIN)delete VAIN[k];VASIG='';
   try{const r=await api('/api/video/analyze',{method:'POST',body:fd});VJ={id:r.id};$('va_cancel').style.display='';clearInterval(VT);VT=setInterval(vaPoll,1000);vaPoll()}catch(e){$('va_stat').textContent=e.message}$('va_file').value=''}
 async function vaPoll(){if(!VJ)return;try{VJ=await api('/api/video/job/'+VJ.id)}catch(e){return}
   const pct=VJ.total?Math.min(100,VJ.done/VJ.total*100):0;$('va_prog').style.width=pct+'%';
@@ -924,10 +925,15 @@ async function vaPoll(){if(!VJ)return;try{VJ=await api('/api/video/job/'+VJ.id)}
   if(VJ.status!=='isleniyor'){clearInterval(VT);$('va_cancel').style.display='none'}
   vaRender()}
 function vaCancel(){if(VJ)api('/api/video/job/'+VJ.id,{method:'DELETE'})}
-function vaFilter(f){VF=f;document.querySelectorAll('#va_f a').forEach(a=>a.classList.toggle('on',a.dataset.f===f));vaRender()}
+function vaFilter(f){VF=f;document.querySelectorAll('#va_f a').forEach(a=>a.classList.toggle('on',a.dataset.f===f));vaRender(1)}
 const vt=s=>`${String(Math.floor(s/60)).padStart(2,'0')}:${String(Math.floor(s%60)).padStart(2,'0')}`;
 const VK={tanindi:['p-ok','Tanındı'],emin_degil:['p-w','Emin değil'],bilinmeyen:['p-r','Bilinmeyen']};
-function vaRender(){if(!VJ?.results)return;const R=VJ.results;$('va_stats').style.display='';$('va_card').hidden=false;
+const VAIN={};let VASIG='';
+function vaRender(force){if(!VJ?.results)return;const R=VJ.results;
+  // kullanici bir kutuya yaziyorsa ya da hicbir sey degismediyse tabloyu yeniden cizme
+  const sig=VJ.id+'|'+R.length+'|'+VF;const act=document.activeElement;
+  if(!force&&(sig===VASIG||(act&&act.closest&&act.closest('#va_body'))))return;VASIG=sig;
+  document.querySelectorAll('#va_body input[id^=va_in_]').forEach(e=>{VAIN[e.id]=e.value});$('va_stats').style.display='';$('va_card').hidden=false;
   $('va_n1').textContent=R.filter(r=>r.kind==='tanindi').length;$('va_n2').textContent=new Set(R.filter(r=>r.kind==='tanindi').map(r=>r.name)).size;
   $('va_n3').textContent=R.filter(r=>r.kind==='emin_degil').length;const ug=new Set(R.filter(r=>r.grp).map(r=>r.grp));$('va_n4').textContent=ug.size;$('va_n4l').textContent=`Farklı bilinmeyen kişi (${R.filter(r=>r.grp).length} görülme)`;
   const can=RL[ME.rol]>=2;const opts=PEOPLE.map(p=>`<option value="${esc(p.name)}">`).join('');
@@ -937,8 +943,9 @@ function vaRender(){if(!VJ?.results)return;const R=VJ.results;$('va_stats').styl
     <td>${r.kind==='tanindi'?`<b>${esc(r.name)}</b> ${r.liste&&r.liste!=='ogrenci'?`<span class="tag ${LC[r.liste]}">${LN[r.liste]}</span>`:''}`:`<span class="tag" style="background:var(--t);color:#fff;font-family:ui-monospace,monospace">Kişi ${esc(r.grp||'?')}</span> ${r.name?`<span class=m>en yakın: ${esc(r.name)}</span>`:''}`}</td>
     <td>${r.score}</td><td>${r.frames}</td><td><span class="tag ${VK[r.kind][0]}">${VK[r.kind][1]}</span></td>
     <td style="white-space:nowrap;text-align:right">${can&&r.img?`<input list="va_pl" placeholder="kişiye ekle…" id="va_in_${i}" value="${r.kind!=='bilinmeyen'&&r.name?esc(r.name):''}" style="width:170px;padding:5px 8px;font-size:12px"> <button class="btn sm" onclick="vaAdd(${i})">Galeriye ekle</button>`:''}</td></tr>`).join('')||'<tr><td colspan=7 class=empty>Henüz yüz bulunmadı</td></tr>';
-  if(!$('va_pl')){const dl_=document.createElement('datalist');dl_.id='va_pl';document.body.appendChild(dl_)}$('va_pl').innerHTML=opts}
-async function vaAdd(i){const n=$('va_in_'+i).value.trim();if(!n)return toast('Kişi seç',1);try{await post('/api/video/result/add',{job:VJ.id,i,name:n});toast('Galeriye eklendi: '+n)}catch(e){toast(e.message,1)}}
+  if(!$('va_pl')){const dl_=document.createElement('datalist');dl_.id='va_pl';document.body.appendChild(dl_)}if($('va_pl').dataset.o!==opts){$('va_pl').innerHTML=opts;$('va_pl').dataset.o=opts}
+  for(const k in VAIN){const e=$(k);if(e&&VAIN[k])e.value=VAIN[k]}}
+async function vaAdd(i){const n=$('va_in_'+i).value.trim();if(!n)return toast('Kişi seç',1);try{await post('/api/video/result/add',{job:VJ.id,i,name:n});toast('Galeriye eklendi: '+n);const b=$('va_in_'+i).nextElementSibling;b.textContent='✓ Eklendi';b.disabled=true;b.classList.add('gr')}catch(e){toast(e.message,1)}}
 function vaCsv(){if(!VJ?.results)return;dl(`video-analiz-${VJ.file}.csv`,'Başlangıç;Bitiş;Kişi;Skor;Kare;Sonuç\n'+VJ.results.map(r=>csvRow([vt(r.t0),vt(r.t1),r.kind==='tanindi'?r.name:'Kişi '+(r.grp||'?'),String(r.score).replace('.',','),r.frames,VK[r.kind][1]])).join('\n'))}
 
 // ---------- hero
