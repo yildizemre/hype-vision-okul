@@ -796,33 +796,74 @@ def audit_list(request: Request, limit: int = 500, user: str = "", qs: str = "")
 
 # ---- raporlar
 @app.get("/api/reports")
-def reports(request: Request, month: str = ""):
-    month = month or datetime.now().strftime("%Y-%m")
-    y, m = map(int, month.split("-")); first = datetime(y, m, 1)
-    last = (datetime(y + (m == 12), m % 12 + 1, 1) - timedelta(days=1))
-    end = min(last, datetime.now())
-    days = [(first + timedelta(days=i)).strftime("%Y-%m-%d") for i in range((end - first).days + 1)] if end >= first else []
+def reports(request: Request, start: str = "", end: str = "", month: str = "", sinif: str = "", name: str = "", t1: str = "", t2: str = ""):
+    """Tarih araligi (start..end), opsiyonel sinif / ogrenci / saat araligi (t1..t2, giris saati) ile devam raporu."""
+    if month and not start:
+        y, m = map(int, month.split("-")); start = f"{month}-01"
+        end = (datetime(y + (m == 12), m % 12 + 1, 1) - timedelta(days=1)).strftime("%Y-%m-%d")
+    start = start or datetime.now().strftime("%Y-%m-01"); end = min(end or today_s(), today_s())
+    d0, d1 = datetime.strptime(start, "%Y-%m-%d"), datetime.strptime(end, "%Y-%m-%d")
+    if (d1 - d0).days > 400: raise HTTPException(400, "En fazla 400 günlük aralık seçilebilir")
+    days = [(d0 + timedelta(days=i)).strftime("%Y-%m-%d") for i in range((d1 - d0).days + 1)] if d1 >= d0 else []
     school = [d for d in days if not is_off_day(d)]
-    rows = q("SELECT name, substr(time,1,10) day, MIN(time) t, MAX(gec) gec FROM events WHERE time LIKE ? AND yon='giris' AND liste='ogrenci' GROUP BY name, day", (month + "%",))
-    pres, late, daily = {}, {}, Counter()
+    # her ogrenci/gun icin ilk giris ve son cikis
+    rows = q("""SELECT name, substr(time,1,10) day, MIN(CASE WHEN yon='giris' THEN time END) gir, MAX(CASE WHEN yon='cikis' THEN time END) cik
+                FROM events WHERE time >= ? AND time < ? AND liste='ogrenci' GROUP BY name, day""", (start, (d1 + timedelta(days=1)).strftime("%Y-%m-%d")))
+    def in_t(t): return t and (not t1 or t[11:16] >= t1) and (not t2 or t[11:16] <= t2)
+    studs_all = [d.name for d in sorted(PEOPLE.iterdir()) if d.is_dir() and liste_of(d.name) == "ogrenci" and visible(request, d.name)]
+    studs_f = [n for n in studs_all if (not sinif or read_info(n).get("sinif") == sinif) and (not name or n == name)]
+    sset = set(studs_f); sch = set(school)
+    pres, late, daily, detail = Counter(), Counter(), Counter(), {}
     for r in rows:
-        if r["day"] not in school: continue
-        pres[r["name"]] = pres.get(r["name"], 0) + 1; daily[r["day"]] += 1
-        if is_late(r["t"]): late[r["name"]] = late.get(r["name"], 0) + 1
+        if r["name"] not in sset or r["day"] not in sch or not in_t(r["gir"]): continue
+        pres[r["name"]] += 1; daily[r["day"]] += 1
+        g = is_late(r["gir"]); late[r["name"]] += g
+        if name: detail[r["day"]] = {"giris": r["gir"][11:16], "cikis": (r["cik"] or "")[11:16], "gec": g}
     studs = []
-    for d in sorted(PEOPLE.iterdir()):
-        if d.is_dir() and liste_of(d.name) == "ogrenci" and visible(request, d.name):
-            i = read_info(d.name); p = pres.get(d.name, 0)
-            studs.append({"name": d.name, "no": i.get("no", ""), "sinif": i.get("sinif", ""), "gelen": p, "gec": late.get(d.name, 0),
-                          "gun": len(school), "oran": round(100 * p / len(school), 1) if school else 0})
+    for n in studs_f:
+        i = read_info(n); p = pres[n]
+        studs.append({"name": n, "no": i.get("no", ""), "sinif": i.get("sinif", ""), "gelen": p, "gec": late[n],
+                      "gun": len(school), "gelmedi": len(school) - p, "oran": round(100 * p / len(school), 1) if school else 0})
     cls = {}
     for s in studs:
         c = cls.setdefault(s["sinif"] or "—", {"sinif": s["sinif"] or "—", "ogrenci": 0, "oran_top": 0, "gec": 0})
         c["ogrenci"] += 1; c["oran_top"] += s["oran"]; c["gec"] += s["gec"]
-    classes = [{"sinif": c["sinif"], "ogrenci": c["ogrenci"], "oran": round(c["oran_top"] / c["ogrenci"], 1), "gec": c["gec"]} for c in cls.values()]
-    names = {s["name"] for s in studs}
-    return {"month": month, "school_days": len(school), "students": studs, "classes": sorted(classes, key=lambda c: c["sinif"]),
-            "daily": [{"day": d, "gelen": sum(1 for r in rows if r["day"] == d and r["name"] in names)} for d in school]}
+    out = {"start": start, "end": end, "school_days": len(school), "students": studs,
+           "classes": sorted(({"sinif": c["sinif"], "ogrenci": c["ogrenci"], "oran": round(c["oran_top"] / c["ogrenci"], 1), "gec": c["gec"]} for c in cls.values()), key=lambda c: c["sinif"]),
+           "daily": [{"day": d, "gelen": daily[d], "toplam": len(studs_f)} for d in school],
+           "all_classes": sorted({read_info(n).get("sinif") for n in studs_all if read_info(n).get("sinif")}),
+           "all_students": [{"name": n, "sinif": read_info(n).get("sinif", "")} for n in studs_all]}
+    if name:
+        out["detail"] = [{"day": d, "off": is_off_day(d), **detail.get(d, {})} for d in days]
+    return out
+
+@app.get("/api/attendance/range")
+def attendance_range(request: Request, start: str, end: str, sinif: str = "", name: str = "", t1: str = "", t2: str = "", durum: str = ""):
+    """Iki tarih arasi gun gun yoklama: her okul gunu x ogrenci icin giris/cikis/gec/gelmedi."""
+    d0, d1 = datetime.strptime(start, "%Y-%m-%d"), datetime.strptime(min(end, today_s()), "%Y-%m-%d")
+    if (d1 - d0).days > 92: raise HTTPException(400, "Yoklama için en fazla 92 gün seçilebilir (daha uzunu için Raporlar)")
+    school = [(d0 + timedelta(days=i)).strftime("%Y-%m-%d") for i in range((d1 - d0).days + 1)]
+    school = [d for d in school if not is_off_day(d)]
+    ev = {}
+    for r in q("""SELECT name, substr(time,1,10) day, MIN(CASE WHEN yon='giris' THEN time END) gir, MAX(CASE WHEN yon='cikis' THEN time END) cik
+                  FROM events WHERE time >= ? AND time < ? AND liste='ogrenci' GROUP BY name, day""",
+               (start, (d1 + timedelta(days=1)).strftime("%Y-%m-%d"))):
+        ev[(r["name"], r["day"])] = r
+    studs = [d.name for d in sorted(PEOPLE.iterdir()) if d.is_dir() and liste_of(d.name) == "ogrenci" and visible(request, d.name)
+             and (not sinif or read_info(d.name).get("sinif") == sinif) and (not name or d.name == name)]
+    out = []
+    for day in reversed(school):
+        for n in studs:
+            r = ev.get((n, day)); gir = r and r["gir"]
+            if gir and ((t1 and gir[11:16] < t1) or (t2 and gir[11:16] > t2)): continue
+            g = bool(gir and is_late(gir))
+            st = "gec" if g else "geldi" if gir else "gelmedi"
+            if durum and durum != st: continue
+            i = read_info(n)
+            out.append({"day": day, "name": n, "no": i.get("no", ""), "sinif": i.get("sinif", ""), "giris": (gir or "")[11:16],
+                        "cikis": ((r and r["cik"]) or "")[11:16], "durum": st, "veli_ad": i.get("veli_ad", ""), "veli_tel": i.get("veli_tel", "")})
+            if len(out) >= 20000: return {"rows": out, "truncated": True, "days": len(school)}
+    return {"rows": out, "truncated": False, "days": len(school)}
 
 # ---- toplu duyuru
 @app.post("/api/broadcast")

@@ -71,6 +71,36 @@ input:focus,select:focus,textarea:focus{border-color:var(--a);box-shadow:0 0 0 3
 .hbar .t i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--a2),var(--a))}.hbar .v{width:56px;text-align:right;font-variant-numeric:tabular-nums}
 th.s{cursor:pointer}th.s:hover{color:var(--t)}
 @media print{aside.sb,#banners,.noprint,.ph button,.ph input,.ph select{display:none!important}main{padding:0}.page{display:none!important}.page.on{display:block!important}.card{break-inside:avoid;box-shadow:none}}
+.hero2{display:grid;grid-template-columns:auto 1fr auto;gap:28px;align-items:center;background:linear-gradient(135deg,#0b2d55 0%,#0e3a6b 55%,#0891b2 130%);color:#fff;border-radius:20px;padding:22px 26px;margin-bottom:20px;position:relative;overflow:hidden}
+.hero2::after{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px);background-size:36px 36px;-webkit-mask-image:linear-gradient(90deg,transparent,#000);mask-image:linear-gradient(90deg,transparent,#000);pointer-events:none}
+.hero2>*{position:relative;z-index:1}
+.clock{font-size:44px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1}
+.clock small{font-size:20px;opacity:.55;font-weight:600}
+.hdate{font-size:13px;opacity:.8;margin-top:6px;font-weight:500}
+.hmeta{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.hmeta span{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:99px;padding:4px 10px;font-size:12px;font-weight:600}
+.hprog .top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.hprog .top b{font-size:28px;font-weight:800}.hprog .top span{opacity:.75;font-size:13px}
+.hprog .bar{height:10px;background:rgba(255,255,255,.15);border-radius:99px;overflow:hidden;display:flex}
+.hprog .bar i{display:block;height:100%}
+.hprog .lg{display:flex;gap:14px;margin-top:8px;font-size:12px;opacity:.85}.hprog .lg i{display:inline-block;width:8px;height:8px;border-radius:99px;margin-right:5px}
+.hcams{display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+.hcams .chips{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.hcams .chip{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2);color:#fff}.hcams .chip .m{color:rgba(255,255,255,.7)}
+.btn.wh{background:#fff;color:var(--t);border-color:#fff}
+@media(max-width:1100px){.hero2{grid-template-columns:1fr}.hcams{align-items:flex-start}.hcams .chips{justify-content:flex-start}}
+.fbar{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;background:#fff;border:1px solid var(--b);border-radius:16px;padding:14px;margin-bottom:20px}
+.fbar .fi{display:flex;flex-direction:column;gap:5px;min-width:130px}.fbar .fi label{font-size:11px;font-weight:700;color:var(--m);text-transform:uppercase;letter-spacing:.04em}
+.fbar input,.fbar select{padding:9px 11px;border:1px solid var(--b);border-radius:10px;background:#fff;font:inherit;width:100%}
+.fbar .tr{display:flex;gap:6px;align-items:center}.fbar .tr input{width:110px}
+.seg{display:inline-flex;background:#eef2f6;border-radius:10px;padding:3px;gap:3px}.seg a{padding:7px 12px;border-radius:8px;cursor:pointer;font-weight:600;color:var(--m);font-size:13px;white-space:nowrap}.seg a.on{background:#fff;color:var(--t);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.quick{display:flex;gap:6px;flex-wrap:wrap}.quick a{font-size:12px;font-weight:600;color:#0e7490;background:#ecfeff;border-radius:99px;padding:5px 10px;cursor:pointer}.quick a:hover{background:#cffafe}
+.scard{display:grid;grid-template-columns:auto 1fr auto;gap:18px;align-items:center}
+.scard .big{width:64px;height:64px;border-radius:16px;object-fit:cover;background:var(--navy)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal div{border-radius:10px;padding:8px;min-height:58px;font-size:12px;border:1px solid var(--b);background:#fff}
+.cal div b{display:block;font-size:13px;margin-bottom:3px}.cal .g{background:var(--okbg);border-color:#bbf7d0}.cal .l{background:var(--vbg);border-color:#ddd6fe}.cal .x{background:var(--rbg);border-color:#fecaca}.cal .o{background:#f8fafc;color:#94a3b8}
+.cal .h{background:none;border:0;min-height:0;padding:2px;text-align:center;color:var(--m);font-weight:700}
 .legend{display:flex;gap:14px;margin-top:10px;font-size:12px;color:var(--m);flex-wrap:wrap}.legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px}
 table{width:100%;border-collapse:collapse}th{text-align:left;color:var(--m);font-weight:600;font-size:12px;padding:10px;border-bottom:1px solid var(--b);background:#fafbfc}
 td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:hover td{background:#fafcff}
@@ -202,10 +232,15 @@ td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:h
 <main>
 <!-- CANLI -->
 <section class="page on" id="p-live">
-  <div class="hero"><span class="badge off" id="camBadge">Kamera kapalı</span><h1 id="greet" style="font-size:26px;margin:6px 0 4px;font-weight:800">Günaydın</h1>
-    <p class="m" style="font-size:14px;margin:0">Kapıdan geçen öğrenci birkaç karede aynı kişi olarak tanınınca "GELDİ" kaydı düşer.</p>
-    <div class="row" style="margin:18px 0 0"><span id="camchips" style="display:flex;gap:8px;flex-wrap:wrap"></span><span></span>
-      <button class="btn dk fx" data-min="mudur_yrd" onclick="go('cameras')"><svg class="i"><use href="#i-cam"/></svg>Kameraları yönet</button></div></div>
+  <div class="hero2">
+    <div><div class="clock" id="h_clock">--:--<small>:--</small></div><div class="hdate" id="h_date"></div>
+      <div class="hmeta" id="h_meta"></div></div>
+    <div class="hprog"><div class="top"><div><b id="h_pct">%0</b> <span>bugünkü devam</span></div><span id="h_cnt">0 / 0 öğrenci</span></div>
+      <div class="bar"><i id="h_b1" style="background:#22c55e;width:0"></i><i id="h_b2" style="background:#a78bfa;width:0"></i></div>
+      <div class="lg"><span><i style="background:#22c55e"></i>Zamanında <b id="h_on">0</b></span><span><i style="background:#a78bfa"></i>Geç <b id="h_lt">0</b></span><span><i style="background:rgba(255,255,255,.3)"></i>Görülmedi <b id="h_ns">0</b></span><span><i style="background:#38bdf8"></i>Çıktı <b id="h_ct">0</b></span></div></div>
+    <div class="hcams"><span class="badge off" id="camBadge" style="background:rgba(255,255,255,.12);color:#fff">Kamera</span><div class="chips" id="camchips"></div>
+      <button class="btn wh sm" data-min="mudur_yrd" onclick="go('cameras')"><svg class="i"><use href="#i-cam"/></svg>Kameraları yönet</button></div>
+  </div>
   <div id="banners"></div>
   <div class="stats">
     <div class="st"><div class="ic c-ok"><svg class="i"><use href="#i-check"/></svg></div><b id="k_g">0</b><span>Bugün geldi</span></div>
@@ -223,23 +258,33 @@ td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:h
       <div class="card"><h2><svg class="i"><use href="#i-img"/></svg>Fotoğrafla test</h2>
         <div class="row"><input type="file" id="testf" accept="image/*"><button class="btn dk" onclick="testImg()">Kim bu?</button></div><div id="testres"></div></div>
     </div>
-    <div class="card"><h2><svg class="i"><use href="#i-check"/></svg>Son Geçişler</h2><div id="ev"></div></div>
+    <div class="card"><h2><svg class="i"><use href="#i-check"/></svg>Son Geçişler<span class="sp"></span><a class="m" style="cursor:pointer;font-weight:600;color:#0e7490" onclick="go('att')">Tümü →</a></h2><div id="ev"></div></div>
   </div>
 </section>
 
 <!-- YOKLAMA -->
 <section class="page" id="p-att">
-  <div class="ph"><div><h1>Yoklama</h1><p>"Henüz görülmedi" veliye otomatik gitmez. Öğrenci gelmediyse teyit edip "Gelmedi bildir"e bas.</p></div><span class="sp"></span>
-    <input type="date" id="aday" onchange="loadAtt()" style="max-width:170px"><select id="as" onchange="renderAtt()" style="max-width:200px"></select>
-    <button class="btn" onclick="exportAtt()"><svg class="i"><use href="#i-down"/></svg>Excel (CSV)</button></div>
+  <div class="ph"><div><h1>Yoklama</h1><p>"Henüz görülmedi" veliye otomatik gitmez. Öğrenci gelmediyse teyit edip "Gelmedi bildir"e bas.</p></div></div>
+  <div class="fbar">
+    <div class="fi"><label>Görünüm</label><div class="seg" id="a_mode"><a data-m="gun" class="on" onclick="aMode('gun')">Tek gün</a><a data-m="aralik" onclick="aMode('aralik')">Tarih aralığı</a></div></div>
+    <div class="fi" id="a_f1"><label id="a_l1">Tarih</label><input type="date" id="aday" onchange="loadAtt()"></div>
+    <div class="fi" id="a_f2" style="display:none"><label>Bitiş</label><input type="date" id="aend" onchange="loadAtt()"></div>
+    <div class="fi"><label>Giriş saati aralığı</label><div class="tr"><input type="time" id="at1" onchange="loadAtt()"><span class=m>–</span><input type="time" id="at2" onchange="loadAtt()"></div></div>
+    <div class="fi"><label>Sınıf</label><select id="as" onchange="loadAtt()"></select></div>
+    <div class="fi" style="min-width:200px"><label>Öğrenci</label><input list="stlist" id="aname" placeholder="Tümü — isim yaz" onchange="loadAtt()"></div>
+    <div class="fi"><label>Durum</label><select id="adur" onchange="loadAtt()"><option value="">Tümü</option><option value="geldi">Zamanında</option><option value="gec">Geç</option><option value="gelmedi">Gelmedi</option></select></div>
+    <div class="fi" style="min-width:0"><label>&nbsp;</label><div style="display:flex;gap:6px"><button class="btn sm" onclick="aClear()">Temizle</button><button class="btn sm dk" onclick="exportAtt()"><svg class="i"><use href="#i-down"/></svg>CSV</button></div></div>
+  </div>
+  <div class="quick" id="a_quick" style="margin:-10px 0 16px;display:none"><a onclick="aQuick(0)">Bugün</a><a onclick="aQuick('w')">Bu hafta</a><a onclick="aQuick('m')">Bu ay</a><a onclick="aQuick(7)">Son 7 gün</a><a onclick="aQuick(30)">Son 30 gün</a></div>
   <div id="a_off"></div>
   <div class="stats" style="grid-template-columns:repeat(5,minmax(0,1fr))">
-    <div class="st"><div class="ic c-blu"><svg class="i"><use href="#i-users"/></svg></div><b id="a_t">0</b><span>Toplam</span></div>
+    <div class="st"><div class="ic c-blu"><svg class="i"><use href="#i-users"/></svg></div><b id="a_t">0</b><span id="a_tl">Toplam</span></div>
     <div class="st"><div class="ic c-ok"><svg class="i"><use href="#i-check"/></svg></div><b id="a_g">0</b><span>Geldi</span></div>
     <div class="st"><div class="ic c-v"><svg class="i"><use href="#i-clock"/></svg></div><b id="a_l">0</b><span>Geç geldi</span></div>
-    <div class="st"><div class="ic c-blu"><svg class="i"><use href="#i-out"/></svg></div><b id="a_c">0</b><span>Çıktı</span></div>
-    <div class="st"><div class="ic c-w"><svg class="i"><use href="#i-q"/></svg></div><b id="a_n">0</b><span>Henüz görülmedi</span></div></div>
-  <div class="card" style="padding:0;overflow:hidden"><div style="overflow-x:auto"><table><thead><tr><th>No</th><th>Ad Soyad</th><th>Sınıf</th><th>Giriş</th><th>Çıkış</th><th>Durum</th><th>Veli</th><th></th></tr></thead><tbody id="atbody"></tbody></table></div></div>
+    <div class="st"><div class="ic c-blu"><svg class="i"><use href="#i-out"/></svg></div><b id="a_c">0</b><span id="a_cl">Çıktı</span></div>
+    <div class="st"><div class="ic c-w"><svg class="i"><use href="#i-q"/></svg></div><b id="a_n">0</b><span id="a_nl">Henüz görülmedi</span></div></div>
+  <div class="card" style="padding:0;overflow:hidden"><div style="overflow-x:auto"><table><thead id="athead"></thead><tbody id="atbody"></tbody></table></div><div id="a_more" class="m" style="padding:10px 14px"></div></div>
+  <datalist id="stlist"></datalist>
 </section>
 
 <!-- ONAY BEKLEYEN -->
@@ -310,23 +355,34 @@ td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:h
 
 <!-- RAPORLAR -->
 <section class="page" id="p-reports">
-  <div class="ph"><div><h1>Raporlar</h1><p id="r_sub">Aylık devam, geç kalanlar ve sınıf karşılaştırması.</p></div><span class="sp"></span>
-    <input type="month" id="r_month" onchange="loadReports()" style="max-width:170px;border:1px solid var(--b);border-radius:10px;padding:9px 12px">
-    <select id="r_cls" onchange="renderReports()" style="max-width:180px"></select>
+  <div class="ph"><div><h1>Raporlar</h1><p id="r_sub">Devam, geç kalanlar ve sınıf karşılaştırması.</p></div><span class="sp"></span>
     <button class="btn" onclick="exportReport()"><svg class="i"><use href="#i-down"/></svg>Excel (CSV)</button>
     <button class="btn dk" onclick="window.print()"><svg class="i"><use href="#i-down"/></svg>PDF / Yazdır</button></div>
+  <div class="fbar noprint">
+    <div class="fi"><label>Başlangıç</label><input type="date" id="r_s" onchange="loadReports()"></div>
+    <div class="fi"><label>Bitiş</label><input type="date" id="r_e" onchange="loadReports()"></div>
+    <div class="fi"><label>Giriş saati aralığı</label><div class="tr"><input type="time" id="r_t1" onchange="loadReports()"><span class=m>–</span><input type="time" id="r_t2" onchange="loadReports()"></div></div>
+    <div class="fi"><label>Sınıf</label><select id="r_cls" onchange="$('r_st').value='';loadReports()"></select></div>
+    <div class="fi" style="min-width:220px"><label>Öğrenci</label><input list="r_stlist" id="r_st" placeholder="Tümü — isim yaz" onchange="loadReports()"></div>
+    <div class="fi" style="min-width:0"><label>&nbsp;</label><button class="btn sm" onclick="rClear()">Temizle</button></div>
+  </div>
+  <datalist id="r_stlist"></datalist>
+  <div class="quick noprint" style="margin:-10px 0 16px"><a onclick="rQuick('w')">Bu hafta</a><a onclick="rQuick('m')">Bu ay</a><a onclick="rQuick('pm')">Geçen ay</a><a onclick="rQuick(30)">Son 30 gün</a><a onclick="rQuick(90)">Son 3 ay</a><a onclick="rQuick('y')">Bu eğitim yılı</a></div>
+  <div id="r_student"></div>
   <div class="stats">
     <div class="st"><div class="ic c-blu"><svg class="i"><use href="#i-clock"/></svg></div><b id="r_days">0</b><span>Okul günü</span></div>
-    <div class="st"><div class="ic c-ok"><svg class="i"><use href="#i-check"/></svg></div><b id="r_avg">0%</b><span>Ortalama devam</span></div>
+    <div class="st"><div class="ic c-ok"><svg class="i"><use href="#i-check"/></svg></div><b id="r_avg">%0</b><span>Ortalama devam</span></div>
     <div class="st"><div class="ic c-w"><svg class="i"><use href="#i-clock"/></svg></div><b id="r_late">0</b><span>Toplam geç giriş</span></div>
     <div class="st"><div class="ic c-r"><svg class="i"><use href="#i-users"/></svg></div><b id="r_low">0</b><span>Devamı %80 altı</span></div></div>
+  <div id="r_multi">
   <div class="g2">
     <div class="card"><h2><svg class="i"><use href="#i-chart"/></svg>Günlük gelen öğrenci</h2><div class="bars" id="r_daily"></div><div class="m" id="r_dlab" style="display:flex;justify-content:space-between;margin-top:6px"></div></div>
     <div class="card"><h2><svg class="i"><use href="#i-users"/></svg>Sınıf karşılaştırması (devam %)</h2><div id="r_cls_bars"></div></div></div>
   <div class="g2">
     <div class="card" style="padding:0;overflow:hidden"><h2 style="padding:16px 16px 0">En çok geç kalanlar</h2><table><tbody id="r_lates"></tbody></table></div>
     <div class="card" style="padding:0;overflow:hidden"><h2 style="padding:16px 16px 0">Devamı en düşük</h2><table><tbody id="r_lows"></tbody></table></div></div>
-  <div class="card" style="padding:0;overflow:hidden"><div style="overflow-x:auto"><table><thead><tr><th class="s" onclick="rSort('no')">No</th><th class="s" onclick="rSort('name')">Ad Soyad</th><th class="s" onclick="rSort('sinif')">Sınıf</th><th class="s" onclick="rSort('gelen')">Geldiği gün</th><th class="s" onclick="rSort('gec')">Geç</th><th class="s" onclick="rSort('oran')">Devam %</th></tr></thead><tbody id="r_body"></tbody></table></div></div>
+  <div class="card" style="padding:0;overflow:hidden"><div style="overflow-x:auto"><table><thead><tr><th class="s" onclick="rSort('no')">No</th><th class="s" onclick="rSort('name')">Ad Soyad</th><th class="s" onclick="rSort('sinif')">Sınıf</th><th class="s" onclick="rSort('gelen')">Geldiği gün</th><th class="s" onclick="rSort('gelmedi')">Gelmedi</th><th class="s" onclick="rSort('gec')">Geç</th><th class="s" onclick="rSort('oran')">Devam %</th></tr></thead><tbody id="r_body"></tbody></table></div></div>
+  </div>
 </section>
 
 <!-- DUYURU -->
@@ -436,9 +492,9 @@ async function api(p,o={}){const r=await fetch(p,o);const j=await r.json().catch
 const post=(p,b)=>api(p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});
 const LN={ogrenci:'Öğrenci',beyaz:'Beyaz liste',kara:'Kara liste'}, LC={ogrenci:'p-ok',beyaz:'p-b',kara:'p-r'};
 const RN={yonetici:'Yönetici',mudur_yrd:'Müdür yardımcısı',ogretmen:'Öğretmen'}, RL={ogretmen:1,mudur_yrd:2,yonetici:3};
-let ME=null,PEOPLE=[],ATT=[],CUR=null,LIST='ogrenci',PK='onay',MSGS=[],SEEN_AL=new Set(JSON.parse(sessionStorage.getItem('al')||'[]'));
+let ME=null,PEOPLE=[],ATT=[],TODAY=[],CUR=null,LIST='ogrenci',PK='onay',MSGS=[],SEEN_AL=new Set(JSON.parse(sessionStorage.getItem('al')||'[]'));
 const today=()=>new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
-const h=new Date().getHours();$('greet').textContent=h<12?'Günaydın 👋':h<18?'İyi günler 👋':'İyi akşamlar 👋';$('aday').value=today();
+$('aday').value=today();
 
 async function doLogin(e){e.preventDefault();$('lerr').textContent='';try{await post('/api/login',{user:$('lu').value,pass:$('lp').value,remember:$('lrem').checked});location.reload()}catch(x){$('lerr').textContent=x.message}}
 async function logout(){await post('/api/logout',{});location.reload()}
@@ -464,7 +520,7 @@ async function testImg(){const f=$('testf').files[0];if(!f)return toast('Önce f
   try{const r=await api('/api/test',{method:'POST',body:fd});
   $('testres').innerHTML=`<img src="${r.image}" style="max-width:100%;border-radius:12px;margin-top:6px"><div style="margin-top:8px">${r.faces.map(x=>x.name?`<span class="tag ${LC[x.liste]}">${esc(x.name)} · ${x.score}</span>`:`<span class="tag p-w">bilinmiyor — en yakın ${esc(x.best||'-')} · ${x.score}</span>`).join(' ')||'<span class=m>Yüz bulunamadı</span>'}</div>`}catch(e){toast(e.message,1)}}
 const waTag=w=>!w||w==='-'?'':`<span class="tag ${w==='gonderildi'||w==='iletildi'||w==='okundu'?'p-ok':w==='hata'?'p-r':''}" style="font-size:11px">WA: ${esc(w)}</span>`;
-async function loadEvents(){const ev=await api('/api/events?limit=40');
+async function loadEvents(){const ev=await api('/api/events?limit=10');
   $('ev').innerHTML=ev.map(e=>`<div class="ev ${e.liste==='kara'?'kara':''}"><img class=av src="/api/people/${enc(e.name)}/_" onerror="this.outerHTML='<div class=ini>${ini(e.name)}</div>'">
     <div class="x"><b>${esc(e.name)}</b> ${e.liste!=='ogrenci'?`<span class="tag ${LC[e.liste]}">${LN[e.liste]}</span>`:''}${e.gec?'<span class="tag p-v">GEÇ</span>':''}<div class=m>${esc(e.sinif||'—')} · ${esc(e.cam||'')} · ${e.kaynak==='kamera'?'skor '+e.score:esc(e.kaynak)} ${waTag(e.wa)}</div></div>
     <span class="tag ${e.liste==='kara'?'p-r':e.yon==='cikis'?'p-b':'p-ok'}">${e.yon==='cikis'?'↗ ':''}${e.time.slice(11,16)}</span></div>`).join('')||`<div class="empty">Henüz geçiş yok</div>`}
@@ -475,19 +531,19 @@ function ackAlarm(){SEEN_AL.add(+$('alarm').dataset.id);sessionStorage.setItem('
 function beep(){try{const c=new AudioContext();[0,.35,.7].forEach(t=>{const o=c.createOscillator(),g=c.createGain();o.frequency.value=880;o.connect(g);g.connect(c.destination);g.gain.setValueAtTime(.25,c.currentTime+t);o.start(c.currentTime+t);o.stop(c.currentTime+t+.22)})}catch(e){}}
 
 // ---------- kisiler
-async function loadPeople(){[PEOPLE,ATT]=await Promise.all([api('/api/people'),api('/api/attendance')]);
+async function loadPeople(){[PEOPLE,TODAY]=await Promise.all([api('/api/people'),api('/api/attendance')]);
   const cls=[...new Set(PEOPLE.map(p=>p.sinif).filter(Boolean))].sort();
   for(const id of['fs','as']){const v=$(id).value;$(id).innerHTML='<option value="">Tüm sınıflar</option>'+cls.map(c=>`<option>${esc(c)}</option>`).join('');$(id).value=v}
   $('sel').innerHTML='<option value="">— yeni kayıt —</option>'+PEOPLE.map(p=>`<option value="${esc(p.name)}" ${p.name===CUR?'selected':''}>${esc(p.name)} (${LN[p.liste]})</option>`).join('');
   for(const l of['ogrenci','beyaz','kara'])$('n_'+l).textContent=PEOPLE.filter(p=>p.liste===l).length;
-  const g=ATT.filter(a=>a.geldi).length;$('n_att').textContent=g+'/'+ATT.length;$('k_g').textContent=g;$('k_n').textContent=ATT.length-g;
+  const g=TODAY.filter(a=>a.geldi).length;$('n_att').textContent=g+'/'+TODAY.length;$('k_g').textContent=g;$('k_n').textContent=TODAY.length-g;heroStats();
   renderStudents();renderThumbs()}
 function renderStudents(){
   $('lt').textContent={ogrenci:'Öğrenciler',beyaz:'Beyaz Liste',kara:'Kara Liste'}[LIST];
   $('ld').textContent={ogrenci:'Kayıtlı öğrenciler, veli bilgileri ve tanıma durumu.',beyaz:'Personel ve izinli kişiler. Tanınınca kayıt düşer, veliye mesaj gitmez.',kara:'Girişi yasak kişiler. Kamerada görülünce ekranda alarm çıkar ve yöneticiye mesaj gider.'}[LIST];
   const ogr=LIST==='ogrenci';$('fs').style.display=ogr?'':'none';
   $('sthead').innerHTML=`<tr><th></th>${ogr?'<th>No</th>':''}<th>Ad Soyad</th>${ogr?'<th>Sınıf</th><th>Veli</th><th>Veli Tel</th>':'<th>Not</th>'}<th>Foto</th><th>Durum</th>${ogr?'<th>Bugün</th>':''}<th></th></tr>`;
-  const q=$('q').value.toLowerCase(),s=$('fs').value;const att=Object.fromEntries(ATT.map(a=>[a.name,a.geldi]));
+  const q=$('q').value.toLowerCase(),s=$('fs').value;const att=Object.fromEntries(TODAY.map(a=>[a.name,a.geldi]));
   const rows=PEOPLE.filter(p=>p.liste===LIST&&(!ogr||!s||p.sinif===s)&&(!q||[p.name,p.no,p.veli_ad,p.veli_tel,p.not].join(' ').toLowerCase().includes(q)))
    .sort((a,b)=>(a.sinif||'').localeCompare(b.sinif||'')||(+a.no||0)-(+b.no||0)||a.name.localeCompare(b.name));
   const can=RL[ME?.rol]>=2;
@@ -531,19 +587,46 @@ async function delPerson(purge){if(!CUR)return;
   try{await api('/api/people/'+enc(CUR)+'?purge='+purge,{method:'DELETE'});toast('Silindi');fill({});loadPeople()}catch(e){toast(e.message,1)}}
 
 // ---------- yoklama
-async function loadAtt(){ATT=await api('/api/attendance?day='+$('aday').value);if(!PEOPLE.length)await loadPeople();renderAtt()}
-function renderAtt(){const s=$('as').value,isToday=$('aday').value===today();const rows=ATT.filter(a=>!s||a.sinif===s).sort((a,b)=>(!!a.geldi-!!b.geldi)||(a.sinif||'').localeCompare(b.sinif||'')||(+a.no||0)-(+b.no||0));
+let AMODE='gun',ARNG=null;
+const fmtD=d=>d.toISOString().slice(0,10),addD=(s,n)=>{const d=new Date(s+'T12:00');d.setDate(d.getDate()+n);return fmtD(d)};
+function weekStart(){const d=new Date(today()+'T12:00');d.setDate(d.getDate()-((d.getDay()+6)%7));return fmtD(d)}
+function aMode(m){AMODE=m;document.querySelectorAll('#a_mode a').forEach(a=>a.classList.toggle('on',a.dataset.m===m));
+  $('a_f2').style.display=$('a_quick').style.display=m==='aralik'?'':'none';$('a_l1').textContent=m==='aralik'?'Başlangıç':'Tarih';
+  if(m==='aralik'&&!$('aend').value){$('aend').value=today();$('aday').value=weekStart()}if(m==='gun'&&!$('aday').value)$('aday').value=today();loadAtt()}
+function aQuick(k){const t=today();$('aend').value=t;$('aday').value=k==='w'?weekStart():k==='m'?t.slice(0,8)+'01':addD(t,-(k||0)+(k?1:0));loadAtt()}
+function aClear(){for(const id of['at1','at2','aname','adur','as'])$(id).value='';loadAtt()}
+function fillStudentLists(){const ogr=PEOPLE.filter(p=>p.liste==='ogrenci');const o=ogr.map(p=>`<option value="${esc(p.name)}">${esc(p.sinif||'')} ${esc(p.no||'')}</option>`).join('');
+  if($('stlist').dataset.o!==o){$('stlist').innerHTML=o;$('r_stlist').innerHTML=o;$('stlist').dataset.o=o}}
+async function loadAtt(){if(!PEOPLE.length)await loadPeople();fillStudentLists();
+  if(!$('aday').value)$('aday').value=today();
+  if(AMODE==='gun'){ATT=await api('/api/attendance?day='+$('aday').value);renderAtt()}
+  else{const qs=new URLSearchParams({start:$('aday').value,end:$('aend').value||today(),sinif:$('as').value,name:$('aname').value,t1:$('at1').value,t2:$('at2').value,durum:$('adur').value});
+    try{ARNG=await api('/api/attendance/range?'+qs)}catch(e){return toast(e.message,1)}renderAttRange()}}
+function attRows(){const s=$('as').value,n=$('aname').value,t1=$('at1').value,t2=$('at2').value,du=$('adur').value;
+  return ATT.filter(a=>(!s||a.sinif===s)&&(!n||a.name===n)&&(!t1||(a.geldi&&a.geldi>=t1))&&(!t2||(a.geldi&&a.geldi<=t2))
+    &&(!du||(du==='gelmedi'?!a.geldi:du==='gec'?a.gec:a.geldi&&!a.gec)))}
+function renderAtt(){const isToday=$('aday').value===today();const rows=attRows().sort((a,b)=>(!!a.geldi-!!b.geldi)||(a.sinif||'').localeCompare(b.sinif||'')||(+a.no||0)-(+b.no||0));
+  $('a_tl').textContent='Öğrenci';$('a_cl').textContent='Çıktı';$('a_nl').textContent=isToday?'Henüz görülmedi':'Gelmedi';$('a_more').textContent='';
   $('a_t').textContent=rows.length;$('a_g').textContent=rows.filter(a=>a.geldi).length;$('a_l').textContent=rows.filter(a=>a.gec).length;$('a_c').textContent=rows.filter(a=>a.durum==='cikti').length;$('a_n').textContent=rows.filter(a=>!a.geldi).length;
+  $('athead').innerHTML='<tr><th>No</th><th>Ad Soyad</th><th>Sınıf</th><th>Giriş</th><th>Çıkış</th><th>Durum</th><th>Veli</th><th></th></tr>';
   $('atbody').innerHTML=rows.map(a=>`<tr><td>${esc(a.no)}</td><td><b>${esc(a.name)}</b></td><td><span class=tag>${esc(a.sinif||'—')}</span></td>
    <td>${a.geldi?`<span class="tag ${a.gec?'p-v':'p-ok'}">${a.geldi}${a.gec?' · geç':''}</span>`:'<span class=m>—</span>'}</td><td>${a.cikis?`<span class="tag p-b">${a.cikis}</span>`:'<span class=m>—</span>'}</td>
    <td>${a.durum==='okulda'?'<span class="tag p-ok">Okulda</span>':a.durum==='cikti'?'<span class="tag p-b">Çıktı</span>':`<span class="tag p-w">${isToday?'Henüz görülmedi':'Gelmedi'}</span>`}</td><td>${esc(a.veli_ad)} <span class=m>${esc(a.veli_tel)}</span></td>
-   <td style="text-align:right;white-space:nowrap">${isToday?(!a.geldi?`<button class="btn sm" onclick="manual('${esc(enc(a.name))}')">Geldi işaretle</button> <button class="btn sm danger" onclick="absent('${esc(enc(a.name))}')">Gelmedi bildir</button>`:a.durum==='okulda'?`<button class="btn sm" onclick="manual('${esc(enc(a.name))}','cikis')">Çıkış işaretle</button>`:''):''}</td></tr>`).join('')||`<tr><td colspan=8 class="empty">Kayıtlı öğrenci yok</td></tr>`}
+   <td style="text-align:right;white-space:nowrap">${isToday?(!a.geldi?`<button class="btn sm" onclick="manual('${esc(enc(a.name))}')">Geldi işaretle</button> <button class="btn sm danger" onclick="absent('${esc(enc(a.name))}')">Gelmedi bildir</button>`:a.durum==='okulda'?`<button class="btn sm" onclick="manual('${esc(enc(a.name))}','cikis')">Çıkış işaretle</button>`:''):''}</td></tr>`).join('')||`<tr><td colspan=8 class="empty">Filtreye uyan kayıt yok</td></tr>`}
+const DUR={geldi:['p-ok','Zamanında'],gec:['p-v','Geç'],gelmedi:['p-r','Gelmedi']};
+const trDay=d=>new Date(d+'T12:00').toLocaleDateString('tr-TR',{day:'2-digit',month:'short',weekday:'short'});
+function renderAttRange(){const R=ARNG.rows;$('a_tl').textContent=`Kayıt (${ARNG.days} okul günü)`;$('a_cl').textContent='Çıkış kaydı';$('a_nl').textContent='Gelmedi';
+  $('a_t').textContent=R.length;$('a_g').textContent=R.filter(r=>r.durum!=='gelmedi').length;$('a_l').textContent=R.filter(r=>r.durum==='gec').length;$('a_c').textContent=R.filter(r=>r.cikis).length;$('a_n').textContent=R.filter(r=>r.durum==='gelmedi').length;
+  $('athead').innerHTML='<tr><th>Tarih</th><th>No</th><th>Ad Soyad</th><th>Sınıf</th><th>Giriş</th><th>Çıkış</th><th>Durum</th><th>Veli</th></tr>';
+  const MAX=1500;$('atbody').innerHTML=R.slice(0,MAX).map(r=>`<tr><td class=m style="white-space:nowrap">${trDay(r.day)}</td><td>${esc(r.no)}</td><td><b>${esc(r.name)}</b></td><td><span class=tag>${esc(r.sinif||'—')}</span></td>
+   <td>${r.giris||'<span class=m>—</span>'}</td><td>${r.cikis||'<span class=m>—</span>'}</td><td><span class="tag ${DUR[r.durum][0]}">${DUR[r.durum][1]}</span></td><td class=m>${esc(r.veli_ad)} ${esc(r.veli_tel)}</td></tr>`).join('')||'<tr><td colspan=8 class=empty>Filtreye uyan kayıt yok</td></tr>';
+  $('a_more').textContent=R.length>MAX?`İlk ${MAX} satır gösteriliyor — tamamı için CSV indir.`:ARNG.truncated?'Çok fazla satır; aralığı daraltın.':''}
 async function manual(n,yon){try{await post('/api/attendance/manual',{name:decodeURIComponent(n),yon});toast(yon==='cikis'?'Çıkış işaretlendi':'Geldi olarak işaretlendi');loadAtt()}catch(e){toast(e.message,1)}}
 async function absent(n){n=decodeURIComponent(n);if(!confirm(`${n} için veliye "okula gelmedi" mesajı gönderilsin mi?`))return;
   try{const r=await post('/api/absent/notify',{name:n});toast(r.wa==='kapali'?'WhatsApp kapalı — WA butonuyla elle gönderebilirsin':'Mesaj: '+r.wa,r.wa!=='gonderiliyor')}catch(e){toast(e.message,1)}}
-function exportAtt(){const s=$('as').value;const rows=ATT.filter(a=>!s||a.sinif===s);
-  const csv='﻿No;Ad Soyad;Sınıf;Durum;Giriş;Geç;Çıkış;Veli;Veli Tel\n'+rows.map(a=>[a.no,a.name,a.sinif,a.geldi?(a.durum==='cikti'?'Çıktı':'Okulda'):'Gelmedi',a.geldi||'',a.gec?'Evet':'',a.cikis||'',a.veli_ad,a.veli_tel].map(x=>`"${String(x||'').replace(/"/g,'""')}"`).join(';')).join('\n');
-  const l=document.createElement('a');l.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));l.download=`yoklama-${$('aday').value}${s?'-'+s:''}.csv`;l.click()}
+function exportAtt(){
+  if(AMODE==='aralik'&&ARNG){dl(`yoklama-${$('aday').value}_${$('aend').value}.csv`,'Tarih;No;Ad Soyad;Sınıf;Giriş;Çıkış;Durum;Veli;Veli Tel\n'+ARNG.rows.map(r=>csvRow([r.day,r.no,r.name,r.sinif,r.giris,r.cikis,DUR[r.durum][1],r.veli_ad,r.veli_tel])).join('\n'));return}
+  const rows=attRows();dl(`yoklama-${$('aday').value}${$('as').value?'-'+$('as').value:''}.csv`,'No;Ad Soyad;Sınıf;Durum;Giriş;Geç;Çıkış;Veli;Veli Tel\n'+rows.map(a=>csvRow([a.no,a.name,a.sinif,a.geldi?(a.durum==='cikti'?'Çıktı':'Okulda'):'Gelmedi',a.geldi||'',a.gec?'Evet':'',a.cikis||'',a.veli_ad,a.veli_tel])).join('\n'))}
 
 // ---------- onay bekleyen
 function pTab(k){PK=k;document.querySelectorAll('.tabs a').forEach(a=>a.classList.toggle('on',a.dataset.k===k));loadPending()}
@@ -612,26 +695,52 @@ async function impZip(inp){const f=inp.files[0];if(!f)return;const fd=new FormDa
 
 // ---------- raporlar
 let REP=null,RS={k:'oran',d:1};
-async function loadReports(){if(!$('r_month').value)$('r_month').value=today().slice(0,7);REP=await api('/api/reports?month='+$('r_month').value);
-  const cls=[...new Set(REP.students.map(s=>s.sinif).filter(Boolean))].sort(),v=$('r_cls').value;$('r_cls').innerHTML='<option value="">Tüm sınıflar</option>'+cls.map(c=>`<option>${esc(c)}</option>`).join('');$('r_cls').value=v;renderReports()}
+function rQuick(k){const t=today();let s=t,e=t;
+  if(k==='w')s=weekStart();else if(k==='m')s=t.slice(0,8)+'01';
+  else if(k==='pm'){const d=new Date(t.slice(0,8)+'01T12:00');d.setDate(0);e=fmtD(d);s=e.slice(0,8)+'01'}
+  else if(k==='y'){const y=+t.slice(0,4),m=+t.slice(5,7);s=(m>=9?y:y-1)+'-09-01'}else s=addD(t,-k+1);
+  $('r_s').value=s;$('r_e').value=e;loadReports()}
+function rClear(){for(const id of['r_t1','r_t2','r_cls','r_st'])$(id).value='';rQuick('m')}
+async function loadReports(){if(!PEOPLE.length)await loadPeople();fillStudentLists();
+  if(!$('r_s').value){$('r_s').value=today().slice(0,8)+'01';$('r_e').value=today()}
+  const qs=new URLSearchParams({start:$('r_s').value,end:$('r_e').value,sinif:$('r_cls').value,name:$('r_st').value,t1:$('r_t1').value,t2:$('r_t2').value});
+  try{REP=await api('/api/reports?'+qs)}catch(e){return toast(e.message,1)}
+  const v=$('r_cls').value;$('r_cls').innerHTML='<option value="">Tüm sınıflar</option>'+REP.all_classes.map(c=>`<option>${esc(c)}</option>`).join('');$('r_cls').value=v;
+  const sl=REP.all_students.filter(s=>!v||s.sinif===v).map(s=>`<option value="${esc(s.name)}">${esc(s.sinif)}</option>`).join('');$('r_stlist').innerHTML=sl;
+  renderReports()}
 function rSort(k){RS={k,d:RS.k===k?-RS.d:(k==='name'||k==='sinif'||k==='no'?-1:1)};renderReports()}
-function renderReports(){if(!REP)return;const c=$('r_cls').value;const st=REP.students.filter(s=>!c||s.sinif===c);
-  $('r_sub').textContent=`${REP.month} · ${REP.school_days} okul günü${c?' · '+c:''}`;$('r_days').textContent=REP.school_days;
+function renderReports(){if(!REP)return;const st=REP.students,one=!!$('r_st').value&&st.length===1;
+  const f=d=>new Date(d+'T12:00').toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});
+  $('r_sub').textContent=`${f(REP.start)} – ${f(REP.end)} · ${REP.school_days} okul günü${$('r_cls').value?' · '+$('r_cls').value:''}${$('r_t1').value||$('r_t2').value?` · giriş ${$('r_t1').value||'00:00'}–${$('r_t2').value||'23:59'}`:''}`;
+  $('r_days').textContent=REP.school_days;
   $('r_avg').textContent='%'+(st.length?Math.round(st.reduce((a,s)=>a+s.oran,0)/st.length):0);$('r_late').textContent=st.reduce((a,s)=>a+s.gec,0);$('r_low').textContent=st.filter(s=>s.oran<80).length;
+  $('r_multi').style.display=one?'none':'';
+  if(one){const s=st[0],p=PEOPLE.find(x=>x.name===s.name)||{};
+    const cells=['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'].map(d=>`<div class="h">${d}</div>`);
+    const first=new Date(REP.detail[0].day+'T12:00');for(let i=0;i<(first.getDay()+6)%7;i++)cells.push('<div style="border:0;background:none"></div>');
+    for(const d of REP.detail){const cls=d.off?'o':!d.giris?'x':d.gec?'l':'g';
+      cells.push(`<div class="${cls}"><b>${+d.day.slice(8)}.${d.day.slice(5,7)}</b>${d.off?'tatil':d.giris?`${d.giris}${d.cikis?' → '+d.cikis:''}${d.gec?'<br>geç':''}`:'gelmedi'}</div>`)}
+    $('r_student').innerHTML=`<div class="card"><div class="scard">${p.photos?.[0]?`<img class=big src="/api/people/${enc(s.name)}/${p.photos[0]}">`:`<div class="big ini" style="width:64px;height:64px;font-size:22px">${ini(s.name)}</div>`}
+      <div><h2 style="margin:0;font-size:20px">${esc(s.name)}</h2><div class=m>${esc(s.sinif)} · No ${esc(s.no)} · Veli: ${esc(p.veli_ad||'—')} ${esc(p.veli_tel||'')}</div></div>
+      <div style="text-align:right"><div style="font-size:30px;font-weight:800;color:${s.oran<80?'var(--r)':'var(--ok)'}">%${s.oran}</div><div class=m>${s.gelen}/${s.gun} gün · ${s.gelmedi} gelmedi · ${s.gec} geç</div></div></div>
+      <div class="legend" style="margin:14px 0 10px"><span><i style="background:#bbf7d0"></i>Zamanında</span><span><i style="background:#ddd6fe"></i>Geç</span><span><i style="background:#fecaca"></i>Gelmedi</span><span><i style="background:#e2e8f0"></i>Tatil / hafta sonu</span></div>
+      <div class="cal">${cells.join('')}</div></div>`;return}
+  $('r_student').innerHTML='';
   const mx=Math.max(1,...REP.daily.map(d=>d.gelen));
-  $('r_daily').innerHTML=REP.daily.map(d=>`<div style="height:${Math.max(2,d.gelen/mx*100)}%" data-t="${d.day.slice(8)}.${d.day.slice(5,7)}: ${d.gelen}"></div>`).join('')||'<span class=m>Bu ayda okul günü yok</span>';
-  $('r_dlab').innerHTML=REP.daily.length?`<span>${REP.daily[0].day.slice(8)}</span><span>${REP.daily.at(-1).day.slice(8)}</span>`:'';
-  $('r_cls_bars').innerHTML=REP.classes.map(k=>`<div class="hbar"><span class="l">${esc(k.sinif)}</span><span class="t"><i style="width:${k.oran}%"></i></span><span class="v">%${k.oran}</span><span class="m" style="width:90px">${k.ogrenci} öğr · ${k.gec} geç</span></div>`).join('')||'<span class=m>Veri yok</span>';
-  const row=s=>`<tr><td><b>${esc(s.name)}</b> <span class=m>${esc(s.sinif)}</span></td>`;
+  $('r_daily').innerHTML=REP.daily.map(d=>`<div style="height:${Math.max(2,d.gelen/mx*100)}%" data-t="${d.day.slice(8)}.${d.day.slice(5,7)}: ${d.gelen}/${d.toplam}"></div>`).join('')||'<span class=m>Bu aralıkta okul günü yok</span>';
+  $('r_dlab').innerHTML=REP.daily.length?`<span>${REP.daily[0].day.slice(8)}.${REP.daily[0].day.slice(5,7)}</span><span>${REP.daily.at(-1).day.slice(8)}.${REP.daily.at(-1).day.slice(5,7)}</span>`:'';
+  $('r_cls_bars').innerHTML=REP.classes.map(k=>`<div class="hbar" style="cursor:pointer" onclick="$('r_cls').value='${esc(k.sinif)}';$('r_st').value='';loadReports()"><span class="l">${esc(k.sinif)}</span><span class="t"><i style="width:${k.oran}%"></i></span><span class="v">%${k.oran}</span><span class="m" style="width:90px">${k.ogrenci} öğr · ${k.gec} geç</span></div>`).join('')||'<span class=m>Veri yok</span>';
+  const row=s=>`<tr style="cursor:pointer" onclick="$('r_st').value='${esc(s.name).replace(/'/g,"\\'")}';loadReports()"><td><b>${esc(s.name)}</b> <span class=m>${esc(s.sinif)}</span></td>`;
   $('r_lates').innerHTML=[...st].filter(s=>s.gec).sort((a,b)=>b.gec-a.gec).slice(0,8).map(s=>row(s)+`<td style="text-align:right"><span class="tag p-v">${s.gec} kez</span></td></tr>`).join('')||'<tr><td class=empty>Geç kalan yok</td></tr>';
   $('r_lows').innerHTML=[...st].sort((a,b)=>a.oran-b.oran).slice(0,8).map(s=>row(s)+`<td style="text-align:right"><span class="tag ${s.oran<80?'p-r':'p-ok'}">%${s.oran}</span></td></tr>`).join('')||'<tr><td class=empty>Veri yok</td></tr>';
-  const k=RS.k;st.sort((a,b)=>(typeof a[k]==='number'?a[k]-b[k]:String(a[k]).localeCompare(String(b[k]),'tr',{numeric:true}))*-RS.d);
-  $('r_body').innerHTML=st.map(s=>`<tr><td>${esc(s.no)}</td><td><b>${esc(s.name)}</b></td><td><span class=tag>${esc(s.sinif||'—')}</span></td><td>${s.gelen} / ${s.gun}</td><td>${s.gec?`<span class="tag p-v">${s.gec}</span>`:'—'}</td>
-   <td><div class="hbar" style="margin:0"><span class="t" style="max-width:140px"><i style="width:${s.oran}%;${s.oran<80?'background:var(--r)':''}"></i></span><span class="v">%${s.oran}</span></div></td></tr>`).join('')||'<tr><td colspan=6 class=empty>Öğrenci yok</td></tr>'}
+  const k=RS.k;const ss=[...st].sort((a,b)=>(typeof a[k]==='number'?a[k]-b[k]:String(a[k]).localeCompare(String(b[k]),'tr',{numeric:true}))*-RS.d);
+  $('r_body').innerHTML=ss.map(s=>row(s).replace(`<td><b>${esc(s.name)}</b> <span class=m>${esc(s.sinif)}</span></td>`,`<td>${esc(s.no)}</td><td><b>${esc(s.name)}</b></td><td><span class=tag>${esc(s.sinif||'—')}</span></td>`)+`<td>${s.gelen} / ${s.gun}</td><td>${s.gelmedi||'—'}</td><td>${s.gec?`<span class="tag p-v">${s.gec}</span>`:'—'}</td>
+   <td><div class="hbar" style="margin:0"><span class="t" style="max-width:140px"><i style="width:${s.oran}%;${s.oran<80?'background:var(--r)':''}"></i></span><span class="v">%${s.oran}</span></div></td></tr>`).join('')||'<tr><td colspan=7 class=empty>Öğrenci yok</td></tr>'}
 function dl(name,csv){const l=document.createElement('a');l.href=URL.createObjectURL(new Blob(['﻿'+csv],{type:'text/csv'}));l.download=name;l.click()}
 const csvRow=a=>a.map(x=>`"${String(x??'').replace(/"/g,'""')}"`).join(';');
-function exportReport(){if(!REP)return;const c=$('r_cls').value;const st=REP.students.filter(s=>!c||s.sinif===c);
-  dl(`devam-raporu-${REP.month}${c?'-'+c:''}.csv`,'No;Ad Soyad;Sınıf;Geldiği gün;Okul günü;Geç;Devam %\n'+st.map(s=>csvRow([s.no,s.name,s.sinif,s.gelen,s.gun,s.gec,String(s.oran).replace('.',',')])).join('\n'))}
+function exportReport(){if(!REP)return;
+  if(REP.detail&&$('r_st').value){dl(`devam-${$('r_st').value}-${REP.start}_${REP.end}.csv`,'Tarih;Giriş;Çıkış;Durum\n'+REP.detail.map(d=>csvRow([d.day,d.giris||'',d.cikis||'',d.off?'Tatil':!d.giris?'Gelmedi':d.gec?'Geç':'Zamanında'])).join('\n'));return}
+  dl(`devam-raporu-${REP.start}_${REP.end}${$('r_cls').value?'-'+$('r_cls').value:''}.csv`,'No;Ad Soyad;Sınıf;Geldiği gün;Okul günü;Gelmedi;Geç;Devam %\n'+REP.students.map(s=>csvRow([s.no,s.name,s.sinif,s.gelen,s.gun,s.gelmedi,s.gec,String(s.oran).replace('.',',')])).join('\n'))}
 
 // ---------- duyuru
 async function loadBroadcast(){if(!PEOPLE.length)await loadPeople();const cls=[...new Set(PEOPLE.filter(p=>p.liste==='ogrenci').map(p=>p.sinif).filter(Boolean))].sort();
@@ -651,6 +760,16 @@ async function loadAudit(){AUD=await api(`/api/audit?qs=${enc($('au_q').value)}&
   $('aubody').innerHTML=AUD.map(a=>`<tr><td class=m style="white-space:nowrap">${a.time.slice(0,16)}</td><td><b>${esc(a.user)}</b></td><td><span class="tag ${/sil|reddedildi|kopt/.test(a.action)?'p-r':/onay|elle/.test(a.action)?'p-ok':''}">${esc(a.action)}</span></td><td>${esc(a.target)}</td><td class=m>${esc(a.detail)}</td></tr>`).join('')||'<tr><td colspan=5 class=empty>Kayıt yok</td></tr>'}
 function exportAudit(){dl('islem-kaydi.csv','Zaman;Kullanıcı;İşlem;Hedef;Detay\n'+AUD.map(a=>csvRow([a.time,a.user,a.action,a.target,a.detail])).join('\n'))}
 
+// ---------- hero
+const GUN=new Intl.DateTimeFormat('tr-TR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+function tick(){const n=new Date();$('h_clock').innerHTML=`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}<small>:${String(n.getSeconds()).padStart(2,'0')}</small>`;$('h_date').textContent=GUN.format(n)}
+setInterval(tick,1000);tick();
+function heroStats(s){const t=TODAY.length,g=TODAY.filter(a=>a.geldi).length,l=TODAY.filter(a=>a.gec).length,c=TODAY.filter(a=>a.durum==='cikti').length;
+  $('h_pct').textContent='%'+(t?Math.round(g/t*100):0);$('h_cnt').textContent=`${g} / ${t} öğrenci`;
+  $('h_b1').style.width=(t?(g-l)/t*100:0)+'%';$('h_b2').style.width=(t?l/t*100:0)+'%';
+  $('h_on').textContent=g-l;$('h_lt').textContent=l;$('h_ns').textContent=t-g;$('h_ct').textContent=c;
+  if(s){const st=s.settings;$('h_meta').innerHTML=(s.off_day?'<span>Tatil / hafta sonu</span>':'<span>Okul günü</span>')+(st.ders_baslangic?`<span>Ders ${st.ders_baslangic}</span>`:'')+(st.gelmedi_saat?`<span>Yoklama uyarısı ${st.gelmedi_saat}</span>`:'')+`<span>${s.gallery} kişi galeride</span>`}}
+
 // ---------- durum
 async function refresh(force){try{const s=await api('/api/status');
   CAMS=s.cams;const on=CAMS.filter(c=>c.aktif),live=on.filter(c=>c.status==='canli'&&!c.down),down=on.filter(c=>c.down);
@@ -665,7 +784,7 @@ async function refresh(force){try{const s=await api('/api/status');
   const AK='absent_'+(s.absent?.day||'');let dis=false;try{dis=!!localStorage.getItem(AK)}catch(e){}
   if(s.absent&&!dis)bn+=`<div class="banner w"><svg class="i"><use href="#i-q"/></svg><span>Saat ${s.absent.saat} geçti: <b>${s.absent.count} öğrenci</b> henüz görülmedi. Yoklamadan teyit edin.</span><span class=sp></span><button class="btn sm" onclick="go('att')">Yoklamaya git</button><button class="btn sm" onclick="try{localStorage.setItem('${AK}',1)}catch(e){};refresh()">Kapat</button></div>`;
   if(s.off_day)bn+=`<div class="banner" style="background:#f1f5f9;color:#475569;border:1px solid var(--b)"><svg class="i"><use href="#i-clock"/></svg>Bugün tatil / hafta sonu — veliye otomatik mesaj gönderilmiyor.</div>`;
-  $('banners').innerHTML=bn;$('a_off').innerHTML=s.absent?`<div class="banner w"><svg class="i"><use href="#i-q"/></svg>${s.absent.count} öğrenci saat ${s.absent.saat} itibarıyla görülmedi.</div>`:'';
+  $('banners').innerHTML=bn;heroStats(s);b.style.background='rgba(255,255,255,.12)';b.style.color='#fff';$('a_off').innerHTML=s.absent?`<div class="banner w"><svg class="i"><use href="#i-q"/></svg>${s.absent.count} öğrenci saat ${s.absent.saat} itibarıyla görülmedi.</div>`:'';
   $('k_p').textContent=s.pending;const np=$('n_pen');np.textContent=s.pending+(s.unknown?' · '+s.unknown:'');np.className='n'+(s.pending?' hot':'');
   $('t_onay').textContent=s.pending;$('t_bil').textContent=s.unknown;
   for(const k in s.settings){const i=$('s_'+k);if(!i||(!force&&document.activeElement===i)||(!force&&i.dataset.init))continue;i.dataset.init=1;if(i.type==='checkbox')i.checked=s.settings[k];else i.value=s.settings[k]}
