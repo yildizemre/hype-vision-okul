@@ -11,6 +11,10 @@ ortamı kurar, modelleri indirir (ilk seferde ~2 GB), sunucuyu başlatır ve htt
 
 ## Özellikler
 
+- Çoklu kamera (giriş / çıkış), tek GPU kuyruğu, kamera koptu uyarısı
+- Ders saati / geç geldi, "henüz görülmeyenler" uyarısı, tatil takvimi
+- Excel + fotoğraf zip ile toplu öğrenci kaydı
+- Raporlar (aylık devam, geç kalanlar, sınıf karşılaştırması), toplu duyuru, veli sorgu botu, işlem kaydı
 - Canlı RTSP izleme, kişi takibi + kare oylaması ile "GELDİ" kaydı
 - Onay bekleyen (emin olunamayan) ve bilinmeyen yüzler; onaylanan foto galeriye eklenir
 - Öğrenci / beyaz liste (personel) / kara liste (alarm + yöneticiye mesaj)

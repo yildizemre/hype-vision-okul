@@ -54,6 +54,20 @@ input:focus,select:focus,textarea:focus{border-color:var(--a);box-shadow:0 0 0 3
 .vid{position:relative;background:#0b1220;border-radius:14px;overflow:hidden;aspect-ratio:16/9}
 .vid img{width:100%;height:100%;object-fit:contain;display:block}
 .vid .ph0{position:absolute;inset:0;display:grid;place-items:center;color:#64748b;text-align:center}
+.vgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:12px}.vgrid.one{grid-template-columns:1fr}
+.vid .cap{position:absolute;left:10px;top:10px;display:flex;gap:6px}
+.vid .cap span{background:rgba(15,23,42,.75);color:#fff;font-size:12px;font-weight:600;padding:3px 9px;border-radius:99px}
+.chip{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:99px;background:#fff;border:1px solid var(--b);font-weight:600;font-size:13px}
+.banner{display:flex;align-items:center;gap:12px;border-radius:14px;padding:14px 16px;margin-bottom:16px;font-weight:500}
+.banner.r{background:var(--rbg);color:#991b1b;border:1px solid #fecaca}.banner.w{background:var(--wbg);color:#9a3412;border:1px solid #fed7aa}
+.banner .sp{flex:1}
+.bars{display:flex;align-items:flex-end;gap:4px;height:160px;padding-top:10px}
+.bars div{flex:1;background:linear-gradient(180deg,var(--a2),var(--a));border-radius:6px 6px 2px 2px;position:relative;min-width:6px}
+.bars div:hover::after{content:attr(data-t);position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:var(--t);color:#fff;font-size:11px;padding:3px 7px;border-radius:6px;white-space:nowrap;margin-bottom:4px}
+.hbar{display:flex;align-items:center;gap:10px;margin:8px 0}.hbar .l{width:70px;font-weight:600}.hbar .t{flex:1;height:12px;background:#f1f5f9;border-radius:99px;overflow:hidden}
+.hbar .t i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--a2),var(--a))}.hbar .v{width:56px;text-align:right;font-variant-numeric:tabular-nums}
+th.s{cursor:pointer}th.s:hover{color:var(--t)}
+@media print{aside.sb,#banners,.noprint,.ph button,.ph input,.ph select{display:none!important}main{padding:0}.page{display:none!important}.page.on{display:block!important}.card{break-inside:avoid;box-shadow:none}}
 .legend{display:flex;gap:14px;margin-top:10px;font-size:12px;color:var(--m);flex-wrap:wrap}.legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px}
 table{width:100%;border-collapse:collapse}th{text-align:left;color:var(--m);font-weight:600;font-size:12px;padding:10px;border-bottom:1px solid var(--b);background:#fafbfc}
 td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:hover td{background:#fafcff}
@@ -128,6 +142,9 @@ td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:h
 <symbol id="i-q" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/></symbol>
 <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></symbol>
 <symbol id="i-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M4.9 4.9l14.2 14.2"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15v3M12 10v8M17 6v12"/></symbol>
+<symbol id="i-mega" viewBox="0 0 24 24"><path d="M3 11v2a1 1 0 0 0 1 1h3l5 4V6L7 10H4a1 1 0 0 0-1 1z"/><path d="M16 8a5 5 0 0 1 0 8M19 5a9 9 0 0 1 0 14"/></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></symbol>
 <symbol id="i-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="5.5"/><path d="M21 2l-9.6 9.6M15.5 7.5l3 3L22 7l-3-3"/></symbol>
 </defs></svg>
 <script>const I=n=>`<svg class="i"><use href="#i-${n}"/></svg>`</script>
@@ -165,9 +182,14 @@ td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:h
     <a data-p="students" data-l="beyaz"><svg class="i"><use href="#i-shield"/></svg>Beyaz Liste<span class="n" id="n_beyaz">0</span></a>
     <a data-p="students" data-l="kara"><svg class="i"><use href="#i-ban"/></svg>Kara Liste<span class="n" id="n_kara">0</span></a>
     <a data-p="enroll" data-min="mudur_yrd"><svg class="i"><use href="#i-scan"/></svg>Yüz Kaydet</a>
-    <div class="sec">Sistem</div>
+    <div class="sec">Raporlar & Veli</div>
+    <a data-p="reports"><svg class="i"><use href="#i-chart"/></svg>Raporlar</a>
+    <a data-p="broadcast"><svg class="i"><use href="#i-mega"/></svg>Toplu Duyuru</a>
     <a data-p="messages"><svg class="i"><use href="#i-msg"/></svg>Mesajlar</a>
+    <div class="sec">Sistem</div>
+    <a data-p="cameras" data-min="mudur_yrd"><svg class="i"><use href="#i-cam"/></svg>Kameralar<span class="n" id="n_cam">0</span></a>
     <a data-p="users" data-min="yonetici"><svg class="i"><use href="#i-key"/></svg>Kullanıcılar</a>
+    <a data-p="audit" data-min="yonetici"><svg class="i"><use href="#i-list"/></svg>İşlem Kaydı</a>
     <a data-p="settings"><svg class="i"><use href="#i-set"/></svg>Ayarlar</a>
   </nav>
   <div class="me"><div class="av" id="me_av">H</div><div><b id="me_n">-</b><span id="me_r"></span></div>
@@ -179,9 +201,9 @@ td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:h
 <section class="page on" id="p-live">
   <div class="hero"><span class="badge off" id="camBadge">Kamera kapalı</span><h1 id="greet" style="font-size:26px;margin:6px 0 4px;font-weight:800">Günaydın</h1>
     <p class="m" style="font-size:14px;margin:0">Kapıdan geçen öğrenci birkaç karede aynı kişi olarak tanınınca "GELDİ" kaydı düşer.</p>
-    <div class="row" style="margin:18px 0 0" data-min="mudur_yrd">
-      <input type="text" id="url" placeholder="rtsp://kullanici:sifre@192.168.1.64:554/Streaming/Channels/101   ·   webcam için 0">
-      <button class="btn dk" onclick="camStart()"><svg class="i"><use href="#i-zap"/></svg>Bağlan</button><button class="btn" onclick="camStop()">Durdur</button></div></div>
+    <div class="row" style="margin:18px 0 0"><span id="camchips" style="display:flex;gap:8px;flex-wrap:wrap"></span><span></span>
+      <button class="btn dk fx" data-min="mudur_yrd" onclick="go('cameras')"><svg class="i"><use href="#i-cam"/></svg>Kameraları yönet</button></div></div>
+  <div id="banners"></div>
   <div class="stats">
     <div class="st"><div class="ic c-ok"><svg class="i"><use href="#i-check"/></svg></div><b id="k_g">0</b><span>Bugün geldi</span></div>
     <div class="st"><div class="ic c-w"><svg class="i"><use href="#i-clock"/></svg></div><b id="k_n">0</b><span>Henüz görülmedi</span></div>
@@ -190,8 +212,9 @@ td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:h
   </div>
   <div class="grid">
     <div>
-      <div class="card"><h2><svg class="i"><use href="#i-cam"/></svg>Kapı Kamerası<span class="sp"></span><span class="m" id="camurl"></span></h2>
-        <div class="vid"><img id="video" alt=""><div class="ph0" id="vph"><div><div>Kamera bağlı değil</div><div class="m">RTSP adresini yazıp Bağlan'a bas</div></div></div></div>
+      <div class="card"><h2><svg class="i"><use href="#i-cam"/></svg>Kameralar<span class="sp"></span>
+        <select id="camsel" onchange="renderVids()" style="max-width:220px;font-weight:500"><option value="">Tümü (ızgara)</option></select></h2>
+        <div id="vids" class="vgrid"></div>
         <div class="legend"><span><i style="background:#16a34a"></i>Öğrenci</span><span><i style="background:#2563eb"></i>Beyaz liste</span><span><i style="background:#dc2626"></i>Kara liste</span><span><i style="background:#f59e0b"></i>Tanınmadı</span><span>"3/5" = oylama sürüyor · "OK" = kaydedildi</span></div>
         <div id="perf" class="m" style="margin-top:10px;padding:10px 12px;background:#f8fafc;border-radius:10px;font-variant-numeric:tabular-nums"></div></div>
       <div class="card"><h2><svg class="i"><use href="#i-img"/></svg>Fotoğrafla test</h2>
@@ -206,11 +229,14 @@ td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:h
   <div class="ph"><div><h1>Yoklama</h1><p>"Henüz görülmedi" veliye otomatik gitmez. Öğrenci gelmediyse teyit edip "Gelmedi bildir"e bas.</p></div><span class="sp"></span>
     <input type="date" id="aday" onchange="loadAtt()" style="max-width:170px"><select id="as" onchange="renderAtt()" style="max-width:200px"></select>
     <button class="btn" onclick="exportAtt()"><svg class="i"><use href="#i-down"/></svg>Excel (CSV)</button></div>
-  <div class="stats" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+  <div id="a_off"></div>
+  <div class="stats" style="grid-template-columns:repeat(5,minmax(0,1fr))">
     <div class="st"><div class="ic c-blu"><svg class="i"><use href="#i-users"/></svg></div><b id="a_t">0</b><span>Toplam</span></div>
     <div class="st"><div class="ic c-ok"><svg class="i"><use href="#i-check"/></svg></div><b id="a_g">0</b><span>Geldi</span></div>
-    <div class="st"><div class="ic c-w"><svg class="i"><use href="#i-clock"/></svg></div><b id="a_n">0</b><span>Henüz görülmedi</span></div></div>
-  <div class="card" style="padding:0;overflow:hidden"><div style="overflow-x:auto"><table><thead><tr><th>No</th><th>Ad Soyad</th><th>Sınıf</th><th>Durum</th><th>Veli</th><th></th></tr></thead><tbody id="atbody"></tbody></table></div></div>
+    <div class="st"><div class="ic c-v"><svg class="i"><use href="#i-clock"/></svg></div><b id="a_l">0</b><span>Geç geldi</span></div>
+    <div class="st"><div class="ic c-blu"><svg class="i"><use href="#i-out"/></svg></div><b id="a_c">0</b><span>Çıktı</span></div>
+    <div class="st"><div class="ic c-w"><svg class="i"><use href="#i-q"/></svg></div><b id="a_n">0</b><span>Henüz görülmedi</span></div></div>
+  <div class="card" style="padding:0;overflow:hidden"><div style="overflow-x:auto"><table><thead><tr><th>No</th><th>Ad Soyad</th><th>Sınıf</th><th>Giriş</th><th>Çıkış</th><th>Durum</th><th>Veli</th><th></th></tr></thead><tbody id="atbody"></tbody></table></div></div>
 </section>
 
 <!-- ONAY BEKLEYEN -->
@@ -228,6 +254,13 @@ td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:h
     <button class="btn" data-min="mudur_yrd" onclick="train()"><svg class="i"><use href="#i-zap"/></svg>Modeli Eğit</button>
     <button class="btn dk" data-min="mudur_yrd" onclick="newPerson(LIST)"><svg class="i"><use href="#i-plus"/></svg>Yeni kayıt</button></div>
   <div id="trainres"></div>
+  <div class="card" data-min="mudur_yrd" id="impcard"><h2><svg class="i"><use href="#i-up"/></svg>Toplu kayıt (Excel + fotoğraf zip)</h2>
+    <div class="row" style="margin:0">
+      <a class="btn fx" href="/api/import/template"><svg class="i"><use href="#i-down"/></svg>1. Şablonu indir</a>
+      <label class="btn dk fx"><input type="file" accept=".xlsx" hidden onchange="impExcel(this)"><svg class="i"><use href="#i-up"/></svg>2. Excel yükle</label>
+      <label class="btn dk fx"><input type="file" accept=".zip" hidden onchange="impZip(this)"><svg class="i"><use href="#i-img"/></svg>3. Fotoğraf zip yükle</label><span></span></div>
+    <div class="m" style="margin-top:8px">Excel sütunları: Ad Soyad, No, Sınıf, Veli Ad Soyad, Veli Tel. Zip içinde fotoğraflar <b>okulno.jpg</b> (aynı öğrenciye birden fazla: 101_1.jpg, 101_2.jpg) ya da <b>101/</b> klasörü içinde. Yüklemeden sonra model otomatik eğitilir.</div>
+    <div id="impres"></div></div>
   <div class="card" style="padding:0;overflow:hidden">
     <div class="row" style="padding:14px 14px 4px"><input type="text" id="q" placeholder="Ara: isim, numara, veli…" oninput="renderStudents()"><select id="fs" onchange="renderStudents()" style="max-width:200px"></select></div>
     <div style="overflow-x:auto"><table><thead id="sthead"></thead><tbody id="stbody"></tbody></table></div></div>
@@ -238,7 +271,7 @@ td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:h
   <div class="ph"><div><h1>Yüz Kaydet</h1><p>Bilgileri gir, kameradan çek ya da fotoğraf yükle.</p></div></div>
   <div class="grid"><div>
     <div class="card"><h2><svg class="i"><use href="#i-cam"/></svg>Kameradan görüntü al</h2>
-      <div class="row"><button class="btn dk" onclick="takeSnap()"><svg class="i"><use href="#i-cam"/></svg>RTSP'den görüntü al</button><button class="btn gr" onclick="capture()"><svg class="i"><use href="#i-check"/></svg>Bu kareyi kaydet</button><span></span></div>
+      <div class="row"><select id="snapcam" style="max-width:200px"></select><button class="btn dk" onclick="takeSnap()"><svg class="i"><use href="#i-cam"/></svg>RTSP'den görüntü al</button><button class="btn gr" onclick="capture()"><svg class="i"><use href="#i-check"/></svg>Bu kareyi kaydet</button><span></span></div>
       <div class="vid"><img id="snap" alt=""><div class="ph0" id="sph"><div><div>Önizleme yok</div><div class="m">Kamera bağlı olmalı · karedeki en büyük yüz kaydedilir</div></div></div></div></div>
     <div class="card"><h2><svg class="i"><use href="#i-up"/></svg>Fotoğraf yükle</h2>
       <label class="drop"><input type="file" id="files" multiple accept="image/*" onchange="upload()" hidden><svg class="i" style="width:28px;height:28px"><use href="#i-up"/></svg><div><b>Fotoğraf seç</b> — birden fazla seçebilirsin</div></label></div>
@@ -256,6 +289,60 @@ td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:h
     </div>
     <div class="card"><h2><svg class="i"><use href="#i-img"/></svg>Fotoğraflar <span class="tag" id="pc">0</span></h2><div class="thumbs" id="thumbs"></div></div>
   </div></div>
+</section>
+
+<!-- KAMERALAR -->
+<section class="page" id="p-cameras">
+  <div class="ph"><div><h1>Kameralar</h1><p>Tüm kameralar tek GPU kuyruğunda sırayla işlenir. Giriş kamerası "geldi", çıkış kamerası "ayrıldı" kaydı üretir.</p></div></div>
+  <div class="grid"><div class="card" style="padding:0;overflow:hidden"><table><thead><tr><th>Kamera</th><th>Yön</th><th>Durum</th><th>Gelen / işlenen fps</th><th></th></tr></thead><tbody id="cbody"></tbody></table></div>
+  <div class="card f"><h2><svg class="i"><use href="#i-plus"/></svg>Kamera ekle / düzenle</h2>
+    <input type="hidden" id="c_id">
+    <label>Kamera adı</label><input type="text" id="c_ad" placeholder="Ana Kapı">
+    <label>RTSP adresi</label><input type="text" id="c_url" placeholder="rtsp://kullanici:sifre@192.168.1.64:554/...  · webcam: 0">
+    <label>Yön</label><select id="c_yon"><option value="giris">Giriş — veliye "geldi"</option><option value="cikis">Çıkış — veliye "okuldan ayrıldı"</option></select>
+    <label class="chk" style="margin-top:14px"><input type="checkbox" id="c_aktif" checked> Aktif</label>
+    <div class="row" style="margin-top:16px"><button class="btn dk" onclick="saveCam()">Kaydet</button><button class="btn" onclick="editCam({})">Temizle</button><span></span></div>
+    <div class="m">Kamera Ayarlar'daki süre kadar görüntü vermezse panelde kırmızı uyarı çıkar ve yöneticiye WhatsApp gider.</div></div></div>
+</section>
+
+<!-- RAPORLAR -->
+<section class="page" id="p-reports">
+  <div class="ph"><div><h1>Raporlar</h1><p id="r_sub">Aylık devam, geç kalanlar ve sınıf karşılaştırması.</p></div><span class="sp"></span>
+    <input type="month" id="r_month" onchange="loadReports()" style="max-width:170px;border:1px solid var(--b);border-radius:10px;padding:9px 12px">
+    <select id="r_cls" onchange="renderReports()" style="max-width:180px"></select>
+    <button class="btn" onclick="exportReport()"><svg class="i"><use href="#i-down"/></svg>Excel (CSV)</button>
+    <button class="btn dk" onclick="window.print()"><svg class="i"><use href="#i-down"/></svg>PDF / Yazdır</button></div>
+  <div class="stats">
+    <div class="st"><div class="ic c-blu"><svg class="i"><use href="#i-clock"/></svg></div><b id="r_days">0</b><span>Okul günü</span></div>
+    <div class="st"><div class="ic c-ok"><svg class="i"><use href="#i-check"/></svg></div><b id="r_avg">0%</b><span>Ortalama devam</span></div>
+    <div class="st"><div class="ic c-w"><svg class="i"><use href="#i-clock"/></svg></div><b id="r_late">0</b><span>Toplam geç giriş</span></div>
+    <div class="st"><div class="ic c-r"><svg class="i"><use href="#i-users"/></svg></div><b id="r_low">0</b><span>Devamı %80 altı</span></div></div>
+  <div class="g2">
+    <div class="card"><h2><svg class="i"><use href="#i-chart"/></svg>Günlük gelen öğrenci</h2><div class="bars" id="r_daily"></div><div class="m" id="r_dlab" style="display:flex;justify-content:space-between;margin-top:6px"></div></div>
+    <div class="card"><h2><svg class="i"><use href="#i-users"/></svg>Sınıf karşılaştırması (devam %)</h2><div id="r_cls_bars"></div></div></div>
+  <div class="g2">
+    <div class="card" style="padding:0;overflow:hidden"><h2 style="padding:16px 16px 0">En çok geç kalanlar</h2><table><tbody id="r_lates"></tbody></table></div>
+    <div class="card" style="padding:0;overflow:hidden"><h2 style="padding:16px 16px 0">Devamı en düşük</h2><table><tbody id="r_lows"></tbody></table></div></div>
+  <div class="card" style="padding:0;overflow:hidden"><div style="overflow-x:auto"><table><thead><tr><th class="s" onclick="rSort('no')">No</th><th class="s" onclick="rSort('name')">Ad Soyad</th><th class="s" onclick="rSort('sinif')">Sınıf</th><th class="s" onclick="rSort('gelen')">Geldiği gün</th><th class="s" onclick="rSort('gec')">Geç</th><th class="s" onclick="rSort('oran')">Devam %</th></tr></thead><tbody id="r_body"></tbody></table></div></div>
+</section>
+
+<!-- DUYURU -->
+<section class="page" id="p-broadcast">
+  <div class="ph"><div><h1>Toplu Duyuru</h1><p>Bir sınıfın ya da tüm okulun velilerine WhatsApp mesajı. Mesajlar 1.5 sn arayla sırayla gider.</p></div></div>
+  <div class="grid"><div class="card f"><h2><svg class="i"><use href="#i-mega"/></svg>Yeni duyuru</h2>
+    <label>Alıcılar</label><select id="b_cls" onchange="bCount()"></select>
+    <label>Mesaj — {veli} ve {ogrenci} otomatik doldurulur</label><textarea id="b_text" rows="6" oninput="bPrev()" placeholder="Sayın {veli}, yarın (10 Kasım) okulumuz tatildir. Bilginize."></textarea>
+    <div class="help" style="margin-top:12px" id="b_prev">Önizleme</div>
+    <div class="row" style="margin-top:16px"><button class="btn gr" onclick="sendBroadcast()"><svg class="i"><use href="#i-mega"/></svg>Gönder</button><span class="m" id="b_cnt"></span></div></div>
+  <div class="card"><h2>Son duyurular</h2><div id="b_hist" class="m"></div></div></div>
+</section>
+
+<!-- ISLEM KAYDI -->
+<section class="page" id="p-audit">
+  <div class="ph"><div><h1>İşlem Kaydı</h1><p>Kim, ne zaman, hangi işlemi yaptı. KVKK denetimi için saklanır.</p></div><span class="sp"></span>
+    <input type="text" id="au_q" placeholder="Ara: işlem ya da kişi" oninput="loadAudit()" style="max-width:240px"><select id="au_u" onchange="loadAudit()" style="max-width:180px"></select>
+    <button class="btn" onclick="exportAudit()"><svg class="i"><use href="#i-down"/></svg>CSV</button></div>
+  <div class="card" style="padding:0;overflow:hidden"><div style="overflow-x:auto"><table><thead><tr><th>Zaman</th><th>Kullanıcı</th><th>İşlem</th><th>Hedef</th><th>Detay</th></tr></thead><tbody id="aubody"></tbody></table></div></div>
 </section>
 
 <!-- MESAJLAR -->
@@ -290,6 +377,13 @@ td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:h
       <div class="m">Küçük çözünürlük = daha hızlı tespit. Kuyruk, işlemci yetişemediğinde kareleri sırayla bekletir (25 fps'te 75 kare ≈ 3 sn). Değişiklik kamera yeniden bağlanınca geçerli olur.</div>
       <div class="row" style="margin:0"><div><label>Yüz tespit güveni</label><input id="s_det_score" type="number" step="0.05"></div><div><label>Min. yüz boyu (px)</label><input id="s_min_face" type="number"></div></div>
       <button class="btn dk" style="margin-top:16px" onclick="saveSettings()">Kaydet</button></div>
+    <div class="card f" data-min="yonetici"><h2><svg class="i"><use href="#i-clock"/></svg>Okul saatleri ve takvim</h2>
+      <div class="row" style="margin:0"><div><label>Ders başlangıcı (sonrası "geç")</label><input type="time" id="s_ders_baslangic" style="width:100%;border:1px solid var(--b);border-radius:10px;padding:9px 12px"></div>
+        <div><label>"Henüz görülmeyenler" uyarı saati</label><input type="time" id="s_gelmedi_saat" style="width:100%;border:1px solid var(--b);border-radius:10px;padding:9px 12px"></div></div>
+      <label class="chk" style="margin-top:14px;color:var(--t)"><input type="checkbox" id="s_hafta_sonu_kapali"> Hafta sonu mesaj gönderme</label>
+      <label>Tatil günleri (bu günlerde veliye mesaj gitmez) — her satıra bir tarih, YYYY-AA-GG</label><textarea id="s_tatiller" rows="4" placeholder="2026-11-10&#10;2026-12-31"></textarea>
+      <label>Kamera koptu uyarısı (sn)</label><input id="s_cam_down_sec" type="number">
+      <button class="btn dk" style="margin-top:16px" onclick="saveSettings()">Kaydet</button></div>
     <div class="card f" data-min="yonetici"><h2><svg class="i"><use href="#i-shield"/></svg>KVKK · Veri saklama</h2>
       <div class="row" style="margin:0"><div><label>Geçiş ve mesaj kayıtları (gün)</label><input id="s_keep_days" type="number"></div><div><label>Bilinmeyen / onay fotoğrafları (gün)</label><input id="s_keep_unknown_days" type="number"></div></div>
       <div class="m" style="margin-top:6px">Süresi dolan kayıtlar her saat otomatik silinir. Canlı görüntü hiç kaydedilmez. Mezun öğrenci için kişi sayfasındaki "kalıcı sil".</div>
@@ -312,7 +406,11 @@ td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:h
       <div id="tplbox"><div class="row" style="margin:0"><div><label>Şablon adı (Meta'da onaylı)</label><input type="text" id="s_wa_tpl_name" placeholder="ogrenci_giris"></div><div style="max-width:110px"><label>Dil</label><input type="text" id="s_wa_tpl_lang" placeholder="tr"></div></div>
         <div class="help" style="margin-top:10px">Meta'da şablon gövdesi 3 değişkenli olmalı: <b>{{1}}</b> veli adı, <b>{{2}}</b> öğrenci, <b>{{3}}</b> saat. Örnek: "Sayın {{1}}, öğrenciniz {{2}} okula saat {{3}}'te giriş yaptı."</div></div>
       <label>Webhook doğrulama anahtarı</label><input type="text" id="s_wa_verify"></div>
-      <label>Mesaj metni (serbest metin ve wa.me için) — {veli} {ogrenci} {saat}</label><textarea id="s_wa_template" rows="2"></textarea>
+      <label>"Geldi" mesajı — {veli} {ogrenci} {saat}</label><textarea id="s_wa_template" rows="2"></textarea>
+      <label>"Geç geldi" mesajı</label><textarea id="s_wa_template_gec" rows="2"></textarea>
+      <label>"Okuldan ayrıldı" mesajı (çıkış kamerası)</label><textarea id="s_wa_template_cikis" rows="2"></textarea>
+      <label class="chk" style="margin-top:14px;color:var(--t)"><input type="checkbox" id="s_bot_enabled"> Veli sorgu botu: veli anahtar kelime yazınca çocuğunun bugünkü durumunu cevapla</label>
+      <label>Bot anahtar kelimeleri (virgülle)</label><input type="text" id="s_bot_keyword" placeholder="durum,nerede">
       <label>Kara liste alarm telefonu (yönetici)</label><input type="text" id="s_alarm_tel" placeholder="05xx…">
       <div class="m" style="margin-top:4px">İletildi/okundu durumları için webhook: <b>https://&lt;sunucu-adresi&gt;/webhook/whatsapp</b> (sunucu internetten erişilebilir olmalı; olmasa da mesajlar gider)</div>
       <button class="btn dk" style="margin-top:16px" onclick="saveSettings()">Kaydet</button>
@@ -346,22 +444,23 @@ document.querySelectorAll('nav a').forEach(a=>a.onclick=()=>go(a.dataset.p,a.dat
 function go(p,l){if(l)LIST=l;
   document.querySelectorAll('nav a').forEach(x=>x.classList.toggle('on',x.dataset.p===p&&(!x.dataset.l||x.dataset.l===LIST)));
   document.querySelectorAll('.page').forEach(x=>x.classList.toggle('on',x.id==='p-'+p));
-  ({att:loadAtt,pending:loadPending,students:loadPeople,enroll:loadPeople,messages:loadMsgs,users:loadUsers})[p]?.()}
+  ({att:loadAtt,pending:loadPending,students:loadPeople,enroll:loadPeople,messages:loadMsgs,users:loadUsers,cameras:loadCams,reports:loadReports,broadcast:loadBroadcast,audit:loadAudit})[p]?.()}
 
 // ---------- canli
-try{$('url').value=localStorage.getItem('url')||''}catch(e){}
-$('video').onload=()=>$('vph').style.display='none';
-async function camStart(){const u=$('url').value.trim();try{localStorage.setItem('url',u)}catch(e){}
-  try{await post('/api/camera',{url:u});$('video').src='/api/stream?'+Date.now();toast('Bağlanılıyor…')}catch(e){toast(e.message,1)}}
-async function camStop(){try{await api('/api/camera',{method:'DELETE'})}catch(e){return toast(e.message,1)}$('video').removeAttribute('src');$('vph').style.display='grid'}
+let CAMS=[];
+function renderVids(){const sel=$('camsel').value;const list=CAMS.filter(c=>c.aktif&&(!sel||c.id===sel));const box=$('vids');box.className='vgrid'+(list.length<=1?' one':'');
+  const want=list.map(c=>c.id).join(',');if(box.dataset.k!==want){box.dataset.k=want;
+    box.innerHTML=list.map(c=>`<div class="vid" id="v_${c.id}"><img src="/api/stream/${c.id}?t=${Date.now()}" onload="this.nextElementSibling.style.display='none'"><div class="ph0"><div><div>${esc(c.ad)}</div><div class=m>bağlanıyor…</div></div></div><div class="cap"><span>${esc(c.ad)}</span><span>${c.yon==='cikis'?'ÇIKIŞ':'GİRİŞ'}</span><span class=st></span></div></div>`).join('')
+      ||`<div class="vid"><div class="ph0"><div><div>Aktif kamera yok</div><div class=m>Kameralar sayfasından RTSP ekle</div></div></div></div>`}
+  for(const c of list){const e=document.querySelector(`#v_${c.id} .st`);if(e)e.textContent=c.down?'⚠ görüntü yok':`${c.fps}/${c.in_fps} fps`}}
 async function testImg(){const f=$('testf').files[0];if(!f)return toast('Önce fotoğraf seç',1);const fd=new FormData();fd.append('file',f);
   try{const r=await api('/api/test',{method:'POST',body:fd});
   $('testres').innerHTML=`<img src="${r.image}" style="max-width:100%;border-radius:12px;margin-top:6px"><div style="margin-top:8px">${r.faces.map(x=>x.name?`<span class="tag ${LC[x.liste]}">${esc(x.name)} · ${x.score}</span>`:`<span class="tag p-w">bilinmiyor — en yakın ${esc(x.best||'-')} · ${x.score}</span>`).join(' ')||'<span class=m>Yüz bulunamadı</span>'}</div>`}catch(e){toast(e.message,1)}}
 const waTag=w=>!w||w==='-'?'':`<span class="tag ${w==='gonderildi'||w==='iletildi'||w==='okundu'?'p-ok':w==='hata'?'p-r':''}" style="font-size:11px">WA: ${esc(w)}</span>`;
 async function loadEvents(){const ev=await api('/api/events?limit=40');
   $('ev').innerHTML=ev.map(e=>`<div class="ev ${e.liste==='kara'?'kara':''}"><img class=av src="/api/people/${enc(e.name)}/_" onerror="this.outerHTML='<div class=ini>${ini(e.name)}</div>'">
-    <div class="x"><b>${esc(e.name)}</b> ${e.liste!=='ogrenci'?`<span class="tag ${LC[e.liste]}">${LN[e.liste]}</span>`:''}<div class=m>${esc(e.sinif||'—')} · ${e.kaynak==='kamera'?'skor '+e.score:esc(e.kaynak)} ${waTag(e.wa)}</div></div>
-    <span class="tag ${e.liste==='kara'?'p-r':'p-ok'}">${e.time.slice(11,16)}</span></div>`).join('')||`<div class="empty">Henüz geçiş yok</div>`}
+    <div class="x"><b>${esc(e.name)}</b> ${e.liste!=='ogrenci'?`<span class="tag ${LC[e.liste]}">${LN[e.liste]}</span>`:''}${e.gec?'<span class="tag p-v">GEÇ</span>':''}<div class=m>${esc(e.sinif||'—')} · ${esc(e.cam||'')} · ${e.kaynak==='kamera'?'skor '+e.score:esc(e.kaynak)} ${waTag(e.wa)}</div></div>
+    <span class="tag ${e.liste==='kara'?'p-r':e.yon==='cikis'?'p-b':'p-ok'}">${e.yon==='cikis'?'↗ ':''}${e.time.slice(11,16)}</span></div>`).join('')||`<div class="empty">Henüz geçiş yok</div>`}
 
 // ---------- alarm
 function showAlarm(a){$('al_t').textContent='⚠ KARA LİSTE: '+a.name;$('al_d').textContent=`${a.time.slice(11,16)} · ${a.not||''}`;$('alarm').style.display='flex';$('alarm').dataset.id=a.id;beep()}
@@ -413,7 +512,7 @@ function info(){const d={name:$('e_name').value.trim(),old_name:CUR};for(const k
 async function saveInfo(){const d=info();if(!d.name)return toast('Ad Soyad gerekli',1);
   try{await post('/api/people',d);CUR=d.name;toast('Kaydedildi');await loadPeople()}catch(e){toast(e.message,1)}}
 async function ensure(){const d=info();if(!d.name){toast('Önce Ad Soyad yaz',1);return null}await post('/api/people',d);CUR=d.name;return d.name}
-async function takeSnap(){try{const r=await fetch('/api/snapshot?t='+Date.now(),{cache:'no-store'});if(!r.ok)throw new Error((await r.json()).detail);$('snap').src=URL.createObjectURL(await r.blob());$('sph').style.display='none'}catch(e){toast(e.message,1)}}
+async function takeSnap(){try{const r=await fetch('/api/snapshot?cam='+$('snapcam').value+'&t='+Date.now(),{cache:'no-store'});if(!r.ok)throw new Error((await r.json()).detail);$('snap').src=URL.createObjectURL(await r.blob());$('sph').style.display='none'}catch(e){toast(e.message,1)}}
 async function capture(){try{const n=await ensure();if(!n)return;await post('/api/enroll/capture',{name:n});toast('Foto eklendi: '+n);loadPeople()}catch(e){toast(e.message,1)}}
 async function upload(){const f=$('files').files;try{const n=await ensure();if(!n)return;
   const fd=new FormData();fd.append('name',n);for(const x of f)fd.append('files',x);
@@ -427,15 +526,16 @@ async function delPerson(purge){if(!CUR)return;
 // ---------- yoklama
 async function loadAtt(){ATT=await api('/api/attendance?day='+$('aday').value);if(!PEOPLE.length)await loadPeople();renderAtt()}
 function renderAtt(){const s=$('as').value,isToday=$('aday').value===today();const rows=ATT.filter(a=>!s||a.sinif===s).sort((a,b)=>(!!a.geldi-!!b.geldi)||(a.sinif||'').localeCompare(b.sinif||'')||(+a.no||0)-(+b.no||0));
-  $('a_t').textContent=rows.length;$('a_g').textContent=rows.filter(a=>a.geldi).length;$('a_n').textContent=rows.filter(a=>!a.geldi).length;
+  $('a_t').textContent=rows.length;$('a_g').textContent=rows.filter(a=>a.geldi).length;$('a_l').textContent=rows.filter(a=>a.gec).length;$('a_c').textContent=rows.filter(a=>a.durum==='cikti').length;$('a_n').textContent=rows.filter(a=>!a.geldi).length;
   $('atbody').innerHTML=rows.map(a=>`<tr><td>${esc(a.no)}</td><td><b>${esc(a.name)}</b></td><td><span class=tag>${esc(a.sinif||'—')}</span></td>
-   <td>${a.geldi?`<span class="tag p-ok">✓ Geldi ${a.geldi}</span>`:`<span class="tag p-w">${isToday?'Henüz görülmedi':'Gelmedi'}</span>`}</td><td>${esc(a.veli_ad)} <span class=m>${esc(a.veli_tel)}</span></td>
-   <td style="text-align:right;white-space:nowrap">${!a.geldi&&isToday?`<button class="btn sm" onclick="manual('${esc(enc(a.name))}')">Geldi işaretle</button> <button class="btn sm danger" onclick="absent('${esc(enc(a.name))}')">Gelmedi bildir</button>`:''}</td></tr>`).join('')||`<tr><td colspan=6 class="empty">Kayıtlı öğrenci yok</td></tr>`}
-async function manual(n){try{await post('/api/attendance/manual',{name:decodeURIComponent(n)});toast('Geldi olarak işaretlendi');loadAtt()}catch(e){toast(e.message,1)}}
+   <td>${a.geldi?`<span class="tag ${a.gec?'p-v':'p-ok'}">${a.geldi}${a.gec?' · geç':''}</span>`:'<span class=m>—</span>'}</td><td>${a.cikis?`<span class="tag p-b">${a.cikis}</span>`:'<span class=m>—</span>'}</td>
+   <td>${a.durum==='okulda'?'<span class="tag p-ok">Okulda</span>':a.durum==='cikti'?'<span class="tag p-b">Çıktı</span>':`<span class="tag p-w">${isToday?'Henüz görülmedi':'Gelmedi'}</span>`}</td><td>${esc(a.veli_ad)} <span class=m>${esc(a.veli_tel)}</span></td>
+   <td style="text-align:right;white-space:nowrap">${isToday?(!a.geldi?`<button class="btn sm" onclick="manual('${esc(enc(a.name))}')">Geldi işaretle</button> <button class="btn sm danger" onclick="absent('${esc(enc(a.name))}')">Gelmedi bildir</button>`:a.durum==='okulda'?`<button class="btn sm" onclick="manual('${esc(enc(a.name))}','cikis')">Çıkış işaretle</button>`:''):''}</td></tr>`).join('')||`<tr><td colspan=8 class="empty">Kayıtlı öğrenci yok</td></tr>`}
+async function manual(n,yon){try{await post('/api/attendance/manual',{name:decodeURIComponent(n),yon});toast(yon==='cikis'?'Çıkış işaretlendi':'Geldi olarak işaretlendi');loadAtt()}catch(e){toast(e.message,1)}}
 async function absent(n){n=decodeURIComponent(n);if(!confirm(`${n} için veliye "okula gelmedi" mesajı gönderilsin mi?`))return;
   try{const r=await post('/api/absent/notify',{name:n});toast(r.wa==='kapali'?'WhatsApp kapalı — WA butonuyla elle gönderebilirsin':'Mesaj: '+r.wa,r.wa!=='gonderiliyor')}catch(e){toast(e.message,1)}}
 function exportAtt(){const s=$('as').value;const rows=ATT.filter(a=>!s||a.sinif===s);
-  const csv='﻿No;Ad Soyad;Sınıf;Durum;Saat;Veli;Veli Tel\n'+rows.map(a=>[a.no,a.name,a.sinif,a.geldi?'Geldi':'Gelmedi',a.geldi||'',a.veli_ad,a.veli_tel].map(x=>`"${String(x||'').replace(/"/g,'""')}"`).join(';')).join('\n');
+  const csv='﻿No;Ad Soyad;Sınıf;Durum;Giriş;Geç;Çıkış;Veli;Veli Tel\n'+rows.map(a=>[a.no,a.name,a.sinif,a.geldi?(a.durum==='cikti'?'Çıktı':'Okulda'):'Gelmedi',a.geldi||'',a.gec?'Evet':'',a.cikis||'',a.veli_ad,a.veli_tel].map(x=>`"${String(x||'').replace(/"/g,'""')}"`).join(';')).join('\n');
   const l=document.createElement('a');l.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));l.download=`yoklama-${$('aday').value}${s?'-'+s:''}.csv`;l.click()}
 
 // ---------- onay bekleyen
@@ -479,21 +579,86 @@ async function delUser(u){if(!confirm(u+' silinsin mi?'))return;try{await api('/
 async function changePw(){try{await post('/api/password',{old:$('pw_old').value,new:$('pw_new').value});$('pw_old').value=$('pw_new').value='';toast('Şifre değiştirildi')}catch(e){toast(e.message,1)}}
 
 // ---------- ayarlar
-const SK=['det_width','queue_max','threshold','low_threshold','vote_frames','cooldown','det_score','min_face','keep_days','keep_unknown_days','wa_phone_id','wa_token','wa_template','wa_mode','wa_tpl_name','wa_tpl_lang','alarm_tel','wa_verify','wa_provider','whapi_token'];
+const SK=['ders_baslangic','gelmedi_saat','tatiller','cam_down_sec','wa_template_gec','wa_template_cikis','bot_keyword','det_width','queue_max','threshold','low_threshold','vote_frames','cooldown','det_score','min_face','keep_days','keep_unknown_days','wa_phone_id','wa_token','wa_template','wa_mode','wa_tpl_name','wa_tpl_lang','alarm_tel','wa_verify','wa_provider','whapi_token'];
 function modeUI(){const w=$('s_wa_provider').value==='whapi';$('whapibox').style.display=w?'':'none';$('metabox').style.display=w?'none':'';$('tplbox').style.display=$('s_wa_mode').value==='template'?'':'none'}
-async function saveSettings(){const d={};for(const k of SK)d[k]=$('s_'+k).value;d.wa_enabled=$('s_wa_enabled').checked;
+async function saveSettings(){const d={};for(const k of SK)d[k]=$('s_'+k).value;d.wa_enabled=$('s_wa_enabled').checked;d.hafta_sonu_kapali=$('s_hafta_sonu_kapali').checked;d.bot_enabled=$('s_bot_enabled').checked;
   try{await post('/api/settings',d);$('s_wa_token').value='';$('s_whapi_token').value='';toast('Ayarlar kaydedildi');refresh(true)}catch(e){toast(e.message,1)}}
 async function waTest(){$('wt_res').textContent='Gönderiliyor…';try{const r=await post('/api/wa_test',{tel:$('wt_tel').value});
   $('wt_res').innerHTML=r.status==='hata'?`<span style="color:var(--r)">Hata: ${esc(r.err)}</span>`:`<span style="color:var(--ok)">✓ ${esc(r.status)} — telefonu kontrol et</span>`}catch(e){$('wt_res').textContent=e.message}}
 async function restore(){const f=$('rest').files[0];if(!f||!confirm('Mevcut tüm veri yedekteki ile değiştirilecek. Devam?'))return($('rest').value='');
   const fd=new FormData();fd.append('file',f);toast('Geri yükleniyor…');try{const r=await api('/api/restore',{method:'POST',body:fd});toast(`Geri yüklendi: ${r.people} kişi`);loadPeople()}catch(e){toast(e.message,1)}$('rest').value=''}
 
+// ---------- kameralar
+async function loadCams(){const cs=await api('/api/cameras');
+  $('cbody').innerHTML=cs.map(c=>`<tr><td><b>${esc(c.ad)}</b><div class=m>${esc(c.url_short)}</div></td><td><span class="tag ${c.yon==='cikis'?'p-b':'p-ok'}">${c.yon==='cikis'?'Çıkış':'Giriş'}</span></td>
+   <td>${!c.aktif?'<span class=tag>Pasif</span>':c.down?'<span class="tag p-r">Görüntü yok</span>':c.status==='canli'?'<span class="tag p-ok">Canlı</span>':`<span class="tag p-w">${esc(c.status)}</span>`}</td><td class=m>${c.in_fps} / ${c.fps}</td>
+   <td style="text-align:right;white-space:nowrap"><button class="btn sm" onclick='editCam(${JSON.stringify(c).replace(/'/g,"&#39;")})'>Düzenle</button> <button class="btn sm danger" onclick="delCam('${c.id}','${esc(c.ad)}')">Sil</button></td></tr>`).join('')||`<tr><td colspan=5 class=empty>Kamera yok. Sağdan ekle.</td></tr>`}
+function editCam(c){$('c_id').value=c.id||'';$('c_ad').value=c.ad||'';$('c_url').value=c.url||'';$('c_yon').value=c.yon||'giris';$('c_aktif').checked=c.aktif!==false}
+async function saveCam(){try{await post('/api/cameras',{id:$('c_id').value,ad:$('c_ad').value,url:$('c_url').value,yon:$('c_yon').value,aktif:$('c_aktif').checked});toast('Kamera kaydedildi');editCam({});loadCams();refresh()}catch(e){toast(e.message,1)}}
+async function delCam(id,ad){if(!confirm(ad+' kamerası silinsin mi?'))return;await api('/api/cameras/'+id,{method:'DELETE'});loadCams();refresh()}
+
+// ---------- toplu kayit
+async function impExcel(inp){const f=inp.files[0];if(!f)return;const fd=new FormData();fd.append('file',f);toast('Excel okunuyor…');
+  try{const r=await api('/api/import/excel',{method:'POST',body:fd});$('impres').innerHTML=`<div class="help" style="margin-top:12px">✓ ${r.new} yeni öğrenci, ${r.updated} güncellendi.${r.errors.length?'<br><span class=wc>'+r.errors.map(esc).join('<br>')+'</span>':''}</div>`;loadPeople()}catch(e){toast(e.message,1)}inp.value=''}
+async function impZip(inp){const f=inp.files[0];if(!f)return;const fd=new FormData();fd.append('file',f);toast('Fotoğraflar işleniyor, bu biraz sürebilir…');
+  try{const r=await api('/api/import/photos',{method:'POST',body:fd});$('impres').innerHTML=`<div class="help" style="margin-top:12px">✓ ${r.saved} fotoğraf eklendi, model eğitildi (${r.trained} kişi).${r.unmatched.length?`<br><span class=wc>Eşleşmeyen (${r.unmatched.length}): ${r.unmatched.slice(0,15).map(esc).join(', ')}</span>`:''}${r.noface.length?`<br><span class=wc>Yüz bulunamayan (${r.noface.length}): ${r.noface.slice(0,15).map(esc).join(', ')}</span>`:''}</div>`;loadPeople()}catch(e){toast(e.message,1)}inp.value=''}
+
+// ---------- raporlar
+let REP=null,RS={k:'oran',d:1};
+async function loadReports(){if(!$('r_month').value)$('r_month').value=today().slice(0,7);REP=await api('/api/reports?month='+$('r_month').value);
+  const cls=[...new Set(REP.students.map(s=>s.sinif).filter(Boolean))].sort(),v=$('r_cls').value;$('r_cls').innerHTML='<option value="">Tüm sınıflar</option>'+cls.map(c=>`<option>${esc(c)}</option>`).join('');$('r_cls').value=v;renderReports()}
+function rSort(k){RS={k,d:RS.k===k?-RS.d:(k==='name'||k==='sinif'||k==='no'?-1:1)};renderReports()}
+function renderReports(){if(!REP)return;const c=$('r_cls').value;const st=REP.students.filter(s=>!c||s.sinif===c);
+  $('r_sub').textContent=`${REP.month} · ${REP.school_days} okul günü${c?' · '+c:''}`;$('r_days').textContent=REP.school_days;
+  $('r_avg').textContent='%'+(st.length?Math.round(st.reduce((a,s)=>a+s.oran,0)/st.length):0);$('r_late').textContent=st.reduce((a,s)=>a+s.gec,0);$('r_low').textContent=st.filter(s=>s.oran<80).length;
+  const mx=Math.max(1,...REP.daily.map(d=>d.gelen));
+  $('r_daily').innerHTML=REP.daily.map(d=>`<div style="height:${Math.max(2,d.gelen/mx*100)}%" data-t="${d.day.slice(8)}.${d.day.slice(5,7)}: ${d.gelen}"></div>`).join('')||'<span class=m>Bu ayda okul günü yok</span>';
+  $('r_dlab').innerHTML=REP.daily.length?`<span>${REP.daily[0].day.slice(8)}</span><span>${REP.daily.at(-1).day.slice(8)}</span>`:'';
+  $('r_cls_bars').innerHTML=REP.classes.map(k=>`<div class="hbar"><span class="l">${esc(k.sinif)}</span><span class="t"><i style="width:${k.oran}%"></i></span><span class="v">%${k.oran}</span><span class="m" style="width:90px">${k.ogrenci} öğr · ${k.gec} geç</span></div>`).join('')||'<span class=m>Veri yok</span>';
+  const row=s=>`<tr><td><b>${esc(s.name)}</b> <span class=m>${esc(s.sinif)}</span></td>`;
+  $('r_lates').innerHTML=[...st].filter(s=>s.gec).sort((a,b)=>b.gec-a.gec).slice(0,8).map(s=>row(s)+`<td style="text-align:right"><span class="tag p-v">${s.gec} kez</span></td></tr>`).join('')||'<tr><td class=empty>Geç kalan yok</td></tr>';
+  $('r_lows').innerHTML=[...st].sort((a,b)=>a.oran-b.oran).slice(0,8).map(s=>row(s)+`<td style="text-align:right"><span class="tag ${s.oran<80?'p-r':'p-ok'}">%${s.oran}</span></td></tr>`).join('')||'<tr><td class=empty>Veri yok</td></tr>';
+  const k=RS.k;st.sort((a,b)=>(typeof a[k]==='number'?a[k]-b[k]:String(a[k]).localeCompare(String(b[k]),'tr',{numeric:true}))*-RS.d);
+  $('r_body').innerHTML=st.map(s=>`<tr><td>${esc(s.no)}</td><td><b>${esc(s.name)}</b></td><td><span class=tag>${esc(s.sinif||'—')}</span></td><td>${s.gelen} / ${s.gun}</td><td>${s.gec?`<span class="tag p-v">${s.gec}</span>`:'—'}</td>
+   <td><div class="hbar" style="margin:0"><span class="t" style="max-width:140px"><i style="width:${s.oran}%;${s.oran<80?'background:var(--r)':''}"></i></span><span class="v">%${s.oran}</span></div></td></tr>`).join('')||'<tr><td colspan=6 class=empty>Öğrenci yok</td></tr>'}
+function dl(name,csv){const l=document.createElement('a');l.href=URL.createObjectURL(new Blob(['﻿'+csv],{type:'text/csv'}));l.download=name;l.click()}
+const csvRow=a=>a.map(x=>`"${String(x??'').replace(/"/g,'""')}"`).join(';');
+function exportReport(){if(!REP)return;const c=$('r_cls').value;const st=REP.students.filter(s=>!c||s.sinif===c);
+  dl(`devam-raporu-${REP.month}${c?'-'+c:''}.csv`,'No;Ad Soyad;Sınıf;Geldiği gün;Okul günü;Geç;Devam %\n'+st.map(s=>csvRow([s.no,s.name,s.sinif,s.gelen,s.gun,s.gec,String(s.oran).replace('.',',')])).join('\n'))}
+
+// ---------- duyuru
+async function loadBroadcast(){if(!PEOPLE.length)await loadPeople();const cls=[...new Set(PEOPLE.filter(p=>p.liste==='ogrenci').map(p=>p.sinif).filter(Boolean))].sort();
+  $('b_cls').innerHTML=(ME.rol==='ogretmen'?'':'<option value="">Tüm okul</option>')+cls.filter(c=>ME.rol!=='ogretmen'||c===ME.sinif).map(c=>`<option>${esc(c)}</option>`).join('');bCount();bPrev();
+  const ms=(await api('/api/messages?limit=1000')).filter(m=>m.kind==='duyuru');const g={};ms.forEach(m=>{const k=m.time.slice(0,16);(g[k]=g[k]||{n:0,t:m.text}).n++});
+  $('b_hist').innerHTML=Object.entries(g).slice(0,15).map(([k,v])=>`<div style="padding:10px 0;border-bottom:1px solid #f1f5f9"><b style="color:var(--t)">${k}</b> · ${v.n} veli<br>${esc(v.t.slice(0,140))}</div>`).join('')||'Henüz duyuru yok'}
+async function bCount(){try{const r=await post('/api/broadcast',{sinif:$('b_cls').value,text:'xxx',dry:1});$('b_cnt').textContent=`${r.count} veliye gidecek`}catch(e){$('b_cnt').textContent=e.message}}
+function bPrev(){const p=PEOPLE.find(x=>x.liste==='ogrenci'&&(!$('b_cls').value||x.sinif===$('b_cls').value));const t=$('b_text').value||'(mesaj)';
+  $('b_prev').innerHTML='<b>Önizleme:</b> '+esc(t.replaceAll('{veli}',p?.veli_ad||'Veli').replaceAll('{ogrenci}',p?.name||'Öğrenci'))}
+async function sendBroadcast(){const t=$('b_text').value.trim();if(!t)return toast('Mesaj yaz',1);if(!confirm(`${$('b_cnt').textContent}. Gönderilsin mi?`))return;
+  try{const r=await post('/api/broadcast',{sinif:$('b_cls').value,text:t});toast(`${r.count} veliye gönderim başladı`);$('b_text').value='';bPrev();setTimeout(loadBroadcast,3000)}catch(e){toast(e.message,1)}}
+
+// ---------- islem kaydi
+let AUD=[];
+async function loadAudit(){AUD=await api(`/api/audit?qs=${enc($('au_q').value)}&user=${enc($('au_u').value)}`);
+  if(!$('au_u').dataset.o){const us=await api('/api/users');$('au_u').innerHTML='<option value="">Tüm kullanıcılar</option><option>sistem</option>'+us.map(u=>`<option>${esc(u.user)}</option>`).join('');$('au_u').dataset.o=1}
+  $('aubody').innerHTML=AUD.map(a=>`<tr><td class=m style="white-space:nowrap">${a.time.slice(0,16)}</td><td><b>${esc(a.user)}</b></td><td><span class="tag ${/sil|reddedildi|kopt/.test(a.action)?'p-r':/onay|elle/.test(a.action)?'p-ok':''}">${esc(a.action)}</span></td><td>${esc(a.target)}</td><td class=m>${esc(a.detail)}</td></tr>`).join('')||'<tr><td colspan=5 class=empty>Kayıt yok</td></tr>'}
+function exportAudit(){dl('islem-kaydi.csv','Zaman;Kullanıcı;İşlem;Hedef;Detay\n'+AUD.map(a=>csvRow([a.time,a.user,a.action,a.target,a.detail])).join('\n'))}
+
 // ---------- durum
 async function refresh(force){try{const s=await api('/api/status');
-  const live=s.camera==='canli';const b=$('camBadge');b.className='badge '+(live?'live':'off');b.textContent='Kamera: '+s.camera;
-  $('k_f').textContent=live?s.ms.toplam+' ms':'—';$('k_pr').textContent=`kare başı · ${s.fps} fps · ${s.provider.replace('ExecutionProvider','')}`;
-  const qp=s.queue_max?Math.round(s.queue/s.queue_max*100):0;
-  $('perf').innerHTML=live?`Kamera <b>${s.in_fps} fps</b> geliyor · işlenen <b>${s.fps} fps</b> · tespit <b>${s.ms.tespit} ms</b> · tanıma <b>${s.ms.tanima} ms</b> · kuyruk <b style="color:${qp>70?'var(--r)':qp>30?'var(--w)':'var(--ok)'}">${s.queue}/${s.queue_max}</b> · gecikme <b>${s.lag} sn</b> · atlanan <b>${s.dropped}</b>`:'Kamera bağlı değil';$('camurl').textContent=s.url||'';
+  CAMS=s.cams;const on=CAMS.filter(c=>c.aktif),live=on.filter(c=>c.status==='canli'&&!c.down),down=on.filter(c=>c.down);
+  const b=$('camBadge');b.className='badge '+(live.length?'live':'off');b.textContent=on.length?`${live.length}/${on.length} kamera canlı`:'Kamera eklenmedi';
+  $('camchips').innerHTML=on.map(c=>`<span class="chip"><span class="dot" style="background:${c.down?'var(--r)':c.status==='canli'?'var(--ok)':'#94a3b8'}"></span>${esc(c.ad)} <span class=m>${c.yon==='cikis'?'çıkış':'giriş'}</span></span>`).join('');
+  $('n_cam').textContent=on.length;$('n_cam').className='n'+(down.length?' red':'');
+  for(const id of['camsel','snapcam']){const e=$(id),v=e.value;const opts=(id==='camsel'?'<option value="">Tümü (ızgara)</option>':'')+on.map(c=>`<option value="${c.id}">${esc(c.ad)}</option>`).join('');if(e.dataset.o!==opts){e.innerHTML=opts;e.dataset.o=opts;if(v)e.value=v}}
+  renderVids();const P=s.perf,qp=s.queue_max?Math.round(s.queue/s.queue_max*100):0;
+  $('k_f').textContent=live.length?P.toplam+' ms':'—';$('k_pr').textContent=`kare başı · ${P.fps} fps · ${s.provider.replace('ExecutionProvider','')}`;
+  $('perf').innerHTML=live.length?`İşlenen <b>${P.fps} fps</b> (tüm kameralar) · tespit <b>${P.tespit} ms</b> · tanıma <b>${P.tanima} ms</b> · ortak kuyruk <b style="color:${qp>70?'var(--r)':qp>30?'var(--w)':'var(--ok)'}">${s.queue}/${s.queue_max}</b> · gecikme <b>${P.lag} sn</b> · atlanan <b>${P.dropped}</b>`:'Canlı kamera yok';
+  let bn=down.map(c=>`<div class="banner r"><svg class="i"><use href="#i-cam"/></svg><span><b>${esc(c.ad)}</b> kamerasından görüntü gelmiyor. Kablo / elektrik / ağ bağlantısını kontrol edin.</span></div>`).join('');
+  const AK='absent_'+(s.absent?.day||'');let dis=false;try{dis=!!localStorage.getItem(AK)}catch(e){}
+  if(s.absent&&!dis)bn+=`<div class="banner w"><svg class="i"><use href="#i-q"/></svg><span>Saat ${s.absent.saat} geçti: <b>${s.absent.count} öğrenci</b> henüz görülmedi. Yoklamadan teyit edin.</span><span class=sp></span><button class="btn sm" onclick="go('att')">Yoklamaya git</button><button class="btn sm" onclick="try{localStorage.setItem('${AK}',1)}catch(e){};refresh()">Kapat</button></div>`;
+  if(s.off_day)bn+=`<div class="banner" style="background:#f1f5f9;color:#475569;border:1px solid var(--b)"><svg class="i"><use href="#i-clock"/></svg>Bugün tatil / hafta sonu — veliye otomatik mesaj gönderilmiyor.</div>`;
+  $('banners').innerHTML=bn;$('a_off').innerHTML=s.absent?`<div class="banner w"><svg class="i"><use href="#i-q"/></svg>${s.absent.count} öğrenci saat ${s.absent.saat} itibarıyla görülmedi.</div>`:'';
   $('k_p').textContent=s.pending;const np=$('n_pen');np.textContent=s.pending+(s.unknown?' · '+s.unknown:'');np.className='n'+(s.pending?' hot':'');
   $('t_onay').textContent=s.pending;$('t_bil').textContent=s.unknown;
   for(const k in s.settings){const i=$('s_'+k);if(!i||(!force&&document.activeElement===i)||(!force&&i.dataset.init))continue;i.dataset.init=1;if(i.type==='checkbox')i.checked=s.settings[k];else i.value=s.settings[k]}
@@ -505,6 +670,6 @@ async function boot(){try{ME=await api('/api/me')}catch(e){return}
   $('login').style.display='none';$('me_n').textContent=ME.ad||ME.user;$('me_r').textContent=RN[ME.rol]+(ME.sinif?' · '+ME.sinif:'');$('me_av').textContent=(ME.ad||ME.user)[0].toUpperCase();
   document.querySelectorAll('[data-min]').forEach(e=>{if(RL[ME.rol]>=RL[e.dataset.min])e.removeAttribute('data-min')});
   loadPeople();loadEvents();refresh(true);setInterval(refresh,2000);setInterval(loadEvents,2500);setInterval(loadPeople,20000);
-  api('/api/status').then(s=>{if(s.camera!=='kapali')$('video').src='/api/stream'})}
+}
 boot();
 </script></body></html>

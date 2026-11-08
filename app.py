@@ -54,6 +54,11 @@ DEFAULTS = {
     "alarm_tel": "",
     "wa_provider": "whapi",  # whapi | meta
     "whapi_token": "",
+    "wa_template_gec": "Sayın {veli}, öğrenciniz {ogrenci} okula GEÇ giriş yaptı. Saat: {saat}",
+    "wa_template_cikis": "Sayın {veli}, öğrenciniz {ogrenci} okuldan ayrıldı. Saat: {saat}",
+    "ders_baslangic": "08:30", "gelmedi_saat": "08:45", "tatiller": "", "hafta_sonu_kapali": True,
+    "cam_down_sec": 60, "bot_enabled": False, "bot_keyword": "durum,nerede",
+    "cameras": [],
 }
 def load_settings():
     d = dict(DEFAULTS)
@@ -74,7 +79,11 @@ CREATE TABLE IF NOT EXISTS messages(id INTEGER PRIMARY KEY, time TEXT, tel TEXT,
 CREATE TABLE IF NOT EXISTS pending(id INTEGER PRIMARY KEY, time TEXT, kind TEXT, cand TEXT, score REAL, img TEXT, cam TEXT, status TEXT DEFAULT 'acik');
 CREATE TABLE IF NOT EXISTS users(user TEXT PRIMARY KEY, pw TEXT, rol TEXT, sinif TEXT, ad TEXT);
 CREATE TABLE IF NOT EXISTS tokens(tok TEXT PRIMARY KEY, user TEXT, exp REAL);
+CREATE TABLE IF NOT EXISTS audit(id INTEGER PRIMARY KEY, time TEXT, user TEXT, action TEXT, target TEXT, detail TEXT);
 """)
+for _c in ("yon TEXT DEFAULT 'giris'", "gec INTEGER DEFAULT 0"):
+    try: CONN.execute("ALTER TABLE events ADD COLUMN " + _c); CONN.commit()
+    except sqlite3.OperationalError: pass
 def q(sql, args=(), one=False):
     with DBL:
         cur = CONN.execute(sql, args); CONN.commit()
@@ -241,23 +250,39 @@ def wa_send(tel_raw, name, kind, vars_or_text, ev_id=None, force_text=False):
     threading.Thread(target=send, daemon=True).start()
     return "gonderiliyor"
 
+# ================= kurallar (saat / tatil) =================
+def today_s(): return datetime.now().strftime("%Y-%m-%d")
+def tatil_set(): return {x.strip() for x in re.split(r"[,\s;]+", S.get("tatiller", "")) if x.strip()}
+def is_off_day(day=None):
+    d = datetime.strptime(day or today_s(), "%Y-%m-%d")
+    return (S.get("hafta_sonu_kapali", True) and d.weekday() >= 5) or d.strftime("%Y-%m-%d") in tatil_set()
+def is_late(t):  # t: "YYYY-mm-dd HH:MM:SS"
+    return bool(S.get("ders_baslangic")) and t[11:16] > S["ders_baslangic"]
+
 # ================= olay kaydi =================
 LAST_SEEN = {}
-ALARMS = []  # canli alarm akisi (son 50)
+ALARMS = []      # kara liste alarm akisi
+CAM_ALERTS = []  # kamera koptu uyarilari
 
-def log_event(name, score, cam, kaynak="kamera", force=False):
-    now = time.time()
-    if not force and now - LAST_SEEN.get(name, 0) < S["cooldown"]: return None
-    LAST_SEEN[name] = now
+def log_event(name, score, cam_name, yon="giris", kaynak="kamera", force=False):
+    now = time.time(); key = (name, yon)
+    if not force and now - LAST_SEEN.get(key, 0) < S["cooldown"]: return None
+    LAST_SEEN[key] = now
     info, t = read_info(name), now_s()
     lst = liste_of(name)
-    eid = ins("INSERT INTO events(time,name,score,cam,sinif,liste,wa,kaynak) VALUES(?,?,?,?,?,?,?,?)",
-              (t, name, round(score, 3), cam, info.get("sinif", ""), lst, "", kaynak))
+    gec = 1 if (yon == "giris" and lst == "ogrenci" and is_late(t)) else 0
+    eid = ins("INSERT INTO events(time,name,score,cam,sinif,liste,wa,kaynak,yon,gec) VALUES(?,?,?,?,?,?,?,?,?,?)",
+              (t, name, round(score, 3), cam_name, info.get("sinif", ""), lst, "", kaynak, yon, gec))
     if lst == "kara":
-        ALARMS.insert(0, {"id": eid, "time": t, "name": name, "not": info.get("not", ""), "cam": cam}); del ALARMS[50:]
-        wa = wa_send(S["alarm_tel"], name, "alarm", f"⚠ KARA LİSTE: {name} kapıda görüldü. Saat {t[11:16]}. {info.get('not', '')}", eid, )
+        ALARMS.insert(0, {"id": eid, "time": t, "name": name, "not": info.get("not", ""), "cam": cam_name}); del ALARMS[50:]
+        wa = wa_send(S["alarm_tel"], name, "alarm", f"⚠ KARA LİSTE: {name} {cam_name} kamerasında görüldü. Saat {t[11:16]}. {info.get('not', '')}", eid, force_text=True)
     elif lst == "beyaz": wa = "-"
-    else: wa = wa_send(info.get("veli_tel"), name, "geldi", wa_vars(info, name, t), eid)
+    elif is_off_day(): wa = "tatil"
+    else:
+        v = wa_vars(info, name, t)
+        if yon == "cikis": wa = wa_send(info.get("veli_tel"), name, "cikis", S["wa_template_cikis"].format(**v), eid)
+        elif gec: wa = wa_send(info.get("veli_tel"), name, "gec", S["wa_template_gec"].format(**v), eid)
+        else: wa = wa_send(info.get("veli_tel"), name, "geldi", v, eid)
     q("UPDATE events SET wa=? WHERE id=? AND wa=''", (wa, eid))
     return eid
 
@@ -277,128 +302,172 @@ def iou(a, b):
 class Track:
     _n = 0
     def __init__(self, box):
-        Track._n += 1; self.id = Track._n; self.box = box; self.votes = []; self.last = time.time()
+        Track._n += 1; self.id = Track._n; self.box = box; self.votes = []; self.last = time.time(); self.sc = 0.0
         self.done = False; self.decided = None; self.best = (0.0, None, None, None)  # score, name, thumb, crop
     def label(self):
         if self.decided: return self.decided
         if not self.votes: return None
-        n, c = Counter(v[0] for v in self.votes).most_common(1)[0]
-        return n
+        return Counter(v[0] for v in self.votes).most_common(1)[0][0]
+
+# Tum kameralar tek GPU kuyruguna yazar; tek isleyici sirayla isler.
+GQ = queue.Queue(maxsize=int(S["queue_max"]) * 4)
+PERF = {"tespit": 0.0, "tanima": 0.0, "toplam": 0.0, "fps": 0.0, "dropped": 0, "lag": 0.0}
 
 class Camera:
-    """RTSP okuyucu -> FIFO kuyruk -> isleyici. Kareler sirayla islenir; kuyruk dolarsa en eski atilir."""
-    def __init__(self):
-        self.url = None; self.frame = None; self.annot = None; self.snap = None
-        self.running = False; self.fps = 0.0; self.in_fps = 0.0; self.status = "kapali"; self.tracks = []
-        self.lock = threading.Lock(); self.gen = 0
-        self.q = queue.Queue(); self.dropped = 0; self.ms = {"tespit": 0, "tanima": 0, "toplam": 0}
+    """Tek bir RTSP kaynagi: okur, ortak kuyruga atar; kendi izlerini ve son goruntusunu tutar."""
+    def __init__(self, cfg):
+        self.cfg = cfg; self.frame = None; self.annot = None; self.snap = None
+        self.running = False; self.in_fps = 0.0; self.fps = 0.0; self.status = "kapali"; self.tracks = []
+        self.lock = threading.Lock(); self.gen = 0; self.last_frame = 0.0; self.started = 0.0
+        self.down = False; self.alerted = False; self._n = 0; self._t0 = time.time()
 
-    def start(self, url):
-        self.stop(); self.url = url; self.running = True; self.status = "baglaniyor"; self.gen += 1
-        g = self.gen; self.q = queue.Queue(maxsize=int(S["queue_max"])); self.dropped = 0
-        threading.Thread(target=self._reader, args=(g,), daemon=True).start()
-        threading.Thread(target=self._worker, args=(g,), daemon=True).start()
+    @property
+    def id(self): return self.cfg["id"]
+    @property
+    def name(self): return self.cfg.get("ad") or self.cfg["id"]
+    @property
+    def yon(self): return self.cfg.get("yon") or "giris"
+    def url_short(self): return re.sub(r"//[^@/]*@", "//", self.cfg.get("url") or "")
+
+    def start(self):
+        self.stop(); self.running = True; self.status = "baglaniyor"; self.gen += 1; self.started = time.time()
+        threading.Thread(target=self._reader, args=(self.gen,), daemon=True).start()
 
     def stop(self):
-        self.running = False; self.gen += 1; time.sleep(0.3)
+        self.running = False; self.gen += 1
         self.frame = None; self.annot = None; self.status = "kapali"; self.tracks = []
 
-    def url_short(self): return re.sub(r"//[^@/]*@", "//", self.url or "")
-
     def _reader(self, g):
-        src = int(self.url) if self.url.isdigit() else self.url
+        url = self.cfg["url"]; src = int(url) if url.isdigit() else url
         t0, n = time.time(), 0
         while self.running and g == self.gen:
             cap = cv2.VideoCapture(src) if isinstance(src, int) else cv2.VideoCapture(src, cv2.CAP_FFMPEG)
-            if not cap.isOpened(): self.status = "baglanamadi, tekrar deneniyor"; time.sleep(2); continue
+            if not cap.isOpened(): self.status = "baglanamadi"; time.sleep(3); continue
             self.status = "canli"
             while self.running and g == self.gen:
                 ok, f = cap.read()
                 if not ok: self.status = "akis koptu"; break
-                ts = time.time()
+                ts = time.time(); self.last_frame = ts
                 with self.lock: self.frame = f
-                try: self.q.put_nowait((ts, f))
-                except queue.Full:  # isleyici yetisemiyor: en eskiyi at, yenisini koy
-                    try: self.q.get_nowait(); self.dropped += 1
+                try: GQ.put_nowait((self, g, ts, f))
+                except queue.Full:
+                    try: GQ.get_nowait(); PERF["dropped"] += 1
                     except queue.Empty: pass
-                    self.q.put_nowait((ts, f))
+                    try: GQ.put_nowait((self, g, ts, f))
+                    except queue.Full: pass
                 n += 1
                 if ts - t0 > 1: self.in_fps = n / (ts - t0); t0, n = ts, 0
-            cap.release()
+            cap.release(); time.sleep(1)
 
-    def _finish(self, tr):
-        """Takip bitti; karar verilmediyse onay/bilinmeyen kutusuna at."""
+    def finish(self, tr):
         if tr.done or len(tr.votes) < 2: return
         sc, name, thumb, crop = tr.best
         if thumb is None: return
-        cam = self.url_short()
-        if sc >= S["low_threshold"]: add_pending("onay", name, sc, thumb, crop, cam)
-        else: add_pending("bilinmeyen", name, sc, thumb, crop, cam)
+        add_pending("onay" if sc >= S["low_threshold"] else "bilinmeyen", name, sc, thumb, crop, self.name)
 
-    def _worker(self, g):
-        t0, n = time.time(), 0
-        while self.running and g == self.gen:
-            try: ts, f = self.q.get(timeout=0.5)
-            except queue.Empty: continue
-            ta = time.perf_counter()
-            dw = int(S["det_width"]); scale = 1.0; img = f
-            if f.shape[1] > dw: scale = dw / f.shape[1]; img = cv2.resize(f, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
-            faces = E.detect(img)
-            tb = time.perf_counter()
-            # 1) takip: yuzleri mevcut izlere bagla (kare zamani ile)
-            used, items = set(), []
-            for fc in faces:
-                fc = fc.copy(); fc[:14] /= scale; box = tuple(fc[:4])
-                if min(fc[2], fc[3]) < S["min_face"]: items.append((fc, None)); continue
-                tr = max((t for t in self.tracks if id(t) not in used), key=lambda t: iou(t.box, box), default=None)
-                if tr is None or iou(tr.box, box) < 0.2: tr = Track(box); self.tracks.append(tr)
-                used.add(id(tr)); tr.box = box; tr.last = ts; items.append((fc, tr))
-            # 2) tanima: sadece karari verilmemis izler icin (karar verilene GPU harcama)
-            need = [(fc, tr) for fc, tr in items if tr is not None and not tr.done]
-            crops = [norm_crop(f, fc[4:14].reshape(5, 2)) for fc, _ in need]
-            res = dict(zip((id(tr) for _, tr in need), zip(crops, G.match(E.embed(crops)))))
-            tc = time.perf_counter()
-            vis = f.copy()
-            for fc, tr in items:
-                box = tuple(fc[:4])
-                if tr is None:
-                    x, y, w, h = map(int, box); cv2.rectangle(vis, (x, y), (x + w, y + h), (150, 150, 150), 1); continue
-                if id(tr) in res:
-                    crop, (name, sc) = res[id(tr)]
-                    ok = name is not None and sc >= S["threshold"]
-                    tr.votes.append((name if ok else None, sc)); tr.votes = tr.votes[-15:]; tr.sc = sc
-                    if sc > tr.best[0]: tr.best = (sc, name, face_thumb(f, fc), crop)
-                    if len(tr.votes) >= S["vote_frames"]:
-                        top, cnt = Counter(v[0] for v in tr.votes).most_common(1)[0]
-                        if top and cnt >= 0.6 * len(tr.votes):
-                            tr.done = True; tr.decided = top
-                            log_event(top, float(np.mean([v[1] for v in tr.votes if v[0] == top])), self.url_short())
-                self._draw(vis, box, tr, None, getattr(tr, "sc", 0.0))
-            for tr in [t for t in self.tracks if ts - t.last > 1.5]:
-                self._finish(tr); self.tracks.remove(tr)
-            self.annot = cv2.imencode(".jpg", vis, [cv2.IMWRITE_JPEG_QUALITY, 80])[1].tobytes()
-            td = time.perf_counter()
-            a = 0.9  # yumusatilmis ortalama
-            for k, v in (("tespit", tb - ta), ("tanima", tc - tb), ("toplam", td - ta)):
-                self.ms[k] = a * self.ms[k] + (1 - a) * v * 1000
-            self.lag = time.time() - ts
-            n += 1; now = time.time()
-            if now - t0 > 1: self.fps = n / (now - t0); t0, n = now, 0
+    def process(self, ts, f):
+        dw = int(S["det_width"]); scale = 1.0; img = f
+        if f.shape[1] > dw: scale = dw / f.shape[1]; img = cv2.resize(f, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
+        ta = time.perf_counter(); faces = E.detect(img); tb = time.perf_counter()
+        used, items = set(), []
+        for fc in faces:
+            fc = fc.copy(); fc[:14] /= scale; box = tuple(fc[:4])
+            if min(fc[2], fc[3]) < S["min_face"]: items.append((fc, None)); continue
+            tr = max((t for t in self.tracks if id(t) not in used), key=lambda t: iou(t.box, box), default=None)
+            if tr is None or iou(tr.box, box) < 0.2: tr = Track(box); self.tracks.append(tr)
+            used.add(id(tr)); tr.box = box; tr.last = ts; items.append((fc, tr))
+        need = [(fc, tr) for fc, tr in items if tr is not None and not tr.done]
+        crops = [norm_crop(f, fc[4:14].reshape(5, 2)) for fc, _ in need]
+        res = dict(zip((id(tr) for _, tr in need), zip(crops, G.match(E.embed(crops)))))
+        tc = time.perf_counter()
+        vis = f.copy()
+        for fc, tr in items:
+            box = tuple(fc[:4])
+            if tr is None:
+                x, y, w, h = map(int, box); cv2.rectangle(vis, (x, y), (x + w, y + h), (150, 150, 150), 1); continue
+            if id(tr) in res:
+                crop, (name, sc) = res[id(tr)]
+                ok = name is not None and sc >= S["threshold"]
+                tr.votes.append((name if ok else None, sc)); tr.votes = tr.votes[-15:]; tr.sc = sc
+                if sc > tr.best[0]: tr.best = (sc, name, face_thumb(f, fc), crop)
+                if len(tr.votes) >= S["vote_frames"]:
+                    top, cnt = Counter(v[0] for v in tr.votes).most_common(1)[0]
+                    if top and cnt >= 0.6 * len(tr.votes):
+                        tr.done = True; tr.decided = top
+                        log_event(top, float(np.mean([v[1] for v in tr.votes if v[0] == top])), self.name, self.yon)
+            self._draw(vis, box, tr)
+        for tr in [t for t in self.tracks if ts - t.last > 1.5]:
+            self.finish(tr); self.tracks.remove(tr)
+        cv2.putText(vis, f"{ascii_name(self.name)} ({'GIRIS' if self.yon == 'giris' else 'CIKIS'})", (12, 36),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 255), 3)
+        self.annot = cv2.imencode(".jpg", vis, [cv2.IMWRITE_JPEG_QUALITY, 78])[1].tobytes()
+        return tb - ta, tc - tb
 
-    def _draw(self, vis, box, tr, name, sc):
-        x, y, w, h = map(int, box); lab = tr.label()
+    def _draw(self, vis, box, tr):
+        x, y, w, h = map(int, box); lab = tr.label(); sc = tr.sc
         if lab:
             lst = liste_of(lab)
             col = (0, 0, 230) if lst == "kara" else (230, 140, 0) if lst == "beyaz" else (0, 190, 0)
             pre = "KARA LISTE: " if lst == "kara" else "[B] " if lst == "beyaz" else ""
             txt = f"{pre}{ascii_name(lab)} {sc:.2f}" + (" OK" if tr.done else f" {len(tr.votes)}/{int(S['vote_frames'])}")
-        else:
-            col = (0, 165, 255); txt = f"? {sc:.2f}"
-        th = 4 if lab and liste_of(lab) == "kara" else 2
-        cv2.rectangle(vis, (x, y), (x + w, y + h), col, th)
+        else: col = (0, 165, 255); txt = f"? {sc:.2f}"
+        cv2.rectangle(vis, (x, y), (x + w, y + h), col, 4 if lab and liste_of(lab) == "kara" else 2)
         cv2.rectangle(vis, (x, y - 26), (x + max(w, 11 * len(txt)), y), col, -1)
         cv2.putText(vis, txt, (x + 4, y - 7), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
-CAM = Camera()
+
+CAMS = {}  # id -> Camera
+
+def worker():
+    t0, n = time.time(), 0; a = 0.9
+    while True:
+        try: cam, g, ts, f = GQ.get(timeout=0.5)
+        except queue.Empty: continue
+        if g != cam.gen or not cam.running: continue
+        t = time.perf_counter()
+        try: d, r = cam.process(ts, f)
+        except Exception as e: print("isleme hatasi:", e); continue
+        tot = time.perf_counter() - t
+        for k, v in (("tespit", d), ("tanima", r), ("toplam", tot)): PERF[k] = a * PERF[k] + (1 - a) * v * 1000
+        PERF["lag"] = time.time() - ts
+        cam._n += 1; n += 1; now = time.time()
+        if now - cam._t0 > 1: cam.fps = cam._n / (now - cam._t0); cam._t0, cam._n = now, 0
+        if now - t0 > 1: PERF["fps"] = n / (now - t0); t0, n = now, 0
+threading.Thread(target=worker, daemon=True).start()
+
+def cams_cfg(): return S.setdefault("cameras", [])
+def apply_cameras():
+    ids = {c["id"] for c in cams_cfg()}
+    for cid in list(CAMS):
+        if cid not in ids: CAMS.pop(cid).stop()
+    for c in cams_cfg():
+        cam = CAMS.get(c["id"])
+        if cam is None: cam = CAMS[c["id"]] = Camera(c)
+        changed = cam.cfg.get("url") != c.get("url") or not cam.running
+        cam.cfg = c
+        if c.get("aktif", True):
+            if changed: cam.start()
+        elif cam.running: cam.stop()
+
+def watchdog():
+    """Kamera koptu uyarisi: aktif kamera cam_down_sec boyunca kare vermezse."""
+    while True:
+        time.sleep(10)
+        lim = float(S.get("cam_down_sec", 60))
+        for cam in list(CAMS.values()):
+            if not cam.running: cam.down = False; cam.alerted = False; continue
+            ref = cam.last_frame or cam.started
+            if time.time() - ref > lim:
+                cam.down = True
+                if not cam.alerted:
+                    cam.alerted = True; t = now_s()
+                    CAM_ALERTS.insert(0, {"time": t, "cam": cam.name, "msg": "görüntü yok"}); del CAM_ALERTS[50:]
+                    wa_send(S["alarm_tel"], cam.name, "kamera", f"⚠ Kamera uyarısı: {cam.name} {int(lim)} sn'dir görüntü vermiyor. ({t[11:16]})", force_text=True)
+                    q("INSERT INTO audit(time,user,action,target,detail) VALUES(?,?,?,?,?)", (t, "sistem", "kamera koptu", cam.name, ""))
+            elif cam.down:
+                cam.down = False; cam.alerted = False; t = now_s()
+                CAM_ALERTS.insert(0, {"time": t, "cam": cam.name, "msg": "düzeldi"})
+                wa_send(S["alarm_tel"], cam.name, "kamera", f"✓ {cam.name} kamerası tekrar çalışıyor. ({t[11:16]})", force_text=True)
+threading.Thread(target=watchdog, daemon=True).start()
 
 # ================= temizlik (saklama suresi) =================
 def cleanup():
@@ -446,6 +515,7 @@ def login(d: dict):
     if not u or not check_pw(d.get("pass", ""), u["pw"]): raise HTTPException(401, "Kullanıcı adı veya şifre hatalı")
     t = secrets.token_hex(16); days = 30 if d.get("remember") else 1
     ins("INSERT INTO tokens VALUES(?,?,?)", (t, u["user"], time.time() + days * 86400))
+    ins("INSERT INTO audit(time,user,action,target,detail) VALUES(?,?,?,?,?)", (now_s(), u["user"], "giriş yaptı", "", ""))
     r = JSONResponse({"ok": True})
     r.set_cookie("tok", t, httponly=True, samesite="lax", max_age=days * 86400 if d.get("remember") else None)
     return r
@@ -475,13 +545,13 @@ def save_user(request: Request, d: dict):
     if not pw: raise HTTPException(400, "Yeni kullanıcı için şifre gerekli")
     q("INSERT OR REPLACE INTO users VALUES(?,?,?,?,?)", (user, pw, rol, (d.get("sinif") or "").strip(), (d.get("ad") or "").strip()))
     if d.get("pass") and old: q("DELETE FROM tokens WHERE user=? AND tok<>?", (user, request.cookies.get("tok", "")))
-    return {"ok": True}
+    audit(request, "kullanıcı kaydedildi", user, rol); return {"ok": True}
 
 @app.delete("/api/users/{user}")
 def del_user(request: Request, user: str):
     need(request, "yonetici")
     if user == request.state.u["user"]: raise HTTPException(400, "Kendini silemezsin")
-    q("DELETE FROM users WHERE user=?", (user,)); q("DELETE FROM tokens WHERE user=?", (user,)); return {"ok": True}
+    q("DELETE FROM users WHERE user=?", (user,)); q("DELETE FROM tokens WHERE user=?", (user,)); audit(request, "kullanıcı silindi", user); return {"ok": True}
 
 @app.post("/api/password")
 def change_pw(request: Request, d: dict):
@@ -502,54 +572,88 @@ def logo(f: str):
 
 @app.get("/api/status")
 def status(request: Request):
-    pub = {k: v for k, v in S.items() if k not in ("wa_token", "whapi_token")} | {"wa_token_set": bool(S["wa_token"]), "whapi_token_set": bool(S["whapi_token"])}
-    return {"camera": CAM.status, "url": CAM.url_short(), "fps": round(CAM.fps, 1), "provider": E.provider, "in_fps": round(CAM.in_fps, 1),
-            "ms": {k: round(v, 1) for k, v in CAM.ms.items()}, "queue": CAM.q.qsize(), "queue_max": CAM.q.maxsize,
-            "dropped": CAM.dropped, "lag": round(getattr(CAM, "lag", 0), 2),
-            "gallery": len(G.names), "settings": pub,
+    pub = {k: v for k, v in S.items() if k not in ("wa_token", "whapi_token", "cameras")} | \
+          {"wa_token_set": bool(S["wa_token"]), "whapi_token_set": bool(S["whapi_token"])}
+    cams = [{"id": c.id, "ad": c.name, "yon": c.yon, "status": c.status, "aktif": c.cfg.get("aktif", True),
+             "in_fps": round(c.in_fps, 1), "fps": round(c.fps, 1), "down": c.down} for c in CAMS.values()]
+    absent = None
+    if S.get("gelmedi_saat") and datetime.now().strftime("%H:%M") >= S["gelmedi_saat"] and not is_off_day():
+        seen = {r["name"] for r in q("SELECT DISTINCT name FROM events WHERE time LIKE ? AND yon='giris'", (today_s() + "%",))}
+        n = sum(1 for d in PEOPLE.iterdir() if d.is_dir() and liste_of(d.name) == "ogrenci" and d.name not in seen and visible(request, d.name))
+        if n: absent = {"count": n, "saat": S["gelmedi_saat"], "day": today_s()}
+    return {"cams": cams, "provider": E.provider, "perf": {k: round(v, 1) for k, v in PERF.items()},
+            "queue": GQ.qsize(), "queue_max": GQ.maxsize,
+            "gallery": len(G.names), "settings": pub, "off_day": is_off_day(), "absent": absent,
             "pending": len([r for r in q("SELECT cand FROM pending WHERE kind='onay'") if visible(request, r["cand"])]),
             "unknown": q("SELECT COUNT(*) n FROM pending WHERE kind='bilinmeyen'", one=True)["n"],
-            "alarms": ALARMS[:5]}
+            "alarms": ALARMS[:5], "cam_alerts": CAM_ALERTS[:5]}
 
 @app.post("/api/settings")
 def settings(request: Request, d: dict):
     need(request, "yonetici")
-    for k in ("threshold", "low_threshold", "cooldown", "det_score", "min_face", "vote_frames", "det_width", "queue_max", "keep_days", "keep_unknown_days"):
+    for k in ("threshold", "low_threshold", "cooldown", "det_score", "min_face", "vote_frames", "det_width", "queue_max",
+              "keep_days", "keep_unknown_days", "cam_down_sec"):
         if d.get(k) not in (None, ""): S[k] = float(d[k])
-    for k in ("wa_phone_id", "wa_template", "wa_tpl_name", "wa_tpl_lang", "wa_mode", "alarm_tel", "wa_verify", "wa_provider"):
+    for k in ("wa_phone_id", "wa_template", "wa_template_gec", "wa_template_cikis", "wa_tpl_name", "wa_tpl_lang", "wa_mode",
+              "alarm_tel", "wa_verify", "wa_provider", "ders_baslangic", "gelmedi_saat", "tatiller", "bot_keyword"):
         if k in d: S[k] = str(d[k]).strip()
     if d.get("wa_token"): S["wa_token"] = str(d["wa_token"]).strip()
     if d.get("whapi_token"): S["whapi_token"] = str(d["whapi_token"]).strip()
-    if "wa_enabled" in d: S["wa_enabled"] = bool(d["wa_enabled"])
-    save_settings(); return {"ok": True}
+    for k in ("wa_enabled", "hafta_sonu_kapali", "bot_enabled"):
+        if k in d: S[k] = bool(d[k])
+    save_settings(); audit(request, "ayar değişti", "", ", ".join(k for k in d if "token" not in k)); return {"ok": True}
 
-# ---- kamera
-@app.post("/api/camera")
-def cam_start(request: Request, d: dict):
+# ---- kameralar
+@app.get("/api/cameras")
+def cameras(request: Request):
+    full = ROLES[request.state.u["rol"]] >= 2
+    out = []
+    for c in cams_cfg():
+        cam = CAMS.get(c["id"])
+        out.append({**c, "url": c["url"] if full else "", "url_short": cam.url_short() if cam else "",
+                    "status": cam.status if cam else "kapali", "down": cam.down if cam else False,
+                    "in_fps": round(cam.in_fps, 1) if cam else 0, "fps": round(cam.fps, 1) if cam else 0})
+    return out
+
+@app.post("/api/cameras")
+def save_camera(request: Request, d: dict):
     need(request, "mudur_yrd")
-    url = (d.get("url") or "").strip()
-    if not url: raise HTTPException(400, "URL bos")
-    CAM.start(url); return {"ok": True}
+    ad = (d.get("ad") or "").strip(); url = (d.get("url") or "").strip()
+    if not ad or not url: raise HTTPException(400, "Kamera adı ve RTSP adresi gerekli")
+    cid = d.get("id") or secrets.token_hex(4)
+    c = {"id": cid, "ad": ad, "url": url, "yon": "cikis" if d.get("yon") == "cikis" else "giris", "aktif": bool(d.get("aktif", True))}
+    lst = cams_cfg(); i = next((k for k, x in enumerate(lst) if x["id"] == cid), None)
+    if i is None: lst.append(c)
+    else: lst[i] = c
+    save_settings(); apply_cameras(); audit(request, "kamera kaydedildi", ad, c["yon"]); return {"ok": True, "id": cid}
 
-@app.delete("/api/camera")
-def cam_stop(request: Request): need(request, "mudur_yrd"); CAM.stop(); return {"ok": True}
+@app.delete("/api/cameras/{cid}")
+def del_camera(request: Request, cid: str):
+    need(request, "mudur_yrd")
+    S["cameras"] = [c for c in cams_cfg() if c["id"] != cid]; save_settings(); apply_cameras()
+    audit(request, "kamera silindi", cid); return {"ok": True}
 
-@app.get("/api/stream")
-def stream():
+@app.get("/api/stream/{cid}")
+def stream(cid: str):
+    cam = CAMS.get(cid)
+    if not cam: raise HTTPException(404)
     def gen():
         last = None
         while True:
-            a = CAM.annot
+            a = cam.annot
             if a is not None and a is not last:
                 last = a; yield b"--f\r\nContent-Type: image/jpeg\r\n\r\n" + a + b"\r\n"
-            time.sleep(0.03)
+            time.sleep(0.04)
     return StreamingResponse(gen(), media_type="multipart/x-mixed-replace; boundary=f")
 
+SNAP = {"f": None}
 @app.get("/api/snapshot")
-def snapshot():
-    with CAM.lock: f = None if CAM.frame is None else CAM.frame.copy()
+def snapshot(cam: str = ""):
+    c = CAMS.get(cam) or next((x for x in CAMS.values() if x.frame is not None), None)
+    if c is None: raise HTTPException(400, "Kamera görüntüsü yok")
+    with c.lock: f = None if c.frame is None else c.frame.copy()
     if f is None: raise HTTPException(400, "Kamera görüntüsü yok")
-    CAM.snap = f.copy()
+    SNAP["f"] = f.copy()
     for fc in E.detect(f):
         x, y, w, h = fc[:4].astype(int); cv2.rectangle(f, (x, y), (x + w, y + h), (220, 200, 0), 2)
     return Response(cv2.imencode(".jpg", f)[1].tobytes(), media_type="image/jpeg", headers={"Cache-Control": "no-store"})
@@ -573,14 +677,12 @@ def save_person(request: Request, d: dict):
     (PEOPLE / name / "info.json").write_text(json.dumps(info, ensure_ascii=False), "utf-8")
     INFO_CACHE.pop(name, None)
     if old and old != name: train_bg()
-    return {"ok": True}
+    audit(request, "kişi kaydedildi", name, info["liste"] + (f" (eski ad: {old})" if old and old != name else "")); return {"ok": True}
 
 @app.post("/api/enroll/capture")
 def enroll_capture(request: Request, d: dict):
     need(request, "mudur_yrd")
-    name = safe_name(d.get("name", "")); f = CAM.snap
-    if f is None:
-        with CAM.lock: f = None if CAM.frame is None else CAM.frame.copy()
+    name = safe_name(d.get("name", "")); f = SNAP["f"]
     if f is None: raise HTTPException(400, "Kamera görüntüsü yok")
     faces = E.detect(f)
     if len(faces) == 0: raise HTTPException(400, "Karede yüz bulunamadı")
@@ -626,10 +728,10 @@ def del_person(request: Request, name: str, purge: int = 0):
     if purge:
         q("DELETE FROM events WHERE name=?", (name,)); q("DELETE FROM messages WHERE name=?", (name,))
         for r in q("SELECT id FROM pending WHERE cand=?", (name,)): drop_pending(r["id"])
-    G.train(); return {"ok": True}
+    G.train(); audit(request, "kalıcı silindi (mezun/ayrıldı)" if purge else "kişi silindi", name); return {"ok": True}
 
 @app.post("/api/train")
-def train(request: Request): need(request, "mudur_yrd"); return G.train()
+def train(request: Request): need(request, "mudur_yrd"); r = G.train(); audit(request, "model eğitildi", "", f"{len(r['people'])} kişi"); return r
 
 # ---- gecisler / yoklama
 @app.get("/api/events")
@@ -637,29 +739,198 @@ def events(request: Request, limit: int = 40, day: str = ""):
     rows = q("SELECT * FROM events WHERE time LIKE ? ORDER BY id DESC LIMIT ?", ((day or "") + "%", min(limit, 2000)))
     return [r for r in rows if visible(request, r["name"])]
 
+# ---- yoklama
 @app.get("/api/attendance")
 def attendance(request: Request, day: str = ""):
-    day = day or datetime.now().strftime("%Y-%m-%d")
-    seen = {}
-    for r in q("SELECT name, MIN(time) t FROM events WHERE time LIKE ? GROUP BY name", (day + "%",)): seen[r["name"]] = r["t"][11:16]
-    return [{"name": d.name, **read_info(d.name), "geldi": seen.get(d.name)}
-            for d in sorted(PEOPLE.iterdir()) if d.is_dir() and liste_of(d.name) == "ogrenci" and visible(request, d.name)]
+    day = day or today_s(); st = {}
+    for r in q("SELECT name,time,yon,gec FROM events WHERE time LIKE ? ORDER BY time", (day + "%",)):
+        s = st.setdefault(r["name"], {"geldi": None, "gec": 0, "cikis": None, "son": None})
+        if r["yon"] == "giris" and not s["geldi"]: s["geldi"] = r["time"][11:16]; s["gec"] = r["gec"]
+        if r["yon"] == "cikis": s["cikis"] = r["time"][11:16]
+        s["son"] = r["yon"]
+    out = []
+    for d in sorted(PEOPLE.iterdir()):
+        if d.is_dir() and liste_of(d.name) == "ogrenci" and visible(request, d.name):
+            s = st.get(d.name, {})
+            durum = None if not s else ("cikti" if s.get("son") == "cikis" else "okulda")
+            out.append({"name": d.name, **read_info(d.name), "geldi": s.get("geldi"), "gec": s.get("gec", 0),
+                        "cikis": s.get("cikis"), "durum": durum})
+    return out
 
 @app.post("/api/attendance/manual")
 def manual(request: Request, d: dict):
-    """Ogretmen elle 'geldi' isaretler (kamera kacirdiysa)."""
     name = safe_name(d.get("name", ""))
     if not visible(request, name): raise HTTPException(403, "Bu öğrenci senin sınıfında değil")
-    log_event(name, 0, "elle:" + request.state.u["user"], kaynak="elle", force=True); return {"ok": True}
+    log_event(name, 0, "elle:" + request.state.u["user"], "cikis" if d.get("yon") == "cikis" else "giris", kaynak="elle", force=True)
+    audit(request, "elle " + ("çıkış" if d.get("yon") == "cikis" else "geldi"), name); return {"ok": True}
 
 @app.post("/api/absent/notify")
 def absent_notify(request: Request, d: dict):
-    """Ogretmen teyidi sonrasi 'gelmedi' mesaji."""
     name = safe_name(d.get("name", ""))
     if not visible(request, name): raise HTTPException(403, "Bu öğrenci senin sınıfında değil")
     i = read_info(name)
     txt = f"Sayın {i.get('veli_ad') or 'Veli'}, öğrenciniz {name} bugün ({datetime.now():%d.%m.%Y}) okula gelmemiştir. Bilginize."
-    return {"wa": wa_send(i.get("veli_tel"), name, "gelmedi", txt)}
+    audit(request, "gelmedi bildirildi", name)
+    return {"wa": wa_send(i.get("veli_tel"), name, "gelmedi", txt, force_text=True)}
+
+# ---- islem kaydi
+def audit(request, action, target="", detail=""):
+    u = getattr(getattr(request, "state", None), "u", None) or {"user": "?"}
+    ins("INSERT INTO audit(time,user,action,target,detail) VALUES(?,?,?,?,?)", (now_s(), u["user"], action, target, str(detail)[:300]))
+
+@app.get("/api/audit")
+def audit_list(request: Request, limit: int = 500, user: str = "", qs: str = ""):
+    need(request, "yonetici")
+    return q("SELECT * FROM audit WHERE user LIKE ? AND (action LIKE ? OR target LIKE ?) ORDER BY id DESC LIMIT ?",
+             (user or "%", f"%{qs}%", f"%{qs}%", min(limit, 5000)))
+
+# ---- raporlar
+@app.get("/api/reports")
+def reports(request: Request, month: str = ""):
+    month = month or datetime.now().strftime("%Y-%m")
+    y, m = map(int, month.split("-")); first = datetime(y, m, 1)
+    last = (datetime(y + (m == 12), m % 12 + 1, 1) - timedelta(days=1))
+    end = min(last, datetime.now())
+    days = [(first + timedelta(days=i)).strftime("%Y-%m-%d") for i in range((end - first).days + 1)] if end >= first else []
+    school = [d for d in days if not is_off_day(d)]
+    rows = q("SELECT name, substr(time,1,10) day, MIN(time) t, MAX(gec) gec FROM events WHERE time LIKE ? AND yon='giris' AND liste='ogrenci' GROUP BY name, day", (month + "%",))
+    pres, late, daily = {}, {}, Counter()
+    for r in rows:
+        if r["day"] not in school: continue
+        pres[r["name"]] = pres.get(r["name"], 0) + 1; daily[r["day"]] += 1
+        if is_late(r["t"]): late[r["name"]] = late.get(r["name"], 0) + 1
+    studs = []
+    for d in sorted(PEOPLE.iterdir()):
+        if d.is_dir() and liste_of(d.name) == "ogrenci" and visible(request, d.name):
+            i = read_info(d.name); p = pres.get(d.name, 0)
+            studs.append({"name": d.name, "no": i.get("no", ""), "sinif": i.get("sinif", ""), "gelen": p, "gec": late.get(d.name, 0),
+                          "gun": len(school), "oran": round(100 * p / len(school), 1) if school else 0})
+    cls = {}
+    for s in studs:
+        c = cls.setdefault(s["sinif"] or "—", {"sinif": s["sinif"] or "—", "ogrenci": 0, "oran_top": 0, "gec": 0})
+        c["ogrenci"] += 1; c["oran_top"] += s["oran"]; c["gec"] += s["gec"]
+    classes = [{"sinif": c["sinif"], "ogrenci": c["ogrenci"], "oran": round(c["oran_top"] / c["ogrenci"], 1), "gec": c["gec"]} for c in cls.values()]
+    names = {s["name"] for s in studs}
+    return {"month": month, "school_days": len(school), "students": studs, "classes": sorted(classes, key=lambda c: c["sinif"]),
+            "daily": [{"day": d, "gelen": sum(1 for r in rows if r["day"] == d and r["name"] in names)} for d in school]}
+
+# ---- toplu duyuru
+@app.post("/api/broadcast")
+def broadcast(request: Request, d: dict):
+    text = (d.get("text") or "").strip()
+    if len(text) < 3: raise HTTPException(400, "Mesaj boş")
+    if not wa_ready(): raise HTTPException(400, "WhatsApp ayarları yapılmamış")
+    sinif = (d.get("sinif") or "").strip()
+    mc = my_class(request)
+    if mc: sinif = mc
+    elif not sinif: need(request, "mudur_yrd")
+    hedef = []
+    for p in sorted(PEOPLE.iterdir()):
+        if not p.is_dir() or liste_of(p.name) != "ogrenci": continue
+        i = read_info(p.name)
+        if sinif and i.get("sinif") != sinif: continue
+        if wa_phone(i.get("veli_tel")): hedef.append((p.name, i))
+    if d.get("dry"): return {"count": len(hedef)}
+    def run():
+        for name, i in hedef:
+            try: msg = text.format(veli=i.get("veli_ad") or "Veli", ogrenci=name)
+            except Exception: msg = text
+            wa_send(i.get("veli_tel"), name, "duyuru", msg, force_text=True); time.sleep(1.5)
+    threading.Thread(target=run, daemon=True).start()
+    audit(request, "toplu duyuru", sinif or "tüm okul", f"{len(hedef)} veli: {text[:120]}")
+    return {"count": len(hedef)}
+
+# ---- veli bot (whapi gelen mesaj)
+def bot_reply(tel, text):
+    if not S.get("bot_enabled"): return
+    kw = [k.strip().lower() for k in (S.get("bot_keyword") or "durum").split(",") if k.strip()]
+    if not any(k in text.lower() for k in kw): return
+    kids = [p.name for p in PEOPLE.iterdir() if p.is_dir() and wa_phone(read_info(p.name).get("veli_tel")) == tel]
+    if not kids:
+        wa_send(tel, "?", "bot", "Bu numara sistemde bir öğrenci velisi olarak kayıtlı değil. Lütfen okul ile iletişime geçin.", force_text=True); return
+    lines = []
+    for k in kids:
+        ev = q("SELECT time,yon FROM events WHERE name=? AND time LIKE ? ORDER BY time", (k, today_s() + "%"))
+        gir = next((e["time"][11:16] for e in ev if e["yon"] == "giris"), None)
+        cik = next((e["time"][11:16] for e in reversed(ev) if e["yon"] == "cikis"), None)
+        if cik: lines.append(f"• {k}: {gir or '?'} giriş, {cik} çıkış yaptı.")
+        elif gir: lines.append(f"• {k}: bugün {gir}'de okula giriş yaptı, şu an okulda.")
+        else: lines.append(f"• {k}: bugün henüz giriş kaydı yok.")
+    wa_send(tel, ", ".join(kids), "bot", f"Bugün ({datetime.now():%d.%m.%Y}):\n" + "\n".join(lines), force_text=True)
+
+# ---- excel ile toplu kayit
+HDR = {"ad soyad": "name", "adsoyad": "name", "ad": "name", "isim": "name", "ogrenci": "name", "no": "no", "okul no": "no",
+       "numara": "no", "sinif": "sinif", "sube": "sinif", "veli": "veli_ad", "veli ad": "veli_ad", "veli adi": "veli_ad",
+       "veli ad soyad": "veli_ad", "veli tel": "veli_tel", "veli telefon": "veli_tel", "telefon": "veli_tel", "tel": "veli_tel",
+       "gsm": "veli_tel", "not": "not"}
+def norm_h(s): return re.sub(r"\s+", " ", ascii_name(str(s or "")).lower().replace(".", "").replace("_", " ")).strip()
+
+@app.get("/api/import/template")
+def import_template(request: Request):
+    import openpyxl
+    wb = openpyxl.Workbook(); ws = wb.active; ws.title = "Ogrenciler"
+    ws.append(["Ad Soyad", "No", "Sınıf", "Veli Ad Soyad", "Veli Tel"])
+    ws.append(["Ahmet Yılmaz", "101", "5-A", "Ayşe Yılmaz", "05321112233"])
+    for col, w in zip("ABCDE", (24, 8, 8, 24, 16)): ws.column_dimensions[col].width = w
+    b = io.BytesIO(); wb.save(b)
+    return Response(b.getvalue(), media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    headers={"Content-Disposition": 'attachment; filename="ogrenci-sablon.xlsx"'})
+
+@app.post("/api/import/excel")
+async def import_excel(request: Request, file: UploadFile = File(...)):
+    need(request, "mudur_yrd")
+    import openpyxl
+    try: ws = openpyxl.load_workbook(io.BytesIO(await file.read()), read_only=True, data_only=True).active
+    except Exception: raise HTTPException(400, "Excel dosyası okunamadı (.xlsx olmalı)")
+    rows = list(ws.iter_rows(values_only=True))
+    if not rows: raise HTTPException(400, "Dosya boş")
+    cols = {i: HDR.get(norm_h(h)) for i, h in enumerate(rows[0])}
+    if "name" not in cols.values(): raise HTTPException(400, "'Ad Soyad' sütunu bulunamadı")
+    new = upd = 0; errs = []
+    for n, r in enumerate(rows[1:], start=2):
+        d = {cols[i]: ("" if v is None else str(v).strip()) for i, v in enumerate(r) if cols.get(i)}
+        if d.get("no", "").endswith(".0"): d["no"] = d["no"][:-2]
+        if d.get("veli_tel") and d["veli_tel"].replace(".0", "").isdigit() and len(d["veli_tel"].replace(".0", "")) == 10:
+            d["veli_tel"] = "0" + d["veli_tel"].replace(".0", "")
+        try: name = safe_name(d.get("name", ""))
+        except HTTPException: errs.append(f"Satır {n}: isim boş"); continue
+        p = PEOPLE / name; ex = p.exists(); p.mkdir(exist_ok=True)
+        info = read_info(name) if ex else {"liste": "ogrenci"}
+        info.update({k: d[k] for k in ("no", "sinif", "veli_ad", "veli_tel", "not") if d.get(k)})
+        (p / "info.json").write_text(json.dumps(info, ensure_ascii=False), "utf-8"); INFO_CACHE.pop(name, None)
+        upd += ex; new += not ex
+    audit(request, "excel içe aktarma", file.filename, f"{new} yeni, {upd} güncellendi")
+    return {"new": new, "updated": upd, "errors": errs[:50]}
+
+@app.post("/api/import/photos")
+async def import_photos(request: Request, file: UploadFile = File(...)):
+    """Zip: okulno.jpg / okulno_2.jpg / Ad Soyad.jpg / KlasorAdi(okulno)/x.jpg"""
+    need(request, "mudur_yrd")
+    try: z = zipfile.ZipFile(io.BytesIO(await file.read()))
+    except Exception: raise HTTPException(400, "Zip dosyası okunamadı")
+    by_no = {}; by_name = {}
+    for p in PEOPLE.iterdir():
+        if p.is_dir():
+            i = read_info(p.name)
+            if i.get("no"): by_no[str(i["no"]).strip()] = p.name
+            by_name[norm_h(p.name)] = p.name
+    ok = 0; miss = []; noface = []
+    for zn in z.namelist():
+        if zn.endswith("/") or not re.search(r"\.(jpe?g|png|bmp|webp)$", zn, re.I): continue
+        parts = zn.replace("\\", "/").split("/")
+        key = parts[-2] if len(parts) > 1 else re.sub(r"[_\-\s]\d{1,2}$", "", Path(parts[-1]).stem)
+        stem = Path(parts[-1]).stem
+        name = by_no.get(key.strip()) or by_name.get(norm_h(key)) or by_no.get(stem) or by_name.get(norm_h(stem))
+        if not name: miss.append(zn); continue
+        img = cv2.imdecode(np.frombuffer(z.read(zn), np.uint8), cv2.IMREAD_COLOR)
+        if img is None: miss.append(zn); continue
+        if max(img.shape[:2]) > 1600: s = 1600 / max(img.shape[:2]); img = cv2.resize(img, None, fx=s, fy=s)
+        faces = E.detect(img)
+        if len(faces) == 0: noface.append(zn); continue
+        _save_face(name, img, max(faces, key=lambda r: r[2] * r[3])); ok += 1
+    rep = G.train()
+    audit(request, "toplu foto yükleme", file.filename, f"{ok} foto eklendi")
+    return {"saved": ok, "unmatched": miss[:100], "noface": noface[:100], "trained": len(rep["people"])}
 
 # ---- onay bekleyen / bilinmeyen
 @app.get("/api/pending")
@@ -686,10 +957,10 @@ def approve(request: Request, pid: int, d: dict):
     crop = folder / f"{pid}_crop.jpg"
     if crop.exists() and d.get("learn", True): shutil.copy(crop, PEOPLE / name / f"{int(time.time() * 1000)}.jpg")
     if d.get("mark", True): log_event(name, r["score"], r["cam"], kaynak="onay:" + request.state.u["user"], force=True)
-    drop_pending(pid); train_bg(); return {"ok": True}
+    drop_pending(pid); train_bg(); audit(request, "onaylandı", name, f"{r['kind']} #{pid} skor {r['score']}"); return {"ok": True}
 
 @app.delete("/api/pending/{pid}")
-def reject(request: Request, pid: int): drop_pending(pid); return {"ok": True}
+def reject(request: Request, pid: int): drop_pending(pid); audit(request, "onay reddedildi", f"#{pid}"); return {"ok": True}
 
 @app.delete("/api/pending")
 def clear_pending(request: Request, kind: str = "bilinmeyen"):
@@ -733,6 +1004,11 @@ def wh_verify(request: Request):
 async def wh(request: Request):
     body = await request.json()
     tr = {"sent": "gonderildi", "delivered": "iletildi", "read": "okundu", "failed": "hata", "played": "okundu"}
+    for m in body.get("messages", []):  # whapi gelen mesaj -> veli bot
+        if m.get("from_me"): continue
+        txt = (m.get("text") or {}).get("body") or ""
+        tel = wa_phone(m.get("from") or (m.get("chat_id") or "").split("@")[0])
+        if txt and tel: threading.Thread(target=bot_reply, args=(tel, txt), daemon=True).start()
     for s in body.get("statuses", []):  # whapi
         q("UPDATE messages SET status=? WHERE wamid=?", (tr.get(s.get("status"), s.get("status")), s.get("id")))
     for e in body.get("entry", []):     # meta
@@ -764,7 +1040,7 @@ async def restore(request: Request, file: UploadFile = File(...)):
     except Exception: raise HTTPException(400, "Geçerli bir yedek zip dosyası değil")
     names = z.namelist()
     if not any(n.startswith("people/") for n in names): raise HTTPException(400, "Yedekte öğrenci verisi yok")
-    CAM.stop()
+    for c in CAMS.values(): c.stop()
     shutil.rmtree(PEOPLE, ignore_errors=True); PEOPLE.mkdir()
     for n in names:
         if n.startswith("people/") and not n.endswith("/") and ".." not in n:
@@ -773,7 +1049,7 @@ async def restore(request: Request, file: UploadFile = File(...)):
     if "okul.db" in names:
         with DBL:
             CONN.close(); DB_PATH.write_bytes(z.read("okul.db")); CONN = db()
-    INFO_CACHE.clear(); G.train()
+    INFO_CACHE.clear(); G.train(); apply_cameras(); audit(request, "yedekten geri yükleme", file.filename)
     return {"ok": True, "people": len(G.names)}
 
 # ---- test
@@ -790,6 +1066,8 @@ async def test_image(file: UploadFile = File(...)):
         cv2.putText(img, f"{ascii_name(n) if ok else '?'} {s:.2f}", (x, y - 8), cv2.FONT_HERSHEY_SIMPLEX, 0.8, col, 2)
         res.append({"name": n if ok else None, "best": n, "score": round(s, 3), "liste": liste_of(n) if ok else None})
     return {"faces": res, "image": "data:image/jpeg;base64," + base64.b64encode(cv2.imencode(".jpg", img)[1]).decode()}
+
+apply_cameras()
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))

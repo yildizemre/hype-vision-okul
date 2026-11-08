@@ -5,3 +5,4 @@ opencv-python
 numpy
 onnxruntime-gpu[cuda,cudnn]
 huggingface_hub
+openpyxl
