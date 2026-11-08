@@ -101,6 +101,24 @@ th.s{cursor:pointer}th.s:hover{color:var(--t)}
 .cal div{border-radius:10px;padding:8px;min-height:58px;font-size:12px;border:1px solid var(--b);background:#fff}
 .cal div b{display:block;font-size:13px;margin-bottom:3px}.cal .g{background:var(--okbg);border-color:#bbf7d0}.cal .l{background:var(--vbg);border-color:#ddd6fe}.cal .x{background:var(--rbg);border-color:#fecaca}.cal .o{background:#f8fafc;color:#94a3b8}
 .cal .h{background:none;border:0;min-height:0;padding:2px;text-align:center;color:var(--m);font-weight:700}
+.tdrop{display:block;cursor:pointer}
+.tdrop .tz{display:flex;align-items:center;gap:16px;border:1.5px dashed #cbd5e1;border-radius:14px;padding:18px 20px;transition:.15s;background:linear-gradient(135deg,#f8fafc,#fff)}
+.tdrop:hover .tz,.tdrop.ov .tz{border-color:var(--a);background:#f0fdff}
+.tdrop .ti{width:46px;height:46px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(135deg,var(--a2),var(--a));color:#fff;flex:0 0 auto}
+.tdrop .ti svg{width:22px;height:22px}.tdrop u{color:#0e7490;text-decoration-thickness:2px}
+.tres{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:16px;margin-top:16px}@media(max-width:900px){.tres{grid-template-columns:1fr}}
+.tres .im{position:relative;border-radius:14px;overflow:hidden;background:#0b1220}.tres .im img{width:100%;display:block}
+.tres .im .x{position:absolute;top:8px;right:8px;background:rgba(15,23,42,.7);color:#fff;border:0;border-radius:99px;width:28px;height:28px;cursor:pointer}
+.fr{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--b);border-radius:14px;margin-bottom:8px}
+.fr .sc{margin-left:auto;text-align:right}.fr .sc b{font-size:18px;display:block;font-variant-numeric:tabular-nums}
+.fr .mt{height:6px;width:90px;border-radius:99px;background:#eef2f6;overflow:hidden;margin-top:4px}.fr .mt i{display:block;height:100%}
+.grp{background:#fff;border:1px solid var(--b);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.grp .hd{display:flex;align-items:center;gap:10px}.grp .gid{font-weight:800;font-family:ui-monospace,Consolas,monospace;background:var(--t);color:#fff;border-radius:8px;padding:3px 8px;font-size:12px}
+.grp .strip{display:grid;grid-template-columns:repeat(6,1fr);gap:5px}.grp .strip div{position:relative}.grp .strip img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:9px;display:block;background:#0b1220}
+.grp .strip span{position:absolute;top:2px;right:2px;background:rgba(15,23,42,.75);color:#fff;border-radius:99px;width:17px;height:17px;font-size:11px;line-height:17px;text-align:center;cursor:pointer;display:none}
+.grp .strip div:hover span{display:block}
+.grp .more{display:grid;place-items:center;background:#f1f5f9;border-radius:9px;font-weight:700;color:var(--m);aspect-ratio:1;font-size:13px}
+.ggrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
 .legend{display:flex;gap:14px;margin-top:10px;font-size:12px;color:var(--m);flex-wrap:wrap}.legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px}
 table{width:100%;border-collapse:collapse}th{text-align:left;color:var(--m);font-weight:600;font-size:12px;padding:10px;border-bottom:1px solid var(--b);background:#fafbfc}
 td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:hover td{background:#fafcff}
@@ -132,6 +150,35 @@ td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:h
 [data-min]{display:none}
 /* login */
 #login{position:fixed;inset:0;display:none;grid-template-columns:1fr 1fr;z-index:30;background:#fff}
+#login .l .lg{height:34px;align-self:flex-start}
+#login .badge .pulse{width:7px;height:7px;border-radius:99px;background:#06b6d4;box-shadow:0 0 0 0 rgba(6,182,212,.6);animation:pl 1.8s infinite}
+@keyframes pl{70%{box-shadow:0 0 0 8px rgba(6,182,212,0)}100%{box-shadow:0 0 0 0 rgba(6,182,212,0)}}
+#login .grad{background:linear-gradient(90deg,#0891b2,#2563eb);-webkit-background-clip:text;background-clip:text;color:transparent}
+#login .demo{display:flex;gap:18px;align-items:center;background:#fff;border:1px solid var(--b);border-radius:20px;padding:16px;max-width:520px;box-shadow:0 20px 50px -20px rgba(15,23,42,.18);margin-bottom:22px}
+#login .scan{position:relative;width:118px;height:118px;flex:0 0 auto;border-radius:16px;background:linear-gradient(160deg,#0b2d55,#0e7490);overflow:hidden;display:grid;place-items:center}
+#login .scan svg{width:84px;height:84px;fill:none;stroke:#67e8f9;stroke-width:3;stroke-linecap:round}
+#login .scan i{position:absolute;left:8px;right:8px;height:2px;background:linear-gradient(90deg,transparent,#22d3ee,transparent);box-shadow:0 0 12px #22d3ee;animation:sc 2.4s ease-in-out infinite}
+@keyframes sc{0%,100%{top:14%}50%{top:84%}}
+#login .feed{flex:1;display:flex;flex-direction:column;gap:7px;min-width:0}
+#login .feed .it{display:flex;align-items:center;gap:8px;font-size:13px;padding:7px 10px;border-radius:10px;background:#f8fafc;opacity:0;animation:fi .5s var(--d) forwards}
+#login .feed .it b{white-space:nowrap}#login .feed .it span{color:var(--m);font-size:12px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#login .feed em{font-style:normal;font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;white-space:nowrap}#login .feed em.ok{background:var(--okbg);color:var(--ok)}#login .feed em.lt{background:var(--vbg);color:var(--vio)}
+#login .feed .wa{background:#ecfdf5;color:#047857}#login .feed .wa span{color:#047857}#login .feed .wa svg{width:15px;height:15px}
+@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+#login .feats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:520px}
+#login .feats div{border:1px solid var(--b);border-radius:14px;padding:12px;background:rgba(255,255,255,.7)}
+#login .feats svg{color:#0891b2;margin-bottom:6px}#login .feats b{display:block;font-size:13px}#login .feats span{font-size:12px;color:var(--m)}
+#login .orb{position:absolute;border-radius:50%;filter:blur(60px);opacity:.55;pointer-events:none}
+#login .o1{width:340px;height:340px;background:#0891b2;top:-80px;right:-60px;animation:fl 9s ease-in-out infinite}
+#login .o2{width:300px;height:300px;background:#1d4ed8;bottom:-90px;left:-60px;animation:fl 11s ease-in-out infinite reverse}
+@keyframes fl{50%{transform:translate(-30px,30px)}}
+#login form .mk{width:44px;height:44px;padding:8px;border-radius:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);margin-bottom:18px}
+#login .inp input:-webkit-autofill,#login .inp input:-webkit-autofill:hover,#login .inp input:-webkit-autofill:focus{-webkit-box-shadow:0 0 0 1000px #0b1220 inset!important;box-shadow:0 0 0 1000px #0b1220 inset!important;-webkit-text-fill-color:#fff!important;caret-color:#fff;transition:background-color 99999s}
+#login .inp input::placeholder{color:#475569}
+#login .lbtn{display:flex;align-items:center;justify-content:center;gap:10px}#login .lbtn svg{width:18px;height:18px;transition:transform .2s}#login .lbtn:hover svg{transform:translateX(3px)}
+#login .lbtn:disabled{opacity:.6;cursor:wait}
+#login .hint{display:flex;align-items:center;justify-content:center;gap:6px;color:#64748b;font-size:12px;margin-top:4px;text-align:center}
+@media(max-width:1200px){#login .demo{display:none}}
 @media(max-width:900px){#login{grid-template-columns:1fr}#login .l{display:none!important}}
 #login .l{background:radial-gradient(700px 400px at 0 0,#e0f7fb 0,transparent 60%),radial-gradient(600px 500px at 100% 100%,#eef2ff 0,transparent 60%),#fff;padding:60px 9%;display:flex;flex-direction:column}
 #login .l img{height:34px;align-self:flex-start}#login .l .mid{margin:auto 0}
@@ -185,20 +232,46 @@ td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:h
 
 <!-- LOGIN -->
 <div id="login">
-  <div class="l"><img src="/logo/darklogo.png" alt="Hype Vision">
-    <div class="mid"><span class="badge">OKUL GİRİŞ</span><h1>Öğrenci girişleri, tek ekranda.</h1>
-      <p>Kapı kamerası öğrenciyi tanır, giriş saatini kaydeder ve veliye anında haber verir. Tüm görüntü okulun kendi sunucusunda kalır.</p>
-      <ul><li><i>✓</i><span><b>Yüz tanıma</b> ile otomatik yoklama</span></li><li><i>✓</i><span><b>Veliye bildirim</b> WhatsApp üzerinden</span></li><li><i>✓</i><span><b>KVKK uyumlu</b> — veri okuldan çıkmaz</span></li></ul></div>
-    <div class="foot">Hype Vision · okul giriş sistemi</div></div>
-  <div class="r"><form onsubmit="doLogin(event)">
-    <h2>Giriş yap</h2><div class="sub">Hype Vision paneline devam et</div>
-    <label>Kullanıcı adı</label><div class="inp"><svg class="i"><use href="#i-user"/></svg><input type="text" id="lu" autocomplete="username" placeholder="kullanıcı adı"></div>
-    <label>Şifre</label><div class="inp"><svg class="i"><use href="#i-lock"/></svg><input type="password" id="lp" autocomplete="current-password" placeholder="••••••">
-      <button type="button" class="show" onclick="const p=$('lp');p.type=p.type==='password'?'text':'password';this.textContent=p.type==='password'?'Göster':'Gizle'">Göster</button></div>
-    <label class="chk" style="margin-top:16px"><input type="checkbox" id="lrem" checked> Bu cihazda oturumum açık kalsın</label>
-    <button class="lbtn">Giriş yap</button><div id="lerr"></div>
-    <div class="m" style="text-align:center;color:#64748b">Şifreni unuttuysan sistem yöneticisine başvur.</div>
-  </form></div>
+  <div class="l">
+    <img src="/logo/darklogo.png" alt="Hype Vision" class="lg">
+    <div class="mid">
+      <span class="badge"><span class="pulse"></span>OKUL GİRİŞ SİSTEMİ</span>
+      <h1>Öğrenci girişleri,<br><span class="grad">tek ekranda.</span></h1>
+      <p>Kapı kamerası öğrenciyi saniyeler içinde tanır, giriş saatini kaydeder ve veliye anında haber verir. Tüm görüntü okulun kendi sunucusunda kalır.</p>
+      <div class="demo">
+        <div class="scan"><svg viewBox="0 0 120 120"><path d="M8 30V14a6 6 0 0 1 6-6h16M90 8h16a6 6 0 0 1 6 6v16M112 90v16a6 6 0 0 1-6 6H90M30 112H14a6 6 0 0 1-6-6V90" /><circle cx="60" cy="50" r="18"/><path d="M28 98c6-14 18-20 32-20s26 6 32 20"/></svg><i></i></div>
+        <div class="feed">
+          <div class="it" style="--d:0s"><b>Ahmet Y.</b><span>5-A · Ana Kapı</span><em class="ok">08:12 Geldi</em></div>
+          <div class="it" style="--d:.15s"><b>Zeynep K.</b><span>7-B · Ana Kapı</span><em class="ok">08:13 Geldi</em></div>
+          <div class="it" style="--d:.3s"><b>Mert A.</b><span>6-C · Yan Kapı</span><em class="lt">08:41 Geç</em></div>
+          <div class="it wa" style="--d:.45s"><svg class="i"><use href="#i-msg"/></svg><span>Veliye bildirim gönderildi</span></div>
+        </div>
+      </div>
+      <div class="feats">
+        <div><svg class="i"><use href="#i-scan"/></svg><b>Yüz tanıma</b><span>Otomatik yoklama</span></div>
+        <div><svg class="i"><use href="#i-msg"/></svg><b>WhatsApp</b><span>Veliye anında bildirim</span></div>
+        <div><svg class="i"><use href="#i-shield"/></svg><b>KVKK uyumlu</b><span>Veri okuldan çıkmaz</span></div>
+      </div>
+    </div>
+    <div class="foot">© Hype Vision · okul giriş sistemi</div>
+  </div>
+  <div class="r">
+    <div class="orb o1"></div><div class="orb o2"></div>
+    <form onsubmit="doLogin(event)" autocomplete="on">
+      <img src="/logo/icon-64.png" class="mk" alt="">
+      <h2>Tekrar hoş geldin</h2><div class="sub">Panele erişmek için giriş yap</div>
+      <label for="lu">Kullanıcı adı</label>
+      <div class="inp"><svg class="i"><use href="#i-user"/></svg><input type="text" id="lu" autocomplete="username" placeholder="kullanıcı adı" spellcheck="false" autocapitalize="off" autocorrect="off"></div>
+      <label for="lp">Şifre</label>
+      <div class="inp"><svg class="i"><use href="#i-lock"/></svg><input type="password" id="lp" autocomplete="current-password" placeholder="••••••••" spellcheck="false">
+        <button type="button" class="show" onclick="const p=$('lp');p.type=p.type==='password'?'text':'password';this.textContent=p.type==='password'?'Göster':'Gizle'">Göster</button></div>
+      <div id="capsw" class="m" style="color:#fbbf24;margin-top:6px;display:none">⇪ Caps Lock açık</div>
+      <label class="chk" style="margin-top:18px"><input type="checkbox" id="lrem" checked> Bu cihazda oturumum açık kalsın</label>
+      <button class="lbtn" id="lbtn"><span>Giriş yap</span><svg class="i"><use href="#i-out"/></svg></button>
+      <div id="lerr"></div>
+      <div class="hint"><svg class="i" style="width:14px;height:14px"><use href="#i-shield"/></svg>Bağlantı okul ağı içinde · Şifreni unuttuysan yöneticine başvur</div>
+    </form>
+  </div>
 </div>
 
 <div id="alarm"><svg class="i" style="width:28px;height:28px"><use href="#i-ban"/></svg><div><b id="al_t">KARA LİSTE</b><div id="al_d" style="font-size:13px;opacity:.9"></div></div><button class="btn sm" onclick="ackAlarm()">Gördüm</button></div>
@@ -257,8 +330,10 @@ td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:h
         <div id="vids" class="vgrid"></div>
         <div class="legend"><span><i style="background:#16a34a"></i>Öğrenci</span><span><i style="background:#2563eb"></i>Beyaz liste</span><span><i style="background:#dc2626"></i>Kara liste</span><span><i style="background:#f59e0b"></i>Tanınmadı</span><span>"3/5" = oylama sürüyor · "OK" = kaydedildi</span></div>
         <div id="perf" class="m" style="margin-top:10px;padding:10px 12px;background:#f8fafc;border-radius:10px;font-variant-numeric:tabular-nums"></div></div>
-      <div class="card"><h2><svg class="i"><use href="#i-img"/></svg>Fotoğrafla test</h2>
-        <div class="row"><input type="file" id="testf" accept="image/*"><button class="btn dk" onclick="testImg()">Kim bu?</button></div><div id="testres"></div></div>
+      <div class="card"><h2><svg class="i"><use href="#i-img"/></svg>Fotoğrafla test<span class="sp"></span><span class="m" style="font-weight:500">Kamerasız hızlı kontrol — kayıt düşmez</span></h2>
+        <label class="tdrop" id="tdrop"><input type="file" id="testf" accept="image/*" hidden onchange="testImg()">
+          <div class="tz"><div class="ti"><svg class="i"><use href="#i-scan"/></svg></div><div><b>Fotoğrafı sürükle bırak</b> ya da <u>seç</u><div class="m">JPG / PNG · birden fazla yüz olabilir · Ctrl+V ile yapıştır</div></div></div></label>
+        <div id="testres"></div></div>
     </div>
     <div class="card"><h2><svg class="i"><use href="#i-check"/></svg>Son Geçişler<span class="sp"></span><a class="m" style="cursor:pointer;font-weight:600;color:#0e7490" onclick="go('att')">Tümü →</a></h2><div id="ev"></div></div>
   </div>
@@ -292,7 +367,7 @@ td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:h
 <!-- ONAY BEKLEYEN -->
 <section class="page" id="p-pending">
   <div class="ph"><div><h1>Onay Bekleyen</h1><p>Sistemin emin olamadığı yüzler. Onaylanan fotoğraf öğrencinin galerisine eklenir, sistem böylece kendini iyileştirir.</p></div></div>
-  <div class="row" style="margin-bottom:0"><div class="tabs fx"><a data-k="onay" class="on" onclick="pTab('onay')">Emin değil <span class="tag" id="t_onay">0</span></a><a data-k="bilinmeyen" onclick="pTab('bilinmeyen')">Bilinmeyen yüzler <span class="tag" id="t_bil">0</span></a></div>
+  <div class="row" style="margin-bottom:0"><div class="tabs fx"><a data-k="onay" class="on" onclick="pTab('onay')">Emin değil <span class="tag" id="t_onay">0</span></a><a data-k="bilinmeyen" onclick="pTab('bilinmeyen')">Bilinmeyen kişiler <span class="tag" id="t_bil">0</span></a></div>
     <span></span><button class="btn danger fx" data-min="mudur_yrd" id="clearUnk" onclick="clearUnknown()">Tümünü temizle</button></div>
   <div id="pinfo" class="help" style="margin-bottom:16px"></div>
   <div class="pgrid" id="pgrid"></div>
@@ -360,9 +435,9 @@ td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:h
     <div class="st"><div class="ic c-ok"><svg class="i"><use href="#i-check"/></svg></div><b id="va_n1">0</b><span>Tanındı</span></div>
     <div class="st"><div class="ic c-v"><svg class="i"><use href="#i-users"/></svg></div><b id="va_n2">0</b><span>Farklı kişi</span></div>
     <div class="st"><div class="ic c-w"><svg class="i"><use href="#i-q"/></svg></div><b id="va_n3">0</b><span>Emin değil</span></div>
-    <div class="st"><div class="ic c-r"><svg class="i"><use href="#i-ban"/></svg></div><b id="va_n4">0</b><span>Bilinmeyen</span></div></div>
+    <div class="st"><div class="ic c-r"><svg class="i"><use href="#i-ban"/></svg></div><b id="va_n4">0</b><span id="va_n4l">Bilinmeyen</span></div></div>
   <div class="card" style="padding:0;overflow:hidden" id="va_card" hidden>
-    <div class="row" style="padding:14px 14px 4px"><div class="seg fx" id="va_f"><a data-f="" class="on" onclick="vaFilter('')">Tümü</a><a data-f="tanindi" onclick="vaFilter('tanindi')">Tanındı</a><a data-f="emin_degil" onclick="vaFilter('emin_degil')">Emin değil</a><a data-f="bilinmeyen" onclick="vaFilter('bilinmeyen')">Bilinmeyen</a></div><span></span>
+    <div class="row" style="padding:14px 14px 4px"><div class="seg fx" id="va_f"><a data-f="" class="on" onclick="vaFilter('')">Tümü</a><a data-f="tanindi" onclick="vaFilter('tanindi')">Tanındı</a><a data-f="emin_degil" onclick="vaFilter('emin_degil')">Emin değil</a><a data-f="bilinmeyen" onclick="vaFilter('bilinmeyen')">Bilinmeyen</a><a data-f="grup" onclick="vaFilter('grup')">Kişiye göre grupla</a></div><span></span>
       <button class="btn sm fx" onclick="vaCsv()"><svg class="i"><use href="#i-down"/></svg>CSV</button></div>
     <div style="overflow-x:auto"><table><thead><tr><th></th><th>Videoda</th><th>Kişi</th><th>Skor</th><th>Kare</th><th>Sonuç</th><th></th></tr></thead><tbody id="va_body"></tbody></table></div></div>
 </section>
@@ -520,11 +595,12 @@ async function api(p,o={}){const r=await fetch(p,o);const j=await r.json().catch
 const post=(p,b)=>api(p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});
 const LN={ogrenci:'Öğrenci',beyaz:'Beyaz liste',kara:'Kara liste'}, LC={ogrenci:'p-ok',beyaz:'p-b',kara:'p-r'};
 const RN={yonetici:'Yönetici',mudur_yrd:'Müdür yardımcısı',ogretmen:'Öğretmen'}, RL={ogretmen:1,mudur_yrd:2,yonetici:3};
-let ME=null,PEOPLE=[],ATT=[],TODAY=[],CUR=null,LIST='ogrenci',PK='onay',MSGS=[],SEEN_AL=new Set(JSON.parse(sessionStorage.getItem('al')||'[]'));
+let SET={},ME=null,PEOPLE=[],ATT=[],TODAY=[],CUR=null,LIST='ogrenci',PK='onay',MSGS=[],SEEN_AL=new Set(JSON.parse(sessionStorage.getItem('al')||'[]'));
 const today=()=>new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
 $('aday').value=today();
 
-async function doLogin(e){e.preventDefault();$('lerr').textContent='';try{await post('/api/login',{user:$('lu').value,pass:$('lp').value,remember:$('lrem').checked});location.reload()}catch(x){$('lerr').textContent=x.message}}
+['lu','lp'].forEach(id=>$(id).addEventListener('keyup',e=>{$('capsw').style.display=e.getModifierState&&e.getModifierState('CapsLock')?'':'none'}));
+async function doLogin(e){e.preventDefault();$('lerr').textContent='';$('lbtn').disabled=true;$('lbtn').firstChild.textContent='Giriş yapılıyor…';setTimeout(()=>{$('lbtn').disabled=false;$('lbtn').firstChild.textContent='Giriş yap'},1500);try{await post('/api/login',{user:$('lu').value,pass:$('lp').value,remember:$('lrem').checked});location.reload()}catch(x){$('lerr').textContent=x.message}}
 async function logout(){await post('/api/logout',{});location.reload()}
 
 document.querySelectorAll('nav a').forEach(a=>a.onclick=()=>go(a.dataset.p,a.dataset.l));
@@ -544,9 +620,19 @@ function renderVids(){const sel=$('camsel').value;const list=CAMS.filter(c=>c.ak
     box.innerHTML=list.map(c=>`<div class="vid" id="v_${c.id}"><img src="/api/stream/${c.id}?t=${Date.now()}" onload="this.nextElementSibling.style.display='none'"><div class="ph0"><div><div>${esc(c.ad)}</div><div class=m>bağlanıyor…</div></div></div><div class="cap"><span>${esc(c.ad)}</span><span>${c.yon==='cikis'?'ÇIKIŞ':'GİRİŞ'}</span><span class=st></span></div></div>`).join('')
       ||`<div class="vid"><div class="ph0"><div><div>Aktif kamera yok</div><div class=m>Kameralar sayfasından RTSP ekle</div></div></div></div>`}
   for(const c of list){const e=document.querySelector(`#v_${c.id} .st`);if(e)e.textContent=c.down?'⚠ görüntü yok':`${c.fps}/${c.in_fps} fps`}}
-async function testImg(){const f=$('testf').files[0];if(!f)return toast('Önce fotoğraf seç',1);const fd=new FormData();fd.append('file',f);
-  try{const r=await api('/api/test',{method:'POST',body:fd});
-  $('testres').innerHTML=`<img src="${r.image}" style="max-width:100%;border-radius:12px;margin-top:6px"><div style="margin-top:8px">${r.faces.map(x=>x.name?`<span class="tag ${LC[x.liste]}">${esc(x.name)} · ${x.score}</span>`:`<span class="tag p-w">bilinmiyor — en yakın ${esc(x.best||'-')} · ${x.score}</span>`).join(' ')||'<span class=m>Yüz bulunamadı</span>'}</div>`}catch(e){toast(e.message,1)}}
+async function testImg(file){const f=file||$('testf').files[0];if(!f)return;const fd=new FormData();fd.append('file',f);
+  $('testres').innerHTML='<div class="m" style="margin-top:12px">Analiz ediliyor…</div>';
+  try{const r=await api('/api/test',{method:'POST',body:fd});const th=SET.threshold||0.4;
+    $('testres').innerHTML=`<div class="tres"><div class="im"><img src="${r.image}"><button class="x" title="Temizle" onclick="$('testres').innerHTML='';$('testf').value=''">×</button></div><div>
+      <div class="m" style="margin-bottom:8px">${r.faces.length} yüz bulundu · eşik ${th}</div>
+      ${r.faces.map((x,i)=>{const pct=Math.max(0,Math.min(100,x.score*100)),col=x.name?(x.liste==='kara'?'var(--r)':x.liste==='beyaz'?'var(--blu)':'var(--ok)'):'var(--w)';
+        return `<div class="fr"><div class="ini" style="background:${col}">${i+1}</div><div><b>${x.name?esc(x.name):'Tanınmadı'}</b>${x.name&&x.liste!=='ogrenci'?` <span class="tag ${LC[x.liste]}">${LN[x.liste]}</span>`:''}
+          <div class=m>${x.name?'Eşleşti':'En yakın: '+esc(x.best||'—')}</div></div><div class="sc"><b style="color:${col}">${x.score.toFixed(2)}</b><div class="mt"><i style="width:${pct}%;background:${col}"></i></div></div></div>`}).join('')||'<div class="empty">Yüz bulunamadı</div>'}
+    </div></div>`}catch(e){$('testres').innerHTML='';toast(e.message,1)}$('testf').value=''}
+(()=>{const d=$('tdrop');['dragenter','dragover'].forEach(ev=>d.addEventListener(ev,e=>{e.preventDefault();d.classList.add('ov')}));
+  ['dragleave','drop'].forEach(ev=>d.addEventListener(ev,e=>{e.preventDefault();d.classList.remove('ov')}));
+  d.addEventListener('drop',e=>{const f=e.dataTransfer.files[0];if(f)testImg(f)});
+  document.addEventListener('paste',e=>{if(!$('p-live').classList.contains('on'))return;const f=[...(e.clipboardData?.files||[])].find(x=>x.type.startsWith('image/'));if(f)testImg(f)})})();
 const waTag=w=>!w||w==='-'?'':`<span class="tag ${w==='gonderildi'||w==='iletildi'||w==='okundu'?'p-ok':w==='hata'?'p-r':''}" style="font-size:11px">WA: ${esc(w)}</span>`;
 async function loadEvents(){const ev=await api('/api/events?limit=10');
   $('ev').innerHTML=ev.map(e=>`<div class="ev ${e.liste==='kara'?'kara':''}"><img class=av src="/api/people/${enc(e.name)}/_" onerror="this.outerHTML='<div class=ini>${ini(e.name)}</div>'">
@@ -656,11 +742,36 @@ function exportAtt(){
   if(AMODE==='aralik'&&ARNG){dl(`yoklama-${$('aday').value}_${$('aend').value}.csv`,'Tarih;No;Ad Soyad;Sınıf;Giriş;Çıkış;Durum;Veli;Veli Tel\n'+ARNG.rows.map(r=>csvRow([r.day,r.no,r.name,r.sinif,r.giris,r.cikis,DUR[r.durum][1],r.veli_ad,r.veli_tel])).join('\n'));return}
   const rows=attRows();dl(`yoklama-${$('aday').value}${$('as').value?'-'+$('as').value:''}.csv`,'No;Ad Soyad;Sınıf;Durum;Giriş;Geç;Çıkış;Veli;Veli Tel\n'+rows.map(a=>csvRow([a.no,a.name,a.sinif,a.geldi?(a.durum==='cikti'?'Çıktı':'Okulda'):'Gelmedi',a.geldi||'',a.gec?'Evet':'',a.cikis||'',a.veli_ad,a.veli_tel])).join('\n'))}
 
+// ---------- bilinmeyen gruplari
+let GRPS=[];
+async function loadGroups(){$('clearUnk').style.display=RL[ME.rol]>=2?'':'none';
+  const r=await api('/api/unknown/groups');GRPS=r.groups;const tot=GRPS.reduce((a,g)=>a+g.n,0);
+  $('pinfo').innerHTML=`<div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap"><div style="flex:1;min-width:260px">Tanınmayan yüzler <b>benzerliklerine göre gruplanır</b>: aynı kişi her geçişinde aynı gruba (ör. <b>K-3F2A</b>) düşer. <b>${GRPS.length} farklı kişi</b>, toplam ${tot} görülme. Grubu bir öğrenciye atayınca en iyi 8 karesi galeriye eklenir.</div>
+    ${RL[ME.rol]>=2?`<div style="display:flex;gap:8px;align-items:center"><span class=m>Gruplama hassasiyeti</span><input type="range" min="0.30" max="0.65" step="0.01" value="${r.threshold}" id="cthr" oninput="$('cthv').textContent=this.value" style="width:120px"><b id="cthv" style="width:34px">${r.threshold}</b><button class="btn sm" onclick="reclu()">Yeniden grupla</button></div>`:''}</div>`;
+  const dl_=`<datalist id="gpl">${PEOPLE.map(p=>`<option value="${esc(p.name)}">${esc(p.sinif||LN[p.liste])}</option>`).join('')}</datalist>`;
+  const can=RL[ME.rol]>=2;
+  $('pgrid').className='ggrid';
+  $('pgrid').innerHTML=dl_+GRPS.map(g=>`<div class="grp"><div class="hd"><span class="gid">${esc(g.id)}</span><b>${g.n} görülme</b><span class="sp" style="flex:1"></span><span class=m>${g.first.slice(5,16).replace('-','.')} → ${g.last.slice(11,16)}</span></div>
+    <div class="strip">${g.items.slice(0,g.n>6?5:6).map(it=>`<div><img src="/media/bilinmeyen/${it.img}" title="${it.time}"><span title="Bu gruba ait değil — ayır" onclick="splitFace(${it.id})">×</span></div>`).join('')}${g.n>6?`<div class="more">+${g.n-5}</div>`:''}</div>
+    <div class=m>${g.cams.map(esc).join(', ')}${g.best?` · en yakın kayıt: <b>${esc(g.best.name)}</b> (${g.best.score})`:''}</div>
+    ${can?`<div class="row" style="margin:0"><input list="gpl" id="ga_${g.id}" placeholder="Öğrenci seç ya da yeni isim yaz" value="${g.best&&g.best.score>=0.3?esc(g.best.name):''}"><button class="btn gr sm" onclick="assignGrp('${g.id}')">Ata</button></div>
+    <div class="row" style="margin:0"><button class="btn sm rd" onclick="assignGrp('${g.id}','kara')">Kara listeye al</button><button class="btn sm" onclick="assignGrp('${g.id}','beyaz')">Beyaz liste</button><span></span><button class="btn sm danger" onclick="delGrp('${g.id}')">Sil</button></div>`:''}
+  </div>`).join('')+(GRPS.length?'':'<div class="empty" style="grid-column:1/-1">Bilinmeyen yüz yok 🎉</div>')}
+async function assignGrp(id,liste){let n=$('ga_'+id).value.trim();
+  if(liste){n=prompt(liste==='kara'?'Kara listeye eklenecek kişinin adı / tanımı':'Beyaz listeye eklenecek kişinin adı / görevi',n||('Kişi '+id));if(!n)return}
+  if(!n)return toast('İsim seç ya da yaz',1);const ex=PEOPLE.find(p=>p.name===n);
+  if(!ex&&!liste&&!confirm(`"${n}" kayıtlı değil. Yeni öğrenci olarak oluşturulsun mu?`))return;
+  let sinif='';if(!ex&&!liste)sinif=prompt('Sınıfı (boş bırakabilirsin)','')||'';
+  try{const r=await post(`/api/unknown/groups/${id}/assign`,{name:n,liste:liste||'ogrenci',sinif});toast(`${n}: ${r.photos} foto galeriye eklendi (${r.n} görülme)`);loadPeople();loadGroups();refresh()}catch(e){toast(e.message,1)}}
+async function delGrp(id){if(!confirm(id+' grubundaki tüm yüzler silinsin mi?'))return;await api('/api/unknown/groups/'+id,{method:'DELETE'});loadGroups();refresh()}
+async function splitFace(fid){await post('/api/unknown/move',{id:fid});toast('Yüz ayrı bir gruba alındı');loadGroups()}
+async function reclu(){toast('Yeniden gruplanıyor…');try{const r=await post('/api/unknown/recluster',{threshold:$('cthr').value});toast(`${r.groups} gruba ayrıldı`);loadGroups()}catch(e){toast(e.message,1)}}
+
 // ---------- onay bekleyen
 function pTab(k){PK=k;document.querySelectorAll('.tabs a').forEach(a=>a.classList.toggle('on',a.dataset.k===k));loadPending()}
-async function loadPending(){if(!PEOPLE.length)await loadPeople();const rows=await api('/api/pending?kind='+PK);
+async function loadPending(){if(!PEOPLE.length)await loadPeople();if(PK==='bilinmeyen')return loadGroups();const rows=await api('/api/pending?kind='+PK);
   $('clearUnk').style.display=PK==='bilinmeyen'&&RL[ME.rol]>=2?'':'none';
-  $('pinfo').innerHTML=PK==='onay'?'Sistem bu kişiyi tahmin etti ama emin olamadı. Doğruysa <b>Onayla</b>: GELDİ kaydı düşer ve fotoğraf galeriye eklenir.':'Hiçbir kayıtla eşleşmeyen yüzler. Kayıtsız bir öğrenciyse <b>kişi seçip ekle</b> ya da yeni isim yaz. Yabancıysa kara listeye alabilirsin.';
+  $('pgrid').className='pgrid';$('pinfo').innerHTML=PK==='onay'?'Sistem bu kişiyi tahmin etti ama emin olamadı. Doğruysa <b>Onayla</b>: GELDİ kaydı düşer ve fotoğraf galeriye eklenir.':'Hiçbir kayıtla eşleşmeyen yüzler. Kayıtsız bir öğrenciyse <b>kişi seçip ekle</b> ya da yeni isim yaz. Yabancıysa kara listeye alabilirsin.';
   const opts=PEOPLE.map(p=>`<option value="${esc(p.name)}">${esc(p.name)}${p.sinif?' · '+esc(p.sinif):''}</option>`).join('');
   $('pgrid').innerHTML=rows.map(r=>`<div class="pc"><img src="/media/${PK}/${r.img}">
     <div class="b"><div style="display:flex;justify-content:space-between"><b>${PK==='onay'?esc(r.cand):'Bilinmeyen'}</b><span class="tag ${PK==='onay'?'p-w':''}">${r.score}</span></div>
@@ -675,7 +786,7 @@ async function approve(id,extra={}){let n=$('pp_'+id).value;if(!n)return toast('
 async function toKara(id){const n=prompt('Kara listeye eklenecek kişinin adı / tanımı','Yabancı '+id);if(!n)return;
   try{await post('/api/people',{name:n,liste:'kara',not:'Bilinmeyen yüzden eklendi'});await post(`/api/pending/${id}/approve`,{name:n,mark:false});toast('Kara listeye eklendi');loadPending();loadPeople()}catch(e){toast(e.message,1)}}
 async function reject(id){await api('/api/pending/'+id,{method:'DELETE'});loadPending();refresh()}
-async function clearUnknown(){if(!confirm('Tüm bilinmeyen yüzler silinsin mi?'))return;await api('/api/pending?kind=bilinmeyen',{method:'DELETE'});loadPending();refresh()}
+async function clearUnknown(){if(!confirm('Tüm bilinmeyen kişi grupları silinsin mi?'))return;await api('/api/pending?kind=bilinmeyen',{method:'DELETE'});loadPending();refresh()}
 
 // ---------- mesajlar
 async function loadMsgs(){MSGS=await api('/api/messages');renderMsgs()}
@@ -818,15 +929,17 @@ const vt=s=>`${String(Math.floor(s/60)).padStart(2,'0')}:${String(Math.floor(s%6
 const VK={tanindi:['p-ok','Tanındı'],emin_degil:['p-w','Emin değil'],bilinmeyen:['p-r','Bilinmeyen']};
 function vaRender(){if(!VJ?.results)return;const R=VJ.results;$('va_stats').style.display='';$('va_card').hidden=false;
   $('va_n1').textContent=R.filter(r=>r.kind==='tanindi').length;$('va_n2').textContent=new Set(R.filter(r=>r.kind==='tanindi').map(r=>r.name)).size;
-  $('va_n3').textContent=R.filter(r=>r.kind==='emin_degil').length;$('va_n4').textContent=R.filter(r=>r.kind==='bilinmeyen').length;
+  $('va_n3').textContent=R.filter(r=>r.kind==='emin_degil').length;const ug=new Set(R.filter(r=>r.grp).map(r=>r.grp));$('va_n4').textContent=ug.size;$('va_n4l').textContent=`Farklı bilinmeyen kişi (${R.filter(r=>r.grp).length} görülme)`;
   const can=RL[ME.rol]>=2;const opts=PEOPLE.map(p=>`<option value="${esc(p.name)}">`).join('');
+  if(VF==='grup'){const gs={};R.forEach((r,i)=>{const k=r.kind==='tanindi'?r.name:'Kişi '+(r.grp||'?');(gs[k]=gs[k]||[]).push([r,i])});
+    $('va_body').innerHTML=Object.entries(gs).sort((a,b)=>b[1].length-a[1].length).map(([k,L])=>`<tr><td>${L[0][0].img?`<img class=av src="${L[0][0].img}">`:''}</td><td colspan=2><b>${esc(k)}</b><div class=m>${L.map(([r])=>vt(r.t0)).join(', ')}</div></td><td>${Math.max(...L.map(([r])=>r.score)).toFixed(2)}</td><td>${L.length} kez</td><td><span class="tag ${VK[L[0][0].kind][0]}">${VK[L[0][0].kind][1]}</span></td><td style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">${L.slice(0,8).map(([r])=>r.img?`<img src="${r.img}" style="width:34px;height:34px;border-radius:7px;object-fit:cover">`:'').join('')}</td></tr>`).join('')||'<tr><td colspan=7 class=empty>Henüz yüz bulunmadı</td></tr>';return}
   $('va_body').innerHTML=R.map((r,i)=>[r,i]).filter(([r])=>!VF||r.kind===VF).map(([r,i])=>`<tr><td>${r.img?`<img class=av src="${r.img}">`:''}</td><td style="font-variant-numeric:tabular-nums">${vt(r.t0)} – ${vt(r.t1)}</td>
-    <td>${r.kind==='tanindi'?`<b>${esc(r.name)}</b> ${r.liste&&r.liste!=='ogrenci'?`<span class="tag ${LC[r.liste]}">${LN[r.liste]}</span>`:''}`:r.name?`<span class=m>en yakın:</span> ${esc(r.name)}`:'<span class=m>—</span>'}</td>
+    <td>${r.kind==='tanindi'?`<b>${esc(r.name)}</b> ${r.liste&&r.liste!=='ogrenci'?`<span class="tag ${LC[r.liste]}">${LN[r.liste]}</span>`:''}`:`<span class="tag" style="background:var(--t);color:#fff;font-family:ui-monospace,monospace">Kişi ${esc(r.grp||'?')}</span> ${r.name?`<span class=m>en yakın: ${esc(r.name)}</span>`:''}`}</td>
     <td>${r.score}</td><td>${r.frames}</td><td><span class="tag ${VK[r.kind][0]}">${VK[r.kind][1]}</span></td>
     <td style="white-space:nowrap;text-align:right">${can&&r.img?`<input list="va_pl" placeholder="kişiye ekle…" id="va_in_${i}" value="${r.kind!=='bilinmeyen'&&r.name?esc(r.name):''}" style="width:170px;padding:5px 8px;font-size:12px"> <button class="btn sm" onclick="vaAdd(${i})">Galeriye ekle</button>`:''}</td></tr>`).join('')||'<tr><td colspan=7 class=empty>Henüz yüz bulunmadı</td></tr>';
   if(!$('va_pl')){const dl_=document.createElement('datalist');dl_.id='va_pl';document.body.appendChild(dl_)}$('va_pl').innerHTML=opts}
 async function vaAdd(i){const n=$('va_in_'+i).value.trim();if(!n)return toast('Kişi seç',1);try{await post('/api/video/result/add',{job:VJ.id,i,name:n});toast('Galeriye eklendi: '+n)}catch(e){toast(e.message,1)}}
-function vaCsv(){if(!VJ?.results)return;dl(`video-analiz-${VJ.file}.csv`,'Başlangıç;Bitiş;Kişi;Skor;Kare;Sonuç\n'+VJ.results.map(r=>csvRow([vt(r.t0),vt(r.t1),r.name||'',String(r.score).replace('.',','),r.frames,VK[r.kind][1]])).join('\n'))}
+function vaCsv(){if(!VJ?.results)return;dl(`video-analiz-${VJ.file}.csv`,'Başlangıç;Bitiş;Kişi;Skor;Kare;Sonuç\n'+VJ.results.map(r=>csvRow([vt(r.t0),vt(r.t1),r.kind==='tanindi'?r.name:'Kişi '+(r.grp||'?'),String(r.score).replace('.',','),r.frames,VK[r.kind][1]])).join('\n'))}
 
 // ---------- hero
 const GUN=new Intl.DateTimeFormat('tr-TR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
@@ -856,7 +969,7 @@ async function refresh(force){try{const s=await api('/api/status');
   $('k_p').textContent=s.pending;const np=$('n_pen');np.textContent=s.pending+(s.unknown?' · '+s.unknown:'');np.className='n'+(s.pending?' hot':'');
   $('t_onay').textContent=s.pending;$('t_bil').textContent=s.unknown;
   for(const k in s.settings){const i=$('s_'+k);if(!i||(!force&&document.activeElement===i)||(!force&&i.dataset.init))continue;i.dataset.init=1;if(i.type==='checkbox')i.checked=s.settings[k];else i.value=s.settings[k]}
-  modeUI();$('tokset').textContent=s.settings.wa_token_set?'(kayıtlı)':'(yok)';$('whtokset').textContent=s.settings.whapi_token_set?'(kayıtlı)':'(yok)';
+  SET=s.settings;modeUI();$('tokset').textContent=s.settings.wa_token_set?'(kayıtlı)':'(yok)';$('whtokset').textContent=s.settings.whapi_token_set?'(kayıtlı)':'(yok)';
   const a=s.alarms.find(x=>!SEEN_AL.has(x.id));if(a&&$('alarm').style.display!=='flex')showAlarm(a);
   $('n_kara').className='n'+(s.alarms.length?' red':'')}catch(e){}}
 

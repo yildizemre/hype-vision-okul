@@ -59,6 +59,7 @@ DEFAULTS = {
     "ders_baslangic": "08:30", "gelmedi_saat": "08:45", "tatiller": "", "hafta_sonu_kapali": True,
     "cam_down_sec": 60, "bot_enabled": False, "bot_keyword": "durum,nerede",
     "cameras": [],
+    "cluster_threshold": 0.45,  # bilinmeyen yuzleri ayni kisi sayma benzerligi
 }
 def load_settings():
     d = dict(DEFAULTS)
@@ -81,8 +82,8 @@ CREATE TABLE IF NOT EXISTS users(user TEXT PRIMARY KEY, pw TEXT, rol TEXT, sinif
 CREATE TABLE IF NOT EXISTS tokens(tok TEXT PRIMARY KEY, user TEXT, exp REAL);
 CREATE TABLE IF NOT EXISTS audit(id INTEGER PRIMARY KEY, time TEXT, user TEXT, action TEXT, target TEXT, detail TEXT);
 """)
-for _c in ("yon TEXT DEFAULT 'giris'", "gec INTEGER DEFAULT 0"):
-    try: CONN.execute("ALTER TABLE events ADD COLUMN " + _c); CONN.commit()
+for _t, _c in (("events", "yon TEXT DEFAULT 'giris'"), ("events", "gec INTEGER DEFAULT 0"), ("pending", "emb BLOB"), ("pending", "grp TEXT")):
+    try: CONN.execute(f"ALTER TABLE {_t} ADD COLUMN " + _c); CONN.commit()
     except sqlite3.OperationalError: pass
 def q(sql, args=(), one=False):
     with DBL:
@@ -286,12 +287,71 @@ def log_event(name, score, cam_name, yon="giris", kaynak="kamera", force=False):
     q("UPDATE events SET wa=? WHERE id=? AND wa=''", (wa, eid))
     return eid
 
+# ---- bilinmeyen yuz gruplama (ayni kisi -> ayni rastgele id)
+CLU_LOCK = threading.Lock()
+def new_gid(): return "K-" + secrets.token_hex(2).upper()
+
+def unk_centroids():
+    rows = q("SELECT grp, emb FROM pending WHERE kind='bilinmeyen' AND emb IS NOT NULL AND grp IS NOT NULL")
+    acc = {}
+    for r in rows:
+        e = np.frombuffer(r["emb"], np.float32)
+        a = acc.setdefault(r["grp"], [np.zeros(512, np.float32), 0]); a[0] = a[0] + e; a[1] += 1
+    gids = list(acc)
+    if not gids: return [], np.zeros((0, 512), np.float32)
+    C = np.stack([acc[g][0] / acc[g][1] for g in gids]); C /= np.linalg.norm(C, axis=1, keepdims=True)
+    return gids, C
+
+def assign_group(emb):
+    gids, C = unk_centroids()
+    if len(gids):
+        sim = C @ emb; k = int(sim.argmax())
+        if sim[k] >= S.get("cluster_threshold", 0.45): return gids[k]
+    return new_gid()
+
 def add_pending(kind, cand, score, thumb, crop, cam):
-    pid = ins("INSERT INTO pending(time,kind,cand,score,img,cam) VALUES(?,?,?,?,?,?)",
-              (now_s(), kind, cand or "", round(score, 3), "", cam))
+    emb = E.embed([crop])[0].astype(np.float32)
+    with CLU_LOCK:
+        grp = assign_group(emb) if kind == "bilinmeyen" else None
+        pid = ins("INSERT INTO pending(time,kind,cand,score,img,cam,emb,grp) VALUES(?,?,?,?,?,?,?,?)",
+                  (now_s(), kind, cand or "", round(score, 3), "", cam, emb.tobytes(), grp))
     folder = PENDING if kind == "onay" else UNKNOWN
     imwrite_u(folder / f"{pid}.jpg", thumb); imwrite_u(folder / f"{pid}_crop.jpg", crop)
     q("UPDATE pending SET img=? WHERE id=?", (f"{pid}.jpg", pid))
+
+def recluster():
+    """Tum bilinmeyenleri bastan grupla (eksik embedding'leri de hesaplar)."""
+    with CLU_LOCK:
+        rows = q("SELECT id, emb FROM pending WHERE kind='bilinmeyen' ORDER BY id")
+        ids, embs = [], []
+        for r in rows:
+            e = r["emb"]
+            if e is None:
+                c = imread_u(UNKNOWN / f"{r['id']}_crop.jpg")
+                if c is None: continue
+                e = E.embed([c])[0].astype(np.float32).tobytes(); q("UPDATE pending SET emb=? WHERE id=?", (e, r["id"]))
+            ids.append(r["id"]); embs.append(np.frombuffer(e, np.float32))
+        if not ids: return 0
+        X = np.stack(embs); th = S.get("cluster_threshold", 0.45)
+        cents, members = [], []
+        for i, e in enumerate(X):  # sirali merkez-tabanli gruplama
+            if cents:
+                C = np.stack(cents); sim = C @ e; k = int(sim.argmax())
+                if sim[k] >= th:
+                    members[k].append(i); m = X[members[k]].mean(0); cents[k] = m / np.linalg.norm(m); continue
+            cents.append(e / np.linalg.norm(e)); members.append([i])
+        # birbirine cok yakin merkezleri birlestir
+        merged = True
+        while merged and len(cents) > 1:
+            merged = False; C = np.stack(cents); sim = C @ C.T; np.fill_diagonal(sim, -1)
+            a, b = np.unravel_index(sim.argmax(), sim.shape)
+            if sim[a, b] >= th:
+                members[a] += members[b]; m = X[members[a]].mean(0); cents[a] = m / np.linalg.norm(m)
+                del cents[b], members[b]; merged = True
+        for mem in members:
+            g = new_gid()
+            for i in mem: q("UPDATE pending SET grp=? WHERE id=?", (g, ids[i]))
+        return len(members)
 
 # ================= kamera + takip/oylama =================
 def iou(a, b):
@@ -986,8 +1046,79 @@ async def import_photos(request: Request, file: UploadFile = File(...)):
 # ---- onay bekleyen / bilinmeyen
 @app.get("/api/pending")
 def pending(request: Request, kind: str = "onay"):
-    rows = q("SELECT * FROM pending WHERE kind=? ORDER BY id DESC LIMIT 300", (kind,))
+    rows = q("SELECT id,time,kind,cand,score,img,cam,grp FROM pending WHERE kind=? ORDER BY id DESC LIMIT 300", (kind,))
     return [r for r in rows if kind != "onay" or visible(request, r["cand"])]
+
+@app.get("/api/unknown/groups")
+def unknown_groups(request: Request):
+    rows = q("SELECT id,time,score,img,cam,grp,emb FROM pending WHERE kind='bilinmeyen' ORDER BY id DESC")
+    gs = {}
+    for r in rows:
+        g = gs.setdefault(r["grp"] or "?", {"id": r["grp"] or "?", "n": 0, "items": [], "first": r["time"], "last": r["time"], "cams": set(), "e": []})
+        g["n"] += 1; g["first"] = min(g["first"], r["time"]); g["last"] = max(g["last"], r["time"]); g["cams"].add(r["cam"] or "")
+        g["items"].append({"id": r["id"], "img": r["img"], "time": r["time"], "score": r["score"]})
+        if r["emb"]: g["e"].append(np.frombuffer(r["emb"], np.float32))
+    out = []
+    for g in gs.values():
+        best = None
+        if g["e"]:
+            c = np.mean(g["e"], 0); c /= np.linalg.norm(c)
+            n_, s_ = G.match(c[None])[0]
+            if n_: best = {"name": n_, "score": round(s_, 3)}
+            # gruba en cok benzeyen (merkeze yakin) yuzler once
+            sims = np.stack(g["e"]) @ c
+            if len(sims) == len(g["items"]): g["items"] = [g["items"][i] for i in np.argsort(-sims)]
+        out.append({"id": g["id"], "n": g["n"], "first": g["first"], "last": g["last"], "cams": sorted(g["cams"]),
+                    "items": g["items"][:40], "best": best})
+    out.sort(key=lambda g: (-g["n"], g["last"]), reverse=False)
+    return {"groups": out, "threshold": S.get("cluster_threshold", 0.45)}
+
+@app.post("/api/unknown/groups/{gid}/assign")
+def unknown_assign(request: Request, gid: str, d: dict):
+    """Grubu bir kisiye ata: en iyi kareler galeriye eklenir, grup silinir."""
+    need(request, "mudur_yrd")
+    name = safe_name(d.get("name", ""))
+    if not (PEOPLE / name).exists():
+        (PEOPLE / name).mkdir()
+        info = {"liste": d.get("liste") if d.get("liste") in ("ogrenci", "beyaz", "kara") else "ogrenci",
+                "sinif": d.get("sinif", ""), "not": d.get("not", "Bilinmeyen yüz grubundan eklendi")}
+        (PEOPLE / name / "info.json").write_text(json.dumps(info, ensure_ascii=False), "utf-8"); INFO_CACHE.pop(name, None)
+    rows = q("SELECT id, emb FROM pending WHERE kind='bilinmeyen' AND grp=?", (gid,))
+    if not rows: raise HTTPException(404, "Grup bulunamadı")
+    # en farkli 8 kareyi sec
+    E_ = [np.frombuffer(r["emb"], np.float32) if r["emb"] else None for r in rows]
+    idx = [i for i, e in enumerate(E_) if e is not None]
+    pick = idx[:1]
+    if idx:
+        X = np.stack([E_[i] for i in idx])
+        sel = [0]
+        while len(sel) < min(int(d.get("learn", 8)), len(idx)):
+            dd = 1 - (X @ X[sel].T).max(1); dd[sel] = -1; sel.append(int(dd.argmax()))
+        pick = [idx[k] for k in sel]
+    for k in pick:
+        c = UNKNOWN / f"{rows[k]['id']}_crop.jpg"
+        if c.exists(): shutil.copy(c, PEOPLE / name / f"{int(time.time() * 1000)}_{k}.jpg")
+    for r in rows: drop_pending(r["id"])
+    train_bg(); audit(request, "bilinmeyen grup atandı", name, f"{gid}: {len(rows)} görülme, {len(pick)} foto")
+    return {"ok": True, "photos": len(pick), "n": len(rows)}
+
+@app.delete("/api/unknown/groups/{gid}")
+def unknown_del_group(request: Request, gid: str):
+    for r in q("SELECT id FROM pending WHERE kind='bilinmeyen' AND grp=?", (gid,)): drop_pending(r["id"])
+    audit(request, "bilinmeyen grup silindi", gid); return {"ok": True}
+
+@app.post("/api/unknown/move")
+def unknown_move(request: Request, d: dict):
+    """Tek yuzu baska gruba tasi ya da yeni gruba ayir; iki grubu birlestir."""
+    if d.get("merge"):
+        a, b = d["merge"]; q("UPDATE pending SET grp=? WHERE grp=? AND kind='bilinmeyen'", (a, b)); return {"ok": True}
+    q("UPDATE pending SET grp=? WHERE id=?", (d.get("to") or new_gid(), int(d["id"]))); return {"ok": True}
+
+@app.post("/api/unknown/recluster")
+def unknown_recluster(request: Request, d: dict):
+    need(request, "mudur_yrd")
+    if d.get("threshold"): S["cluster_threshold"] = float(d["threshold"]); save_settings()
+    return {"groups": recluster()}
 
 @app.get("/media/{kind}/{f}")
 def media(kind: str, f: str):
@@ -1191,14 +1322,24 @@ def _analyze(jid, path, every):
     try:
         cap = cv2.VideoCapture(str(path)); fps = cap.get(cv2.CAP_PROP_FPS) or 25
         J["total"] = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0); tracks = []; i = 0
+        VG = {"id": [], "c": [], "n": []}  # bu videodaki bilinmeyen kisi gruplari
         def close(tr):
             if len(tr.votes) < 2 and not tr.done: return
             sc, nm, thumb, _ = tr.best
             if tr.done: kind = "tanindi"
             elif sc >= S["low_threshold"]: kind = "emin_degil"
             else: kind = "bilinmeyen"
+            grp = None
+            if kind != "tanindi" and tr.best[3] is not None:
+                e = E.embed([tr.best[3]])[0]
+                if VG["c"]:
+                    sim = np.stack(VG["c"]) @ e; k = int(sim.argmax())
+                    if sim[k] >= S.get("cluster_threshold", 0.45):
+                        grp = VG["id"][k]; n_ = VG["n"][k]; m = VG["c"][k] * n_ + e; VG["c"][k] = m / np.linalg.norm(m); VG["n"][k] += 1
+                if grp is None:
+                    grp = f"#{len(VG['id']) + 1}"; VG["id"].append(grp); VG["c"].append(e); VG["n"].append(1)
             J["results"].append({"t0": round(tr.t0, 1), "t1": round(tr.last, 1), "name": tr.decided or nm, "score": round(tr.mean if tr.done else sc, 3),
-                                 "kind": kind, "liste": liste_of(tr.decided) if tr.decided else None, "frames": len(tr.votes),
+                                 "kind": kind, "liste": liste_of(tr.decided) if tr.decided else None, "frames": len(tr.votes), "grp": grp,
                                  "img": b64jpg(thumb, 80) if thumb is not None else None})
         while not J.get("cancel"):
             ok = cap.grab()
@@ -1288,6 +1429,8 @@ async def test_image(file: UploadFile = File(...)):
     return {"faces": res, "image": "data:image/jpeg;base64," + base64.b64encode(cv2.imencode(".jpg", img)[1]).decode()}
 
 apply_cameras()
+if q("SELECT 1 FROM pending WHERE kind='bilinmeyen' AND (emb IS NULL OR grp IS NULL) LIMIT 1"):
+    threading.Thread(target=recluster, daemon=True).start()
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))
