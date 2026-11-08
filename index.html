@@ -192,7 +192,8 @@ td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:h
     <div>
       <div class="card"><h2><svg class="i"><use href="#i-cam"/></svg>Kapı Kamerası<span class="sp"></span><span class="m" id="camurl"></span></h2>
         <div class="vid"><img id="video" alt=""><div class="ph0" id="vph"><div><div>Kamera bağlı değil</div><div class="m">RTSP adresini yazıp Bağlan'a bas</div></div></div></div>
-        <div class="legend"><span><i style="background:#16a34a"></i>Öğrenci</span><span><i style="background:#2563eb"></i>Beyaz liste</span><span><i style="background:#dc2626"></i>Kara liste</span><span><i style="background:#f59e0b"></i>Tanınmadı</span><span>"3/5" = oylama sürüyor · "OK" = kaydedildi</span></div></div>
+        <div class="legend"><span><i style="background:#16a34a"></i>Öğrenci</span><span><i style="background:#2563eb"></i>Beyaz liste</span><span><i style="background:#dc2626"></i>Kara liste</span><span><i style="background:#f59e0b"></i>Tanınmadı</span><span>"3/5" = oylama sürüyor · "OK" = kaydedildi</span></div>
+        <div id="perf" class="m" style="margin-top:10px;padding:10px 12px;background:#f8fafc;border-radius:10px;font-variant-numeric:tabular-nums"></div></div>
       <div class="card"><h2><svg class="i"><use href="#i-img"/></svg>Fotoğrafla test</h2>
         <div class="row"><input type="file" id="testf" accept="image/*"><button class="btn dk" onclick="testImg()">Kim bu?</button></div><div id="testres"></div></div>
     </div>
@@ -285,6 +286,8 @@ td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:h
       <div class="row" style="margin:0"><div><label>Eşleşme eşiği</label><input id="s_threshold" type="number" step="0.01"></div><div><label>Onay alt sınırı</label><input id="s_low_threshold" type="number" step="0.01"></div></div>
       <div class="m">Eşik üstü: tanındı · alt sınır ile eşik arası: onay bekler · altı: bilinmeyen</div>
       <div class="row" style="margin:0"><div><label>Karar için kare (oylama)</label><input id="s_vote_frames" type="number"></div><div><label>Tekrar kayıt arası (sn)</label><input id="s_cooldown" type="number"></div></div>
+      <div class="row" style="margin:0"><div><label>Tespit çözünürlüğü (genişlik px)</label><input id="s_det_width" type="number" step="160"></div><div><label>Kuyruk boyu (kare)</label><input id="s_queue_max" type="number"></div></div>
+      <div class="m">Küçük çözünürlük = daha hızlı tespit. Kuyruk, işlemci yetişemediğinde kareleri sırayla bekletir (25 fps'te 75 kare ≈ 3 sn). Değişiklik kamera yeniden bağlanınca geçerli olur.</div>
       <div class="row" style="margin:0"><div><label>Yüz tespit güveni</label><input id="s_det_score" type="number" step="0.05"></div><div><label>Min. yüz boyu (px)</label><input id="s_min_face" type="number"></div></div>
       <button class="btn dk" style="margin-top:16px" onclick="saveSettings()">Kaydet</button></div>
     <div class="card f" data-min="yonetici"><h2><svg class="i"><use href="#i-shield"/></svg>KVKK · Veri saklama</h2>
@@ -476,7 +479,7 @@ async function delUser(u){if(!confirm(u+' silinsin mi?'))return;try{await api('/
 async function changePw(){try{await post('/api/password',{old:$('pw_old').value,new:$('pw_new').value});$('pw_old').value=$('pw_new').value='';toast('Şifre değiştirildi')}catch(e){toast(e.message,1)}}
 
 // ---------- ayarlar
-const SK=['threshold','low_threshold','vote_frames','cooldown','det_score','min_face','keep_days','keep_unknown_days','wa_phone_id','wa_token','wa_template','wa_mode','wa_tpl_name','wa_tpl_lang','alarm_tel','wa_verify','wa_provider','whapi_token'];
+const SK=['det_width','queue_max','threshold','low_threshold','vote_frames','cooldown','det_score','min_face','keep_days','keep_unknown_days','wa_phone_id','wa_token','wa_template','wa_mode','wa_tpl_name','wa_tpl_lang','alarm_tel','wa_verify','wa_provider','whapi_token'];
 function modeUI(){const w=$('s_wa_provider').value==='whapi';$('whapibox').style.display=w?'':'none';$('metabox').style.display=w?'none':'';$('tplbox').style.display=$('s_wa_mode').value==='template'?'':'none'}
 async function saveSettings(){const d={};for(const k of SK)d[k]=$('s_'+k).value;d.wa_enabled=$('s_wa_enabled').checked;
   try{await post('/api/settings',d);$('s_wa_token').value='';$('s_whapi_token').value='';toast('Ayarlar kaydedildi');refresh(true)}catch(e){toast(e.message,1)}}
@@ -488,7 +491,9 @@ async function restore(){const f=$('rest').files[0];if(!f||!confirm('Mevcut tüm
 // ---------- durum
 async function refresh(force){try{const s=await api('/api/status');
   const live=s.camera==='canli';const b=$('camBadge');b.className='badge '+(live?'live':'off');b.textContent='Kamera: '+s.camera;
-  $('k_f').textContent=s.fps;$('k_pr').textContent='fps · '+s.provider.replace('ExecutionProvider','');$('camurl').textContent=s.url||'';
+  $('k_f').textContent=live?s.ms.toplam+' ms':'—';$('k_pr').textContent=`kare başı · ${s.fps} fps · ${s.provider.replace('ExecutionProvider','')}`;
+  const qp=s.queue_max?Math.round(s.queue/s.queue_max*100):0;
+  $('perf').innerHTML=live?`Kamera <b>${s.in_fps} fps</b> geliyor · işlenen <b>${s.fps} fps</b> · tespit <b>${s.ms.tespit} ms</b> · tanıma <b>${s.ms.tanima} ms</b> · kuyruk <b style="color:${qp>70?'var(--r)':qp>30?'var(--w)':'var(--ok)'}">${s.queue}/${s.queue_max}</b> · gecikme <b>${s.lag} sn</b> · atlanan <b>${s.dropped}</b>`:'Kamera bağlı değil';$('camurl').textContent=s.url||'';
   $('k_p').textContent=s.pending;const np=$('n_pen');np.textContent=s.pending+(s.unknown?' · '+s.unknown:'');np.className='n'+(s.pending?' hot':'');
   $('t_onay').textContent=s.pending;$('t_bil').textContent=s.unknown;
   for(const k in s.settings){const i=$('s_'+k);if(!i||(!force&&document.activeElement===i)||(!force&&i.dataset.init))continue;i.dataset.init=1;if(i.type==='checkbox')i.checked=s.settings[k];else i.value=s.settings[k]}

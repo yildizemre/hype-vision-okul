@@ -4,7 +4,7 @@ Modeller:  models/yunet.onnx, models/auraface/glintr100.onnx
 Veri:      data/  (people/, gallery.npz, okul.db, settings.json, pending/, unknown/)
 """
 import os, time, threading, json, re, shutil, sqlite3, hashlib, secrets, io, zipfile, base64, csv
-import urllib.request, urllib.parse
+import urllib.request, urllib.parse, queue
 from pathlib import Path
 from datetime import datetime, timedelta
 from collections import Counter
@@ -43,6 +43,8 @@ DEFAULTS = {
     "vote_frames": 5,       # karar icin gereken kare
     "cooldown": 300,        # ayni kisi tekrar kayit (sn)
     "det_score": 0.8, "min_face": 60,
+    "det_width": 960,      # tespit bu genislikte yapilir (yuz kesimi tam cozunurlukten)
+    "queue_max": 75,       # kuyruk: ~3 sn (25 fps)
     "keep_days": 90,        # gecis/mesaj kayitlari saklama
     "keep_unknown_days": 1, # bilinmeyen/onay fotolari saklama
     "wa_enabled": False, "wa_token": "", "wa_phone_id": "", "wa_verify": "hypevision",
@@ -284,14 +286,16 @@ class Track:
         return n
 
 class Camera:
+    """RTSP okuyucu -> FIFO kuyruk -> isleyici. Kareler sirayla islenir; kuyruk dolarsa en eski atilir."""
     def __init__(self):
         self.url = None; self.frame = None; self.annot = None; self.snap = None
-        self.running = False; self.fps = 0.0; self.status = "kapali"; self.tracks = []
+        self.running = False; self.fps = 0.0; self.in_fps = 0.0; self.status = "kapali"; self.tracks = []
         self.lock = threading.Lock(); self.gen = 0
+        self.q = queue.Queue(); self.dropped = 0; self.ms = {"tespit": 0, "tanima": 0, "toplam": 0}
 
     def start(self, url):
         self.stop(); self.url = url; self.running = True; self.status = "baglaniyor"; self.gen += 1
-        g = self.gen
+        g = self.gen; self.q = queue.Queue(maxsize=int(S["queue_max"])); self.dropped = 0
         threading.Thread(target=self._reader, args=(g,), daemon=True).start()
         threading.Thread(target=self._worker, args=(g,), daemon=True).start()
 
@@ -303,6 +307,7 @@ class Camera:
 
     def _reader(self, g):
         src = int(self.url) if self.url.isdigit() else self.url
+        t0, n = time.time(), 0
         while self.running and g == self.gen:
             cap = cv2.VideoCapture(src) if isinstance(src, int) else cv2.VideoCapture(src, cv2.CAP_FFMPEG)
             if not cap.isOpened(): self.status = "baglanamadi, tekrar deneniyor"; time.sleep(2); continue
@@ -310,7 +315,15 @@ class Camera:
             while self.running and g == self.gen:
                 ok, f = cap.read()
                 if not ok: self.status = "akis koptu"; break
+                ts = time.time()
                 with self.lock: self.frame = f
+                try: self.q.put_nowait((ts, f))
+                except queue.Full:  # isleyici yetisemiyor: en eskiyi at, yenisini koy
+                    try: self.q.get_nowait(); self.dropped += 1
+                    except queue.Empty: pass
+                    self.q.put_nowait((ts, f))
+                n += 1
+                if ts - t0 > 1: self.in_fps = n / (ts - t0); t0, n = ts, 0
             cap.release()
 
     def _finish(self, tr):
@@ -325,41 +338,51 @@ class Camera:
     def _worker(self, g):
         t0, n = time.time(), 0
         while self.running and g == self.gen:
-            with self.lock: f = None if self.frame is None else self.frame.copy()
-            if f is None: time.sleep(0.05); continue
-            scale = 1.0; img = f
-            if f.shape[1] > 1280: scale = 1280 / f.shape[1]; img = cv2.resize(f, None, fx=scale, fy=scale)
+            try: ts, f = self.q.get(timeout=0.5)
+            except queue.Empty: continue
+            ta = time.perf_counter()
+            dw = int(S["det_width"]); scale = 1.0; img = f
+            if f.shape[1] > dw: scale = dw / f.shape[1]; img = cv2.resize(f, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
             faces = E.detect(img)
-            dets, crops = [], []
+            tb = time.perf_counter()
+            # 1) takip: yuzleri mevcut izlere bagla (kare zamani ile)
+            used, items = set(), []
             for fc in faces:
-                fc = fc.copy(); fc[:14] /= scale
-                if min(fc[2], fc[3]) < S["min_face"]: dets.append((fc, None)); continue
-                crops.append(norm_crop(f, fc[4:14].reshape(5, 2))); dets.append((fc, len(crops) - 1))
-            matches = G.match(E.embed(crops))
-            now = time.time(); vis = f.copy(); used = set()
-            for fc, ci in dets:
-                box = tuple(fc[:4])
-                if ci is None:
-                    x, y, w, h = map(int, box); cv2.rectangle(vis, (x, y), (x + w, y + h), (150, 150, 150), 1); continue
-                name, sc = matches[ci]
+                fc = fc.copy(); fc[:14] /= scale; box = tuple(fc[:4])
+                if min(fc[2], fc[3]) < S["min_face"]: items.append((fc, None)); continue
                 tr = max((t for t in self.tracks if id(t) not in used), key=lambda t: iou(t.box, box), default=None)
                 if tr is None or iou(tr.box, box) < 0.2: tr = Track(box); self.tracks.append(tr)
-                used.add(id(tr)); tr.box = box; tr.last = now
-                ok = name is not None and sc >= S["threshold"]
-                tr.votes.append((name if ok else None, sc)); tr.votes = tr.votes[-15:]
-                if sc > tr.best[0]: tr.best = (sc, name, face_thumb(f, fc), crops[ci])
-                # oylama
-                if not tr.done and len(tr.votes) >= S["vote_frames"]:
-                    top, cnt = Counter(v[0] for v in tr.votes).most_common(1)[0]
-                    if top and cnt >= 0.6 * len(tr.votes):
-                        tr.done = True; tr.decided = top
-                        mean = float(np.mean([v[1] for v in tr.votes if v[0] == top]))
-                        log_event(top, mean, self.url_short())
-                self._draw(vis, box, tr, name, sc)
-            for tr in [t for t in self.tracks if now - t.last > 1.5]:
+                used.add(id(tr)); tr.box = box; tr.last = ts; items.append((fc, tr))
+            # 2) tanima: sadece karari verilmemis izler icin (karar verilene GPU harcama)
+            need = [(fc, tr) for fc, tr in items if tr is not None and not tr.done]
+            crops = [norm_crop(f, fc[4:14].reshape(5, 2)) for fc, _ in need]
+            res = dict(zip((id(tr) for _, tr in need), zip(crops, G.match(E.embed(crops)))))
+            tc = time.perf_counter()
+            vis = f.copy()
+            for fc, tr in items:
+                box = tuple(fc[:4])
+                if tr is None:
+                    x, y, w, h = map(int, box); cv2.rectangle(vis, (x, y), (x + w, y + h), (150, 150, 150), 1); continue
+                if id(tr) in res:
+                    crop, (name, sc) = res[id(tr)]
+                    ok = name is not None and sc >= S["threshold"]
+                    tr.votes.append((name if ok else None, sc)); tr.votes = tr.votes[-15:]; tr.sc = sc
+                    if sc > tr.best[0]: tr.best = (sc, name, face_thumb(f, fc), crop)
+                    if len(tr.votes) >= S["vote_frames"]:
+                        top, cnt = Counter(v[0] for v in tr.votes).most_common(1)[0]
+                        if top and cnt >= 0.6 * len(tr.votes):
+                            tr.done = True; tr.decided = top
+                            log_event(top, float(np.mean([v[1] for v in tr.votes if v[0] == top])), self.url_short())
+                self._draw(vis, box, tr, None, getattr(tr, "sc", 0.0))
+            for tr in [t for t in self.tracks if ts - t.last > 1.5]:
                 self._finish(tr); self.tracks.remove(tr)
             self.annot = cv2.imencode(".jpg", vis, [cv2.IMWRITE_JPEG_QUALITY, 80])[1].tobytes()
-            n += 1
+            td = time.perf_counter()
+            a = 0.9  # yumusatilmis ortalama
+            for k, v in (("tespit", tb - ta), ("tanima", tc - tb), ("toplam", td - ta)):
+                self.ms[k] = a * self.ms[k] + (1 - a) * v * 1000
+            self.lag = time.time() - ts
+            n += 1; now = time.time()
             if now - t0 > 1: self.fps = n / (now - t0); t0, n = now, 0
 
     def _draw(self, vis, box, tr, name, sc):
@@ -480,7 +503,9 @@ def logo(f: str):
 @app.get("/api/status")
 def status(request: Request):
     pub = {k: v for k, v in S.items() if k not in ("wa_token", "whapi_token")} | {"wa_token_set": bool(S["wa_token"]), "whapi_token_set": bool(S["whapi_token"])}
-    return {"camera": CAM.status, "url": CAM.url_short(), "fps": round(CAM.fps, 1), "provider": E.provider,
+    return {"camera": CAM.status, "url": CAM.url_short(), "fps": round(CAM.fps, 1), "provider": E.provider, "in_fps": round(CAM.in_fps, 1),
+            "ms": {k: round(v, 1) for k, v in CAM.ms.items()}, "queue": CAM.q.qsize(), "queue_max": CAM.q.maxsize,
+            "dropped": CAM.dropped, "lag": round(getattr(CAM, "lag", 0), 2),
             "gallery": len(G.names), "settings": pub,
             "pending": len([r for r in q("SELECT cand FROM pending WHERE kind='onay'") if visible(request, r["cand"])]),
             "unknown": q("SELECT COUNT(*) n FROM pending WHERE kind='bilinmeyen'", one=True)["n"],
@@ -489,7 +514,7 @@ def status(request: Request):
 @app.post("/api/settings")
 def settings(request: Request, d: dict):
     need(request, "yonetici")
-    for k in ("threshold", "low_threshold", "cooldown", "det_score", "min_face", "vote_frames", "keep_days", "keep_unknown_days"):
+    for k in ("threshold", "low_threshold", "cooldown", "det_score", "min_face", "vote_frames", "det_width", "queue_max", "keep_days", "keep_unknown_days"):
         if d.get(k) not in (None, ""): S[k] = float(d[k])
     for k in ("wa_phone_id", "wa_template", "wa_tpl_name", "wa_tpl_lang", "wa_mode", "alarm_tel", "wa_verify", "wa_provider"):
         if k in d: S[k] = str(d[k]).strip()
