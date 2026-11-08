@@ -1,0 +1,505 @@
+<!doctype html>
+<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hype Vision · Okul Giriş</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6f8fb;--card:#fff;--b:#e7ebf1;--t:#0f172a;--m:#64748b;--navy:#0b2d55;--a:#06b6d4;--a2:#22d3ee;--ok:#16a34a;--okbg:#ecfdf3;--w:#d97706;--wbg:#fff7ed;--r:#dc2626;--rbg:#fef2f2;--vio:#7c3aed;--vbg:#f3f0ff;--blu:#2563eb;--bbg:#eff6ff}
+*{box-sizing:border-box}html,body{margin:0;height:100%;overflow-x:hidden}
+body{background:var(--bg);color:var(--t);font:14px/1.45 Inter,system-ui,Segoe UI,sans-serif;-webkit-font-smoothing:antialiased}
+svg.i{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
+.app{display:flex;min-height:100vh}
+aside.sb{width:248px;flex:0 0 248px;background:#fff;border-right:1px solid var(--b);display:flex;flex-direction:column;padding:18px 14px;position:sticky;top:0;height:100vh;overflow-y:auto}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 8px 18px}.brand img{height:24px}
+.brand .chip{font-size:11px;font-weight:700;color:var(--a);background:#ecfeff;padding:3px 8px;border-radius:99px}
+.cta{width:100%;margin-bottom:14px;padding:11px 14px!important}
+nav{display:flex;flex-direction:column;gap:2px}
+nav .sec{font-size:11px;color:#94a3b8;font-weight:600;padding:14px 10px 6px}
+nav a{display:flex;align-items:center;gap:11px;padding:9px 10px;border-radius:9px;color:#334155;cursor:pointer;font-weight:500}
+nav a:hover{background:#f1f5f9}nav a.on{background:#f1f5f9;color:var(--t);font-weight:700;box-shadow:inset 0 0 0 1px var(--b)}
+nav a .n{margin-left:auto;font-size:11px;background:#f1f5f9;border-radius:99px;padding:1px 8px;color:var(--m);font-weight:600}
+nav a .n.hot{background:var(--w);color:#fff}nav a .n.red{background:var(--r);color:#fff}
+.dot{width:8px;height:8px;border-radius:99px;display:inline-block}
+.me{margin-top:auto;display:flex;align-items:center;gap:10px;border-top:1px solid var(--b);padding:14px 6px 0}
+.me .av{width:34px;height:34px;border-radius:99px;background:linear-gradient(135deg,var(--blu),var(--a));color:#fff;display:grid;place-items:center;font-weight:700;flex:0 0 auto}
+.me b{display:block;font-size:13px}.me span{font-size:12px;color:var(--m)}
+.me button{margin-left:auto;background:none;border:0;color:var(--m);cursor:pointer;padding:6px}
+main{flex:1;min-width:0;padding:26px 32px}
+@media(max-width:900px){.app{flex-direction:column}aside.sb{width:auto;height:auto;position:static;flex:none}nav{flex-direction:row;flex-wrap:wrap}nav .sec{display:none}.me{display:none}main{padding:16px}}
+.page{display:none}.page.on{display:block}
+.ph{display:flex;align-items:flex-end;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.ph h1{font-size:26px;letter-spacing:-.02em;margin:4px 0 0;font-weight:800}.ph p{margin:4px 0 0;color:var(--m)}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#0e7490;background:#ecfeff;padding:4px 10px;border-radius:99px}
+.badge.live::before,.badge.off::before{content:"";width:7px;height:7px;border-radius:99px;background:#94a3b8}
+.badge.live::before{background:var(--ok);box-shadow:0 0 0 3px #bbf7d0}
+.sp{flex:1}
+.hero{background:radial-gradient(1200px 300px at 0 0,#e0f7fb 0,transparent 60%),#fff;border:1px solid var(--b);border-radius:20px;padding:24px;margin-bottom:20px}
+.card{background:var(--card);border:1px solid var(--b);border-radius:16px;padding:18px;margin-bottom:20px;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+.card h2{font-size:15px;margin:0 0 14px;font-weight:700;display:flex;align-items:center;gap:8px}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:20px}@media(max-width:1200px){.grid{grid-template-columns:1fr}}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:20px}@media(max-width:1100px){.g2{grid-template-columns:1fr}}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:20px}@media(max-width:900px){.stats{grid-template-columns:repeat(2,1fr)}}
+.st{background:#fff;border:1px solid var(--b);border-radius:16px;padding:16px 18px;cursor:default}
+.st .ic{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;margin-bottom:12px}
+.st b{display:block;font-size:28px;font-weight:800;letter-spacing:-.02em;line-height:1.1}.st span{color:var(--m);font-size:13px}
+.c-blu{background:var(--bbg);color:var(--blu)}.c-ok{background:var(--okbg);color:var(--ok)}.c-w{background:var(--wbg);color:var(--w)}.c-v{background:var(--vbg);color:var(--vio)}.c-r{background:var(--rbg);color:var(--r)}
+input,select,button,textarea{font:inherit;color:var(--t)}
+input[type=text],input[type=password],input[type=number],input[type=date],select,textarea{width:100%;background:#fff;border:1px solid var(--b);border-radius:10px;padding:10px 12px;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--a);box-shadow:0 0 0 3px #cffafe}
+.btn{display:inline-flex;align-items:center;gap:7px;justify-content:center;cursor:pointer;border-radius:10px;padding:10px 14px;font-weight:600;border:1px solid var(--b);background:#fff;white-space:nowrap}
+.btn:hover{background:#f8fafc}.btn.dk{background:var(--t);color:#fff;border-color:var(--t)}.btn.dk:hover{background:#1e293b}
+.btn.gr{background:var(--ok);color:#fff;border-color:var(--ok)}.btn.rd{background:var(--r);color:#fff;border-color:var(--r)}
+.btn.sm{padding:5px 10px;font-size:12px;border-radius:8px}.btn.danger{color:var(--r)}
+.row{display:flex;gap:10px;margin-bottom:10px;align-items:center;flex-wrap:wrap}.row>*{flex:1;min-width:0}.row>.btn,.row>.fx{flex:0 0 auto}
+.f label{display:block;color:#475569;font-size:12px;font-weight:600;margin:12px 0 5px}
+.vid{position:relative;background:#0b1220;border-radius:14px;overflow:hidden;aspect-ratio:16/9}
+.vid img{width:100%;height:100%;object-fit:contain;display:block}
+.vid .ph0{position:absolute;inset:0;display:grid;place-items:center;color:#64748b;text-align:center}
+.legend{display:flex;gap:14px;margin-top:10px;font-size:12px;color:var(--m);flex-wrap:wrap}.legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px}
+table{width:100%;border-collapse:collapse}th{text-align:left;color:var(--m);font-weight:600;font-size:12px;padding:10px;border-bottom:1px solid var(--b);background:#fafbfc}
+td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:hover td{background:#fafcff}
+.av{width:40px;height:40px;border-radius:10px;display:block;background:#e2e8f0;object-fit:cover}
+.ini{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;background:var(--navy);color:#fff;font-weight:700}
+.tag{display:inline-block;padding:3px 9px;border-radius:99px;font-size:12px;font-weight:600;background:#f1f5f9;color:#334155}
+.m{color:var(--m);font-size:12px}.wc{color:var(--w)}
+.p-ok{background:var(--okbg);color:var(--ok)}.p-w{background:var(--wbg);color:var(--w)}.p-r{background:var(--rbg);color:var(--r)}.p-b{background:var(--bbg);color:var(--blu)}.p-v{background:var(--vbg);color:var(--vio)}
+.ev{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f1f5f9}.ev:last-child{border:0}.ev .x{flex:1;min-width:0}
+.ev.kara{background:var(--rbg);margin:0 -10px;padding:10px;border-radius:10px}
+.thumbs{display:flex;flex-wrap:wrap;gap:8px}.thumbs div{position:relative}.thumbs img{width:76px;height:76px;border-radius:12px;display:block;border:1px solid var(--b)}
+.thumbs span{position:absolute;top:-6px;right:-6px;background:var(--r);color:#fff;border-radius:99px;width:20px;height:20px;font-size:13px;text-align:center;line-height:20px;cursor:pointer}
+.help{background:linear-gradient(135deg,#ecfeff,#f0f9ff);border:1px solid #cffafe;border-radius:12px;padding:12px 14px;color:#155e75;font-size:13px}
+.warn{background:var(--wbg);border:1px solid #fed7aa;border-radius:12px;padding:12px 14px;color:#9a3412;font-size:13px}
+.drop{border:1.5px dashed #cbd5e1;border-radius:14px;padding:22px;text-align:center;color:var(--m);cursor:pointer;display:block}
+.drop:hover{border-color:var(--a);background:#f0fdff}.drop b{color:var(--t)}
+.tabs{display:inline-flex;background:#eef2f6;border-radius:11px;padding:4px;gap:4px;margin-bottom:16px}
+.tabs a{padding:7px 14px;border-radius:8px;cursor:pointer;font-weight:600;color:var(--m)}.tabs a.on{background:#fff;color:var(--t);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+.pc{background:#fff;border:1px solid var(--b);border-radius:14px;overflow:hidden}
+.pc img{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:#0b1220}
+.pc .b{padding:12px}.pc .b select{margin:8px 0}
+#msg{position:fixed;bottom:20px;right:20px;background:var(--t);color:#fff;padding:12px 16px;border-radius:12px;display:none;z-index:20;box-shadow:0 10px 30px rgba(0,0,0,.2);font-weight:500;max-width:420px}
+#msg.e{background:var(--r)}
+#alarm{display:none;position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:19;background:var(--r);color:#fff;border-radius:14px;padding:14px 18px;box-shadow:0 14px 40px rgba(220,38,38,.45);align-items:center;gap:14px;animation:pulse 1s infinite alternate;max-width:92vw}
+@keyframes pulse{to{box-shadow:0 14px 50px rgba(220,38,38,.8)}}
+#alarm b{font-size:16px}#alarm button{background:#fff;color:var(--r);border:0}
+.empty{padding:30px;text-align:center;color:var(--m)}
+[data-min]{display:none}
+/* login */
+#login{position:fixed;inset:0;display:none;grid-template-columns:1fr 1fr;z-index:30;background:#fff}
+@media(max-width:900px){#login{grid-template-columns:1fr}#login .l{display:none!important}}
+#login .l{background:radial-gradient(700px 400px at 0 0,#e0f7fb 0,transparent 60%),radial-gradient(600px 500px at 100% 100%,#eef2ff 0,transparent 60%),#fff;padding:60px 9%;display:flex;flex-direction:column}
+#login .l img{height:34px;align-self:flex-start}#login .l .mid{margin:auto 0}
+#login .l .badge{letter-spacing:.12em;border:1px solid #a5f3fc}
+#login h1{font-size:46px;line-height:1.08;letter-spacing:-.03em;margin:20px 0 16px;font-weight:800;max-width:520px}
+#login .l p{color:#475569;font-size:16px;max-width:520px;margin:0 0 26px}
+#login ul{list-style:none;padding:0;margin:0}#login li{display:flex;gap:12px;align-items:center;margin:12px 0;color:#475569;font-size:15px}
+#login li b{color:var(--t)}#login li i{width:22px;height:22px;border-radius:99px;background:#ecfeff;color:var(--a);display:grid;place-items:center;font-style:normal;font-size:12px;font-weight:800}
+#login .foot{color:#94a3b8;font-size:13px}
+#login .r{background:radial-gradient(800px 500px at 100% 0,rgba(6,182,212,.18),transparent 60%),radial-gradient(700px 500px at 0 100%,rgba(37,99,235,.18),transparent 60%),#070b14;position:relative;display:grid;place-items:center;padding:24px;overflow:hidden}
+#login .r::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:44px 44px;-webkit-mask-image:radial-gradient(circle,#000,transparent 75%);mask-image:radial-gradient(circle,#000,transparent 75%)}
+#login form{position:relative;width:100%;max-width:440px;background:rgba(17,24,39,.72);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.09);border-radius:22px;padding:36px;color:#e5e7eb;box-shadow:0 30px 80px rgba(0,0,0,.45)}
+#login form h2{margin:0;font-size:28px;color:#fff;font-weight:800}#login form .sub{color:#94a3b8;margin:6px 0 24px}
+#login form label{display:block;font-size:13px;font-weight:600;color:#cbd5e1;margin:16px 0 7px}
+.inp{display:flex;align-items:center;gap:10px;background:#0b1220;border:1px solid #273244;border-radius:12px;padding:0 12px}
+.inp:focus-within{border-color:var(--a2);box-shadow:0 0 0 3px rgba(34,211,238,.18)}
+.inp svg{color:#64748b}.inp input{background:transparent!important;border:0!important;box-shadow:none!important;color:#fff!important;padding:14px 0!important}
+.inp .show{background:#1f2937;border:0;color:#cbd5e1;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer}
+.chk{display:flex!important;align-items:center;gap:9px;cursor:pointer}.chk input{width:17px;height:17px;accent-color:var(--a)}
+.lbtn{width:100%;margin-top:22px;border:0;border-radius:12px;padding:15px;font-weight:800;font-size:16px;cursor:pointer;color:#04313a;background:linear-gradient(135deg,#67e8f9,#06b6d4);box-shadow:0 10px 30px rgba(6,182,212,.35)}
+#lerr{color:#f87171;font-size:13px;margin-top:12px;min-height:18px;text-align:center}
+</style></head><body>
+
+<svg width="0" height="0" style="position:absolute"><defs>
+<symbol id="i-cam" viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+<symbol id="i-scan" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="10" r="3"/><path d="M7 17c1-2 3-3 5-3s4 1 5 3"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></symbol>
+<symbol id="i-set" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M1 12h3M20 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="i-out" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+<symbol id="i-cpu" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/></symbol>
+<symbol id="i-msg" viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.5 8.5 0 0 1-3.8-.9L3 21l2-5.2A8.4 8.4 0 0 1 12 3a8.4 8.4 0 0 1 9 8.5z"/></symbol>
+<symbol id="i-img" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></symbol>
+<symbol id="i-up" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></symbol>
+<symbol id="i-down" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></symbol>
+<symbol id="i-zap" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></symbol>
+<symbol id="i-q" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></symbol>
+<symbol id="i-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M4.9 4.9l14.2 14.2"/></symbol>
+<symbol id="i-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="5.5"/><path d="M21 2l-9.6 9.6M15.5 7.5l3 3L22 7l-3-3"/></symbol>
+</defs></svg>
+<script>const I=n=>`<svg class="i"><use href="#i-${n}"/></svg>`</script>
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="l"><img src="/logo/darklogo.png" alt="Hype Vision">
+    <div class="mid"><span class="badge">OKUL GİRİŞ</span><h1>Öğrenci girişleri, tek ekranda.</h1>
+      <p>Kapı kamerası öğrenciyi tanır, giriş saatini kaydeder ve veliye anında haber verir. Tüm görüntü okulun kendi sunucusunda kalır.</p>
+      <ul><li><i>✓</i><span><b>Yüz tanıma</b> ile otomatik yoklama</span></li><li><i>✓</i><span><b>Veliye bildirim</b> WhatsApp üzerinden</span></li><li><i>✓</i><span><b>KVKK uyumlu</b> — veri okuldan çıkmaz</span></li></ul></div>
+    <div class="foot">Hype Vision · okul giriş sistemi</div></div>
+  <div class="r"><form onsubmit="doLogin(event)">
+    <h2>Giriş yap</h2><div class="sub">Hype Vision paneline devam et</div>
+    <label>Kullanıcı adı</label><div class="inp"><svg class="i"><use href="#i-user"/></svg><input type="text" id="lu" autocomplete="username" placeholder="kullanıcı adı"></div>
+    <label>Şifre</label><div class="inp"><svg class="i"><use href="#i-lock"/></svg><input type="password" id="lp" autocomplete="current-password" placeholder="••••••">
+      <button type="button" class="show" onclick="const p=$('lp');p.type=p.type==='password'?'text':'password';this.textContent=p.type==='password'?'Göster':'Gizle'">Göster</button></div>
+    <label class="chk" style="margin-top:16px"><input type="checkbox" id="lrem" checked> Bu cihazda oturumum açık kalsın</label>
+    <button class="lbtn">Giriş yap</button><div id="lerr"></div>
+    <div class="m" style="text-align:center;color:#64748b">Şifreni unuttuysan sistem yöneticisine başvur.</div>
+  </form></div>
+</div>
+
+<div id="alarm"><svg class="i" style="width:28px;height:28px"><use href="#i-ban"/></svg><div><b id="al_t">KARA LİSTE</b><div id="al_d" style="font-size:13px;opacity:.9"></div></div><button class="btn sm" onclick="ackAlarm()">Gördüm</button></div>
+
+<div class="app">
+<aside class="sb">
+  <div class="brand"><img src="/logo/darklogo.png" alt="Hype Vision"><span class="chip">Okul</span></div>
+  <button class="btn dk cta" data-min="mudur_yrd" onclick="newPerson('ogrenci')"><svg class="i"><use href="#i-plus"/></svg> Yeni Kayıt</button>
+  <nav>
+    <a data-p="live" class="on"><svg class="i"><use href="#i-cam"/></svg>Canlı İzleme</a>
+    <a data-p="att"><svg class="i"><use href="#i-check"/></svg>Yoklama<span class="n" id="n_att">0</span></a>
+    <a data-p="pending"><svg class="i"><use href="#i-q"/></svg>Onay Bekleyen<span class="n" id="n_pen">0</span></a>
+    <div class="sec">Kişiler</div>
+    <a data-p="students" data-l="ogrenci"><svg class="i"><use href="#i-users"/></svg>Öğrenciler<span class="n" id="n_ogrenci">0</span></a>
+    <a data-p="students" data-l="beyaz"><svg class="i"><use href="#i-shield"/></svg>Beyaz Liste<span class="n" id="n_beyaz">0</span></a>
+    <a data-p="students" data-l="kara"><svg class="i"><use href="#i-ban"/></svg>Kara Liste<span class="n" id="n_kara">0</span></a>
+    <a data-p="enroll" data-min="mudur_yrd"><svg class="i"><use href="#i-scan"/></svg>Yüz Kaydet</a>
+    <div class="sec">Sistem</div>
+    <a data-p="messages"><svg class="i"><use href="#i-msg"/></svg>Mesajlar</a>
+    <a data-p="users" data-min="yonetici"><svg class="i"><use href="#i-key"/></svg>Kullanıcılar</a>
+    <a data-p="settings"><svg class="i"><use href="#i-set"/></svg>Ayarlar</a>
+  </nav>
+  <div class="me"><div class="av" id="me_av">H</div><div><b id="me_n">-</b><span id="me_r"></span></div>
+    <button title="Çıkış" onclick="logout()"><svg class="i"><use href="#i-out"/></svg></button></div>
+</aside>
+
+<main>
+<!-- CANLI -->
+<section class="page on" id="p-live">
+  <div class="hero"><span class="badge off" id="camBadge">Kamera kapalı</span><h1 id="greet" style="font-size:26px;margin:6px 0 4px;font-weight:800">Günaydın</h1>
+    <p class="m" style="font-size:14px;margin:0">Kapıdan geçen öğrenci birkaç karede aynı kişi olarak tanınınca "GELDİ" kaydı düşer.</p>
+    <div class="row" style="margin:18px 0 0" data-min="mudur_yrd">
+      <input type="text" id="url" placeholder="rtsp://kullanici:sifre@192.168.1.64:554/Streaming/Channels/101   ·   webcam için 0">
+      <button class="btn dk" onclick="camStart()"><svg class="i"><use href="#i-zap"/></svg>Bağlan</button><button class="btn" onclick="camStop()">Durdur</button></div></div>
+  <div class="stats">
+    <div class="st"><div class="ic c-ok"><svg class="i"><use href="#i-check"/></svg></div><b id="k_g">0</b><span>Bugün geldi</span></div>
+    <div class="st"><div class="ic c-w"><svg class="i"><use href="#i-clock"/></svg></div><b id="k_n">0</b><span>Henüz görülmedi</span></div>
+    <div class="st"><div class="ic c-v"><svg class="i"><use href="#i-q"/></svg></div><b id="k_p">0</b><span>Onay bekleyen</span></div>
+    <div class="st"><div class="ic c-blu"><svg class="i"><use href="#i-cpu"/></svg></div><b id="k_f">0</b><span id="k_pr">fps</span></div>
+  </div>
+  <div class="grid">
+    <div>
+      <div class="card"><h2><svg class="i"><use href="#i-cam"/></svg>Kapı Kamerası<span class="sp"></span><span class="m" id="camurl"></span></h2>
+        <div class="vid"><img id="video" alt=""><div class="ph0" id="vph"><div><div>Kamera bağlı değil</div><div class="m">RTSP adresini yazıp Bağlan'a bas</div></div></div></div>
+        <div class="legend"><span><i style="background:#16a34a"></i>Öğrenci</span><span><i style="background:#2563eb"></i>Beyaz liste</span><span><i style="background:#dc2626"></i>Kara liste</span><span><i style="background:#f59e0b"></i>Tanınmadı</span><span>"3/5" = oylama sürüyor · "OK" = kaydedildi</span></div></div>
+      <div class="card"><h2><svg class="i"><use href="#i-img"/></svg>Fotoğrafla test</h2>
+        <div class="row"><input type="file" id="testf" accept="image/*"><button class="btn dk" onclick="testImg()">Kim bu?</button></div><div id="testres"></div></div>
+    </div>
+    <div class="card"><h2><svg class="i"><use href="#i-check"/></svg>Son Geçişler</h2><div id="ev"></div></div>
+  </div>
+</section>
+
+<!-- YOKLAMA -->
+<section class="page" id="p-att">
+  <div class="ph"><div><h1>Yoklama</h1><p>"Henüz görülmedi" veliye otomatik gitmez. Öğrenci gelmediyse teyit edip "Gelmedi bildir"e bas.</p></div><span class="sp"></span>
+    <input type="date" id="aday" onchange="loadAtt()" style="max-width:170px"><select id="as" onchange="renderAtt()" style="max-width:200px"></select>
+    <button class="btn" onclick="exportAtt()"><svg class="i"><use href="#i-down"/></svg>Excel (CSV)</button></div>
+  <div class="stats" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+    <div class="st"><div class="ic c-blu"><svg class="i"><use href="#i-users"/></svg></div><b id="a_t">0</b><span>Toplam</span></div>
+    <div class="st"><div class="ic c-ok"><svg class="i"><use href="#i-check"/></svg></div><b id="a_g">0</b><span>Geldi</span></div>
+    <div class="st"><div class="ic c-w"><svg class="i"><use href="#i-clock"/></svg></div><b id="a_n">0</b><span>Henüz görülmedi</span></div></div>
+  <div class="card" style="padding:0;overflow:hidden"><div style="overflow-x:auto"><table><thead><tr><th>No</th><th>Ad Soyad</th><th>Sınıf</th><th>Durum</th><th>Veli</th><th></th></tr></thead><tbody id="atbody"></tbody></table></div></div>
+</section>
+
+<!-- ONAY BEKLEYEN -->
+<section class="page" id="p-pending">
+  <div class="ph"><div><h1>Onay Bekleyen</h1><p>Sistemin emin olamadığı yüzler. Onaylanan fotoğraf öğrencinin galerisine eklenir, sistem böylece kendini iyileştirir.</p></div></div>
+  <div class="row" style="margin-bottom:0"><div class="tabs fx"><a data-k="onay" class="on" onclick="pTab('onay')">Emin değil <span class="tag" id="t_onay">0</span></a><a data-k="bilinmeyen" onclick="pTab('bilinmeyen')">Bilinmeyen yüzler <span class="tag" id="t_bil">0</span></a></div>
+    <span></span><button class="btn danger fx" data-min="mudur_yrd" id="clearUnk" onclick="clearUnknown()">Tümünü temizle</button></div>
+  <div id="pinfo" class="help" style="margin-bottom:16px"></div>
+  <div class="pgrid" id="pgrid"></div>
+</section>
+
+<!-- KISILER -->
+<section class="page" id="p-students">
+  <div class="ph"><div><h1 id="lt">Öğrenciler</h1><p id="ld"></p></div><span class="sp"></span>
+    <button class="btn" data-min="mudur_yrd" onclick="train()"><svg class="i"><use href="#i-zap"/></svg>Modeli Eğit</button>
+    <button class="btn dk" data-min="mudur_yrd" onclick="newPerson(LIST)"><svg class="i"><use href="#i-plus"/></svg>Yeni kayıt</button></div>
+  <div id="trainres"></div>
+  <div class="card" style="padding:0;overflow:hidden">
+    <div class="row" style="padding:14px 14px 4px"><input type="text" id="q" placeholder="Ara: isim, numara, veli…" oninput="renderStudents()"><select id="fs" onchange="renderStudents()" style="max-width:200px"></select></div>
+    <div style="overflow-x:auto"><table><thead id="sthead"></thead><tbody id="stbody"></tbody></table></div></div>
+</section>
+
+<!-- YUZ KAYDET -->
+<section class="page" id="p-enroll">
+  <div class="ph"><div><h1>Yüz Kaydet</h1><p>Bilgileri gir, kameradan çek ya da fotoğraf yükle.</p></div></div>
+  <div class="grid"><div>
+    <div class="card"><h2><svg class="i"><use href="#i-cam"/></svg>Kameradan görüntü al</h2>
+      <div class="row"><button class="btn dk" onclick="takeSnap()"><svg class="i"><use href="#i-cam"/></svg>RTSP'den görüntü al</button><button class="btn gr" onclick="capture()"><svg class="i"><use href="#i-check"/></svg>Bu kareyi kaydet</button><span></span></div>
+      <div class="vid"><img id="snap" alt=""><div class="ph0" id="sph"><div><div>Önizleme yok</div><div class="m">Kamera bağlı olmalı · karedeki en büyük yüz kaydedilir</div></div></div></div></div>
+    <div class="card"><h2><svg class="i"><use href="#i-up"/></svg>Fotoğraf yükle</h2>
+      <label class="drop"><input type="file" id="files" multiple accept="image/*" onchange="upload()" hidden><svg class="i" style="width:28px;height:28px"><use href="#i-up"/></svg><div><b>Fotoğraf seç</b> — birden fazla seçebilirsin</div></label></div>
+  </div><div>
+    <div class="card f"><h2><svg class="i"><use href="#i-user"/></svg>Kişi bilgisi</h2>
+      <div class="help">Bir kişiye <b>istediğin kadar foto</b> ekleyebilirsin; 3-5 tane önerilir. Sonra <b>Modeli Eğit</b>.</div>
+      <label>Kayıtlı kişi seç</label><select id="sel" onchange="pick(this.value)"></select>
+      <label>Kayıt tipi</label><select id="e_liste" onchange="listeUI()"><option value="ogrenci">Öğrenci</option><option value="beyaz">Beyaz liste (personel / izinli kişi)</option><option value="kara">Kara liste (girişi yasak)</option></select>
+      <label>Ad Soyad *</label><input type="text" id="e_name">
+      <div class="ogr"><div class="row" style="margin:0"><div><label>Okul No</label><input type="text" id="e_no"></div><div><label>Sınıf</label><input type="text" id="e_sinif" placeholder="5-A"></div></div>
+      <label>Veli Ad Soyad</label><input type="text" id="e_veli_ad"><label>Veli Telefon (WhatsApp)</label><input type="text" id="e_veli_tel" placeholder="05xx xxx xx xx"></div>
+      <label id="notl">Not</label><textarea id="e_not" rows="2" placeholder=""></textarea>
+      <div class="row" style="margin-top:16px"><button class="btn dk" onclick="saveInfo()">Bilgileri kaydet</button><button class="btn danger" onclick="delPerson(0)">Sil</button><span></span></div>
+      <button class="btn danger sm" style="width:100%" onclick="delPerson(1)">Mezun / ayrıldı — tüm verisini kalıcı sil</button>
+    </div>
+    <div class="card"><h2><svg class="i"><use href="#i-img"/></svg>Fotoğraflar <span class="tag" id="pc">0</span></h2><div class="thumbs" id="thumbs"></div></div>
+  </div></div>
+</section>
+
+<!-- MESAJLAR -->
+<section class="page" id="p-messages">
+  <div class="ph"><div><h1>Mesaj Geçmişi</h1><p>Velilere giden WhatsApp mesajları. "İletildi/okundu" durumu için webhook kurulmalı (Ayarlar).</p></div><span class="sp"></span>
+    <select id="mf" onchange="renderMsgs()" style="max-width:200px"><option value="">Tüm türler</option><option value="geldi">Geldi</option><option value="gelmedi">Gelmedi</option><option value="alarm">Alarm</option><option value="test">Test</option></select></div>
+  <div class="card" style="padding:0;overflow:hidden"><div style="overflow-x:auto"><table><thead><tr><th>Zaman</th><th>Öğrenci</th><th>Telefon</th><th>Tür</th><th>Mesaj</th><th>Durum</th></tr></thead><tbody id="mbody"></tbody></table></div></div>
+</section>
+
+<!-- KULLANICILAR -->
+<section class="page" id="p-users">
+  <div class="ph"><div><h1>Kullanıcılar</h1><p>Yönetici her şeyi yapar · Müdür yrd. kayıt ve kamera yönetir · Öğretmen sadece kendi sınıfını görür.</p></div></div>
+  <div class="grid"><div class="card" style="padding:0;overflow:hidden"><table><thead><tr><th>Kullanıcı</th><th>Ad</th><th>Rol</th><th>Sınıf</th><th></th></tr></thead><tbody id="ubody"></tbody></table></div>
+  <div class="card f"><h2><svg class="i"><use href="#i-plus"/></svg>Kullanıcı ekle / düzenle</h2>
+    <label>Kullanıcı adı</label><input type="text" id="u_user"><label>Ad Soyad</label><input type="text" id="u_ad">
+    <label>Rol</label><select id="u_rol"><option value="ogretmen">Sınıf öğretmeni</option><option value="mudur_yrd">Müdür yardımcısı</option><option value="yonetici">Yönetici</option></select>
+    <label>Sınıf (öğretmen için)</label><input type="text" id="u_sinif" placeholder="5-A">
+    <label>Şifre <span class="m">(düzenlerken boş bırakırsan değişmez)</span></label><input type="password" id="u_pass">
+    <button class="btn dk" style="margin-top:16px" onclick="saveUser()">Kaydet</button></div></div>
+</section>
+
+<!-- AYARLAR -->
+<section class="page" id="p-settings">
+  <div class="ph"><div><h1>Ayarlar</h1><p>Tanıma, saklama süreleri, WhatsApp ve yedekleme.</p></div></div>
+  <div class="g2">
+  <div>
+    <div class="card f" data-min="yonetici"><h2><svg class="i"><use href="#i-scan"/></svg>Tanıma</h2>
+      <div class="row" style="margin:0"><div><label>Eşleşme eşiği</label><input id="s_threshold" type="number" step="0.01"></div><div><label>Onay alt sınırı</label><input id="s_low_threshold" type="number" step="0.01"></div></div>
+      <div class="m">Eşik üstü: tanındı · alt sınır ile eşik arası: onay bekler · altı: bilinmeyen</div>
+      <div class="row" style="margin:0"><div><label>Karar için kare (oylama)</label><input id="s_vote_frames" type="number"></div><div><label>Tekrar kayıt arası (sn)</label><input id="s_cooldown" type="number"></div></div>
+      <div class="row" style="margin:0"><div><label>Yüz tespit güveni</label><input id="s_det_score" type="number" step="0.05"></div><div><label>Min. yüz boyu (px)</label><input id="s_min_face" type="number"></div></div>
+      <button class="btn dk" style="margin-top:16px" onclick="saveSettings()">Kaydet</button></div>
+    <div class="card f" data-min="yonetici"><h2><svg class="i"><use href="#i-shield"/></svg>KVKK · Veri saklama</h2>
+      <div class="row" style="margin:0"><div><label>Geçiş ve mesaj kayıtları (gün)</label><input id="s_keep_days" type="number"></div><div><label>Bilinmeyen / onay fotoğrafları (gün)</label><input id="s_keep_unknown_days" type="number"></div></div>
+      <div class="m" style="margin-top:6px">Süresi dolan kayıtlar her saat otomatik silinir. Canlı görüntü hiç kaydedilmez. Mezun öğrenci için kişi sayfasındaki "kalıcı sil".</div>
+      <button class="btn dk" style="margin-top:16px" onclick="saveSettings()">Kaydet</button></div>
+    <div class="card f" data-min="yonetici"><h2><svg class="i"><use href="#i-down"/></svg>Yedekleme</h2>
+      <div class="m">Öğrenciler, fotoğraflar, galeri, kayıtlar, kullanıcılar ve ayarlar tek zip dosyası. Başka PC'ye taşırken de kullanılır.</div>
+      <div class="row" style="margin-top:12px"><a class="btn dk fx" href="/api/backup"><svg class="i"><use href="#i-down"/></svg>Yedek indir</a>
+        <label class="btn fx"><input type="file" id="rest" accept=".zip" hidden onchange="restore()"><svg class="i"><use href="#i-up"/></svg>Yedekten geri yükle</label><span></span></div>
+      <div class="warn">Geri yükleme mevcut tüm verinin yerine geçer.</div></div>
+  </div>
+  <div>
+    <div class="card f" data-min="yonetici"><h2><svg class="i"><use href="#i-msg"/></svg>WhatsApp</h2>
+      <label class="chk" style="color:var(--t)"><input type="checkbox" id="s_wa_enabled"> Geldi mesajını otomatik gönder</label>
+      <label>Sağlayıcı</label><select id="s_wa_provider" onchange="modeUI()"><option value="whapi">Whapi.cloud (normal WhatsApp numarası, şablon gerekmez)</option><option value="meta">Meta Cloud API (resmi Business API)</option></select>
+      <div id="whapibox"><label>Whapi API Token <span id="whtokset" class="m"></span></label><input type="password" id="s_whapi_token" placeholder="whapi.cloud panelinden kanal token'ı">
+        <div class="help" style="margin-top:10px">whapi.cloud → kanal oluştur → QR ile okulun WhatsApp numarasını bağla → token'ı buraya yapıştır. İletildi/okundu için kanal ayarlarında webhook: <b>https://&lt;sunucu&gt;/webhook/whatsapp</b></div></div>
+      <div id="metabox">
+      <div class="row" style="margin:0"><div><label>Phone Number ID</label><input type="text" id="s_wa_phone_id"></div><div><label>Access Token <span id="tokset" class="m"></span></label><input type="password" id="s_wa_token" placeholder="değiştirmek için yaz"></div></div>
+      <label>Gönderim türü</label><select id="s_wa_mode" onchange="modeUI()"><option value="template">Onaylı şablon (önerilen — gerçek kullanım)</option><option value="text">Serbest metin (sadece son 24 saatte yazmış veliler)</option></select>
+      <div id="tplbox"><div class="row" style="margin:0"><div><label>Şablon adı (Meta'da onaylı)</label><input type="text" id="s_wa_tpl_name" placeholder="ogrenci_giris"></div><div style="max-width:110px"><label>Dil</label><input type="text" id="s_wa_tpl_lang" placeholder="tr"></div></div>
+        <div class="help" style="margin-top:10px">Meta'da şablon gövdesi 3 değişkenli olmalı: <b>{{1}}</b> veli adı, <b>{{2}}</b> öğrenci, <b>{{3}}</b> saat. Örnek: "Sayın {{1}}, öğrenciniz {{2}} okula saat {{3}}'te giriş yaptı."</div></div>
+      <label>Webhook doğrulama anahtarı</label><input type="text" id="s_wa_verify"></div>
+      <label>Mesaj metni (serbest metin ve wa.me için) — {veli} {ogrenci} {saat}</label><textarea id="s_wa_template" rows="2"></textarea>
+      <label>Kara liste alarm telefonu (yönetici)</label><input type="text" id="s_alarm_tel" placeholder="05xx…">
+      <div class="m" style="margin-top:4px">İletildi/okundu durumları için webhook: <b>https://&lt;sunucu-adresi&gt;/webhook/whatsapp</b> (sunucu internetten erişilebilir olmalı; olmasa da mesajlar gider)</div>
+      <button class="btn dk" style="margin-top:16px" onclick="saveSettings()">Kaydet</button>
+      <div class="row" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--b)"><input type="text" id="wt_tel" placeholder="Test için telefon (05xx…)"><button class="btn gr" onclick="waTest()">Test mesajı gönder</button></div>
+      <div id="wt_res" class="m"></div></div>
+    <div class="card f"><h2><svg class="i"><use href="#i-lock"/></svg>Şifremi değiştir</h2>
+      <label>Mevcut şifre</label><input type="password" id="pw_old"><label>Yeni şifre</label><input type="password" id="pw_new">
+      <button class="btn dk" style="margin-top:16px" onclick="changePw()">Değiştir</button></div>
+  </div></div>
+</section>
+</main></div>
+
+<div id="msg"></div>
+<script>
+const $=id=>document.getElementById(id), enc=encodeURIComponent;
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ini=n=>esc((n||'?').split(' ').map(x=>x[0]).slice(0,2).join(''));
+const toast=(t,e)=>{const m=$('msg');m.textContent=t;m.className=e?'e':'';m.style.display='block';clearTimeout(m._t);m._t=setTimeout(()=>m.style.display='none',4000)};
+async function api(p,o={}){const r=await fetch(p,o);const j=await r.json().catch(()=>({}));if(r.status===401&&p!=='/api/login'){$('login').style.display='grid';throw new Error('Giriş gerekli')}if(!r.ok)throw new Error(j.detail||r.statusText);return j}
+const post=(p,b)=>api(p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});
+const LN={ogrenci:'Öğrenci',beyaz:'Beyaz liste',kara:'Kara liste'}, LC={ogrenci:'p-ok',beyaz:'p-b',kara:'p-r'};
+const RN={yonetici:'Yönetici',mudur_yrd:'Müdür yardımcısı',ogretmen:'Öğretmen'}, RL={ogretmen:1,mudur_yrd:2,yonetici:3};
+let ME=null,PEOPLE=[],ATT=[],CUR=null,LIST='ogrenci',PK='onay',MSGS=[],SEEN_AL=new Set(JSON.parse(sessionStorage.getItem('al')||'[]'));
+const today=()=>new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
+const h=new Date().getHours();$('greet').textContent=h<12?'Günaydın 👋':h<18?'İyi günler 👋':'İyi akşamlar 👋';$('aday').value=today();
+
+async function doLogin(e){e.preventDefault();$('lerr').textContent='';try{await post('/api/login',{user:$('lu').value,pass:$('lp').value,remember:$('lrem').checked});location.reload()}catch(x){$('lerr').textContent=x.message}}
+async function logout(){await post('/api/logout',{});location.reload()}
+
+document.querySelectorAll('nav a').forEach(a=>a.onclick=()=>go(a.dataset.p,a.dataset.l));
+function go(p,l){if(l)LIST=l;
+  document.querySelectorAll('nav a').forEach(x=>x.classList.toggle('on',x.dataset.p===p&&(!x.dataset.l||x.dataset.l===LIST)));
+  document.querySelectorAll('.page').forEach(x=>x.classList.toggle('on',x.id==='p-'+p));
+  ({att:loadAtt,pending:loadPending,students:loadPeople,enroll:loadPeople,messages:loadMsgs,users:loadUsers})[p]?.()}
+
+// ---------- canli
+try{$('url').value=localStorage.getItem('url')||''}catch(e){}
+$('video').onload=()=>$('vph').style.display='none';
+async function camStart(){const u=$('url').value.trim();try{localStorage.setItem('url',u)}catch(e){}
+  try{await post('/api/camera',{url:u});$('video').src='/api/stream?'+Date.now();toast('Bağlanılıyor…')}catch(e){toast(e.message,1)}}
+async function camStop(){try{await api('/api/camera',{method:'DELETE'})}catch(e){return toast(e.message,1)}$('video').removeAttribute('src');$('vph').style.display='grid'}
+async function testImg(){const f=$('testf').files[0];if(!f)return toast('Önce fotoğraf seç',1);const fd=new FormData();fd.append('file',f);
+  try{const r=await api('/api/test',{method:'POST',body:fd});
+  $('testres').innerHTML=`<img src="${r.image}" style="max-width:100%;border-radius:12px;margin-top:6px"><div style="margin-top:8px">${r.faces.map(x=>x.name?`<span class="tag ${LC[x.liste]}">${esc(x.name)} · ${x.score}</span>`:`<span class="tag p-w">bilinmiyor — en yakın ${esc(x.best||'-')} · ${x.score}</span>`).join(' ')||'<span class=m>Yüz bulunamadı</span>'}</div>`}catch(e){toast(e.message,1)}}
+const waTag=w=>!w||w==='-'?'':`<span class="tag ${w==='gonderildi'||w==='iletildi'||w==='okundu'?'p-ok':w==='hata'?'p-r':''}" style="font-size:11px">WA: ${esc(w)}</span>`;
+async function loadEvents(){const ev=await api('/api/events?limit=40');
+  $('ev').innerHTML=ev.map(e=>`<div class="ev ${e.liste==='kara'?'kara':''}"><img class=av src="/api/people/${enc(e.name)}/_" onerror="this.outerHTML='<div class=ini>${ini(e.name)}</div>'">
+    <div class="x"><b>${esc(e.name)}</b> ${e.liste!=='ogrenci'?`<span class="tag ${LC[e.liste]}">${LN[e.liste]}</span>`:''}<div class=m>${esc(e.sinif||'—')} · ${e.kaynak==='kamera'?'skor '+e.score:esc(e.kaynak)} ${waTag(e.wa)}</div></div>
+    <span class="tag ${e.liste==='kara'?'p-r':'p-ok'}">${e.time.slice(11,16)}</span></div>`).join('')||`<div class="empty">Henüz geçiş yok</div>`}
+
+// ---------- alarm
+function showAlarm(a){$('al_t').textContent='⚠ KARA LİSTE: '+a.name;$('al_d').textContent=`${a.time.slice(11,16)} · ${a.not||''}`;$('alarm').style.display='flex';$('alarm').dataset.id=a.id;beep()}
+function ackAlarm(){SEEN_AL.add(+$('alarm').dataset.id);sessionStorage.setItem('al',JSON.stringify([...SEEN_AL]));$('alarm').style.display='none'}
+function beep(){try{const c=new AudioContext();[0,.35,.7].forEach(t=>{const o=c.createOscillator(),g=c.createGain();o.frequency.value=880;o.connect(g);g.connect(c.destination);g.gain.setValueAtTime(.25,c.currentTime+t);o.start(c.currentTime+t);o.stop(c.currentTime+t+.22)})}catch(e){}}
+
+// ---------- kisiler
+async function loadPeople(){[PEOPLE,ATT]=await Promise.all([api('/api/people'),api('/api/attendance')]);
+  const cls=[...new Set(PEOPLE.map(p=>p.sinif).filter(Boolean))].sort();
+  for(const id of['fs','as']){const v=$(id).value;$(id).innerHTML='<option value="">Tüm sınıflar</option>'+cls.map(c=>`<option>${esc(c)}</option>`).join('');$(id).value=v}
+  $('sel').innerHTML='<option value="">— yeni kayıt —</option>'+PEOPLE.map(p=>`<option value="${esc(p.name)}" ${p.name===CUR?'selected':''}>${esc(p.name)} (${LN[p.liste]})</option>`).join('');
+  for(const l of['ogrenci','beyaz','kara'])$('n_'+l).textContent=PEOPLE.filter(p=>p.liste===l).length;
+  const g=ATT.filter(a=>a.geldi).length;$('n_att').textContent=g+'/'+ATT.length;$('k_g').textContent=g;$('k_n').textContent=ATT.length-g;
+  renderStudents();renderThumbs()}
+function renderStudents(){
+  $('lt').textContent={ogrenci:'Öğrenciler',beyaz:'Beyaz Liste',kara:'Kara Liste'}[LIST];
+  $('ld').textContent={ogrenci:'Kayıtlı öğrenciler, veli bilgileri ve tanıma durumu.',beyaz:'Personel ve izinli kişiler. Tanınınca kayıt düşer, veliye mesaj gitmez.',kara:'Girişi yasak kişiler. Kamerada görülünce ekranda alarm çıkar ve yöneticiye mesaj gider.'}[LIST];
+  const ogr=LIST==='ogrenci';$('fs').style.display=ogr?'':'none';
+  $('sthead').innerHTML=`<tr><th></th>${ogr?'<th>No</th>':''}<th>Ad Soyad</th>${ogr?'<th>Sınıf</th><th>Veli</th><th>Veli Tel</th>':'<th>Not</th>'}<th>Foto</th><th>Durum</th>${ogr?'<th>Bugün</th>':''}<th></th></tr>`;
+  const q=$('q').value.toLowerCase(),s=$('fs').value;const att=Object.fromEntries(ATT.map(a=>[a.name,a.geldi]));
+  const rows=PEOPLE.filter(p=>p.liste===LIST&&(!ogr||!s||p.sinif===s)&&(!q||[p.name,p.no,p.veli_ad,p.veli_tel,p.not].join(' ').toLowerCase().includes(q)))
+   .sort((a,b)=>(a.sinif||'').localeCompare(b.sinif||'')||(+a.no||0)-(+b.no||0)||a.name.localeCompare(b.name));
+  const can=RL[ME?.rol]>=2;
+  $('stbody').innerHTML=rows.map(p=>`<tr><td>${p.photos[0]?`<img class=av src="/api/people/${enc(p.name)}/${p.photos[0]}">`:`<div class=ini>${ini(p.name)}</div>`}</td>
+   ${ogr?`<td>${esc(p.no)}</td>`:''}<td><b>${esc(p.name)}</b></td>
+   ${ogr?`<td><span class=tag>${esc(p.sinif||'—')}</span></td><td>${esc(p.veli_ad)}</td><td class=m>${esc(p.veli_tel)}</td>`:`<td class=m>${esc(p.not)}</td>`}
+   <td>${p.photos.length}</td><td>${p.trained?'<span class="tag p-ok">Eğitildi</span>':p.photos.length?'<span class="tag p-w">Eğitilmedi</span>':'<span class="tag p-r">Foto yok</span>'}</td>
+   ${ogr?`<td>${att[p.name]?`<span class="tag p-ok">${att[p.name]}</span>`:'<span class=m>—</span>'}</td>`:''}
+   <td style="white-space:nowrap;text-align:right">${can?`<button class="btn sm" onclick="edit('${esc(enc(p.name))}')">Düzenle</button>`:''} ${ogr?`<button class="btn sm" title="WhatsApp" onclick="wa('${esc(enc(p.name))}')">${I('msg')}</button>`:''}</td></tr>`).join('')
+   ||`<tr><td colspan=10 class="empty">Kayıt yok.</td></tr>`}
+function newPerson(l){CUR=null;fill({liste:l||'ogrenci'});go('enroll')}
+function edit(n){pick(decodeURIComponent(n));go('enroll')}
+async function wa(n){const r=await api('/api/wa_link/'+n);if(r.url.includes('wa.me/?'))return toast('Veli telefonu yok',1);window.open(r.url,'_blank')}
+async function train(){toast('Eğitiliyor…');try{const r=await post('/api/train',{});
+  let h=`<b>${r.people.length} kişi</b> galeride.`;
+  if(r.closest_pair)h+=` En benzer iki kişi: ${esc(r.closest_pair.a)} ↔ ${esc(r.closest_pair.b)} (${r.closest_pair.sim})`;
+  const bad=r.people.filter(p=>p.min_sim<0.5);if(bad.length)h+=`<br><span class=wc>Tutarsız foto olabilir: ${bad.map(p=>esc(p.name)+' '+p.min_sim).join(', ')}</span>`;
+  $('trainres').innerHTML=`<div class="help" style="margin-bottom:16px">${h}</div>`;toast('Eğitim tamam');loadPeople()}catch(e){toast(e.message,1)}}
+
+// ---------- kayit
+const F=['no','sinif','veli_ad','veli_tel','not','liste'];
+function fill(p){CUR=p.name||null;$('e_name').value=p.name||'';for(const k of F)$('e_'+k).value=p[k]||(k==='liste'?'ogrenci':'');$('sel').value=CUR||'';listeUI();renderThumbs()}
+function listeUI(){const l=$('e_liste').value;document.querySelector('.ogr').style.display=l==='ogrenci'?'':'none';
+  $('notl').textContent=l==='kara'?'Neden kara listede? (alarm mesajında görünür)':l==='beyaz'?'Görevi / not (ör. Matematik öğretmeni, servis şoförü)':'Not';}
+function pick(n){fill(PEOPLE.find(p=>p.name===n)||{})}
+function renderThumbs(){const p=PEOPLE.find(x=>x.name===CUR);$('pc').textContent=p?p.photos.length:0;
+  $('thumbs').innerHTML=p?p.photos.map(f=>`<div><img src="/api/people/${enc(p.name)}/${f}"><span onclick="delPhoto('${f}')">×</span></div>`).join('')||'<span class=m>Henüz foto yok</span>':'<span class=m>Önce bilgileri gir</span>'}
+function info(){const d={name:$('e_name').value.trim(),old_name:CUR};for(const k of F)d[k]=$('e_'+k).value;return d}
+async function saveInfo(){const d=info();if(!d.name)return toast('Ad Soyad gerekli',1);
+  try{await post('/api/people',d);CUR=d.name;toast('Kaydedildi');await loadPeople()}catch(e){toast(e.message,1)}}
+async function ensure(){const d=info();if(!d.name){toast('Önce Ad Soyad yaz',1);return null}await post('/api/people',d);CUR=d.name;return d.name}
+async function takeSnap(){try{const r=await fetch('/api/snapshot?t='+Date.now(),{cache:'no-store'});if(!r.ok)throw new Error((await r.json()).detail);$('snap').src=URL.createObjectURL(await r.blob());$('sph').style.display='none'}catch(e){toast(e.message,1)}}
+async function capture(){try{const n=await ensure();if(!n)return;await post('/api/enroll/capture',{name:n});toast('Foto eklendi: '+n);loadPeople()}catch(e){toast(e.message,1)}}
+async function upload(){const f=$('files').files;try{const n=await ensure();if(!n)return;
+  const fd=new FormData();fd.append('name',n);for(const x of f)fd.append('files',x);
+  const r=await api('/api/enroll/upload',{method:'POST',body:fd});const ok=r.filter(x=>x.saved).length;
+  toast(`${ok}/${r.length} foto eklendi`+(ok<r.length?' (bazılarında yüz yok)':''),ok<r.length)}catch(e){toast(e.message,1)}finally{$('files').value='';loadPeople()}}
+async function delPhoto(f){await api(`/api/people/${enc(CUR)}/${f}`,{method:'DELETE'});loadPeople()}
+async function delPerson(purge){if(!CUR)return;
+  if(!confirm(purge?`${CUR}: fotoğrafları, tüm geçiş ve mesaj kayıtları KALICI olarak silinecek. Geri alınamaz. Devam?`:`${CUR} ve fotoğrafları silinsin mi? (geçmiş kayıtlar kalır)`))return;
+  try{await api('/api/people/'+enc(CUR)+'?purge='+purge,{method:'DELETE'});toast('Silindi');fill({});loadPeople()}catch(e){toast(e.message,1)}}
+
+// ---------- yoklama
+async function loadAtt(){ATT=await api('/api/attendance?day='+$('aday').value);if(!PEOPLE.length)await loadPeople();renderAtt()}
+function renderAtt(){const s=$('as').value,isToday=$('aday').value===today();const rows=ATT.filter(a=>!s||a.sinif===s).sort((a,b)=>(!!a.geldi-!!b.geldi)||(a.sinif||'').localeCompare(b.sinif||'')||(+a.no||0)-(+b.no||0));
+  $('a_t').textContent=rows.length;$('a_g').textContent=rows.filter(a=>a.geldi).length;$('a_n').textContent=rows.filter(a=>!a.geldi).length;
+  $('atbody').innerHTML=rows.map(a=>`<tr><td>${esc(a.no)}</td><td><b>${esc(a.name)}</b></td><td><span class=tag>${esc(a.sinif||'—')}</span></td>
+   <td>${a.geldi?`<span class="tag p-ok">✓ Geldi ${a.geldi}</span>`:`<span class="tag p-w">${isToday?'Henüz görülmedi':'Gelmedi'}</span>`}</td><td>${esc(a.veli_ad)} <span class=m>${esc(a.veli_tel)}</span></td>
+   <td style="text-align:right;white-space:nowrap">${!a.geldi&&isToday?`<button class="btn sm" onclick="manual('${esc(enc(a.name))}')">Geldi işaretle</button> <button class="btn sm danger" onclick="absent('${esc(enc(a.name))}')">Gelmedi bildir</button>`:''}</td></tr>`).join('')||`<tr><td colspan=6 class="empty">Kayıtlı öğrenci yok</td></tr>`}
+async function manual(n){try{await post('/api/attendance/manual',{name:decodeURIComponent(n)});toast('Geldi olarak işaretlendi');loadAtt()}catch(e){toast(e.message,1)}}
+async function absent(n){n=decodeURIComponent(n);if(!confirm(`${n} için veliye "okula gelmedi" mesajı gönderilsin mi?`))return;
+  try{const r=await post('/api/absent/notify',{name:n});toast(r.wa==='kapali'?'WhatsApp kapalı — WA butonuyla elle gönderebilirsin':'Mesaj: '+r.wa,r.wa!=='gonderiliyor')}catch(e){toast(e.message,1)}}
+function exportAtt(){const s=$('as').value;const rows=ATT.filter(a=>!s||a.sinif===s);
+  const csv='﻿No;Ad Soyad;Sınıf;Durum;Saat;Veli;Veli Tel\n'+rows.map(a=>[a.no,a.name,a.sinif,a.geldi?'Geldi':'Gelmedi',a.geldi||'',a.veli_ad,a.veli_tel].map(x=>`"${String(x||'').replace(/"/g,'""')}"`).join(';')).join('\n');
+  const l=document.createElement('a');l.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));l.download=`yoklama-${$('aday').value}${s?'-'+s:''}.csv`;l.click()}
+
+// ---------- onay bekleyen
+function pTab(k){PK=k;document.querySelectorAll('.tabs a').forEach(a=>a.classList.toggle('on',a.dataset.k===k));loadPending()}
+async function loadPending(){if(!PEOPLE.length)await loadPeople();const rows=await api('/api/pending?kind='+PK);
+  $('clearUnk').style.display=PK==='bilinmeyen'&&RL[ME.rol]>=2?'':'none';
+  $('pinfo').innerHTML=PK==='onay'?'Sistem bu kişiyi tahmin etti ama emin olamadı. Doğruysa <b>Onayla</b>: GELDİ kaydı düşer ve fotoğraf galeriye eklenir.':'Hiçbir kayıtla eşleşmeyen yüzler. Kayıtsız bir öğrenciyse <b>kişi seçip ekle</b> ya da yeni isim yaz. Yabancıysa kara listeye alabilirsin.';
+  const opts=PEOPLE.map(p=>`<option value="${esc(p.name)}">${esc(p.name)}${p.sinif?' · '+esc(p.sinif):''}</option>`).join('');
+  $('pgrid').innerHTML=rows.map(r=>`<div class="pc"><img src="/media/${PK}/${r.img}">
+    <div class="b"><div style="display:flex;justify-content:space-between"><b>${PK==='onay'?esc(r.cand):'Bilinmeyen'}</b><span class="tag ${PK==='onay'?'p-w':''}">${r.score}</span></div>
+    <div class=m>${r.time.slice(5,16).replace('-','.')} ${esc(r.cam||'')}</div>
+    <select id="pp_${r.id}">${PK==='onay'?'':'<option value="">— kişi seç —</option>'}${opts}<option value="__new">+ Yeni isim yaz…</option></select>
+    <div class="row" style="margin:0"><button class="btn gr sm" onclick="approve(${r.id})">${PK==='onay'?'Onayla':'Ekle'}</button><button class="btn sm" onclick="reject(${r.id})">Sil</button>
+    ${PK==='bilinmeyen'&&RL[ME.rol]>=2?`<button class="btn sm rd" onclick="toKara(${r.id})">Kara liste</button>`:''}</div></div></div>`).join('')||`<div class="empty" style="grid-column:1/-1">Bekleyen kayıt yok 🎉</div>`;
+  rows.forEach(r=>{const s=$('pp_'+r.id);if(PK==='onay')s.value=r.cand})}
+async function approve(id,extra={}){let n=$('pp_'+id).value;if(!n)return toast('Kişi seç',1);
+  if(n==='__new'){n=prompt('Ad Soyad');if(!n)return}
+  try{await post(`/api/pending/${id}/approve`,{name:n,mark:PK==='onay'||extra.mark!==false,...extra});toast('Kaydedildi: '+n);loadPending();loadPeople();refresh()}catch(e){toast(e.message,1)}}
+async function toKara(id){const n=prompt('Kara listeye eklenecek kişinin adı / tanımı','Yabancı '+id);if(!n)return;
+  try{await post('/api/people',{name:n,liste:'kara',not:'Bilinmeyen yüzden eklendi'});await post(`/api/pending/${id}/approve`,{name:n,mark:false});toast('Kara listeye eklendi');loadPending();loadPeople()}catch(e){toast(e.message,1)}}
+async function reject(id){await api('/api/pending/'+id,{method:'DELETE'});loadPending();refresh()}
+async function clearUnknown(){if(!confirm('Tüm bilinmeyen yüzler silinsin mi?'))return;await api('/api/pending?kind=bilinmeyen',{method:'DELETE'});loadPending();refresh()}
+
+// ---------- mesajlar
+async function loadMsgs(){MSGS=await api('/api/messages');renderMsgs()}
+function renderMsgs(){const f=$('mf').value;const SC={gonderiliyor:'',gonderildi:'p-b',iletildi:'p-ok',okundu:'p-ok',hata:'p-r'};
+  $('mbody').innerHTML=MSGS.filter(m=>!f||m.kind===f).map(m=>`<tr><td class=m style="white-space:nowrap">${m.time.slice(5,16)}</td><td><b>${esc(m.name)}</b></td><td class=m>${esc(m.tel)}</td>
+   <td><span class="tag ${m.kind==='alarm'?'p-r':m.kind==='gelmedi'?'p-w':''}">${esc(m.kind)}</span></td><td style="max-width:380px">${esc(m.text)}</td>
+   <td><span class="tag ${SC[m.status]||''}" title="${esc(m.err||'')}">${esc(m.status)}</span>${m.err?`<div class=m style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.err)}</div>`:''}</td></tr>`).join('')
+   ||`<tr><td colspan=6 class="empty">Henüz mesaj yok. WhatsApp ayarları yapılınca burada görünür.</td></tr>`}
+
+// ---------- kullanicilar
+async function loadUsers(){const us=await api('/api/users');
+  $('ubody').innerHTML=us.map(u=>`<tr><td><b>${esc(u.user)}</b></td><td>${esc(u.ad)}</td><td><span class="tag ${u.rol==='yonetici'?'p-v':u.rol==='mudur_yrd'?'p-b':''}">${RN[u.rol]}</span></td><td>${esc(u.sinif||'—')}</td>
+   <td style="text-align:right;white-space:nowrap"><button class="btn sm" onclick='editUser(${JSON.stringify(u).replace(/'/g,"&#39;")})'>Düzenle</button> ${u.user!==ME.user?`<button class="btn sm danger" onclick="delUser('${esc(u.user)}')">Sil</button>`:''}</td></tr>`).join('')}
+function editUser(u){for(const k of['user','ad','rol','sinif'])$('u_'+k).value=u[k]||'';$('u_pass').value=''}
+async function saveUser(){const d={};for(const k of['user','ad','rol','sinif','pass'])d[k]=$('u_'+k).value;
+  if(d.rol==='ogretmen'&&!d.sinif)return toast('Öğretmen için sınıf yaz',1);
+  try{await post('/api/users',d);toast('Kullanıcı kaydedildi');for(const k of['user','ad','sinif','pass'])$('u_'+k).value='';loadUsers()}catch(e){toast(e.message,1)}}
+async function delUser(u){if(!confirm(u+' silinsin mi?'))return;try{await api('/api/users/'+enc(u),{method:'DELETE'});loadUsers()}catch(e){toast(e.message,1)}}
+async function changePw(){try{await post('/api/password',{old:$('pw_old').value,new:$('pw_new').value});$('pw_old').value=$('pw_new').value='';toast('Şifre değiştirildi')}catch(e){toast(e.message,1)}}
+
+// ---------- ayarlar
+const SK=['threshold','low_threshold','vote_frames','cooldown','det_score','min_face','keep_days','keep_unknown_days','wa_phone_id','wa_token','wa_template','wa_mode','wa_tpl_name','wa_tpl_lang','alarm_tel','wa_verify','wa_provider','whapi_token'];
+function modeUI(){const w=$('s_wa_provider').value==='whapi';$('whapibox').style.display=w?'':'none';$('metabox').style.display=w?'none':'';$('tplbox').style.display=$('s_wa_mode').value==='template'?'':'none'}
+async function saveSettings(){const d={};for(const k of SK)d[k]=$('s_'+k).value;d.wa_enabled=$('s_wa_enabled').checked;
+  try{await post('/api/settings',d);$('s_wa_token').value='';$('s_whapi_token').value='';toast('Ayarlar kaydedildi');refresh(true)}catch(e){toast(e.message,1)}}
+async function waTest(){$('wt_res').textContent='Gönderiliyor…';try{const r=await post('/api/wa_test',{tel:$('wt_tel').value});
+  $('wt_res').innerHTML=r.status==='hata'?`<span style="color:var(--r)">Hata: ${esc(r.err)}</span>`:`<span style="color:var(--ok)">✓ ${esc(r.status)} — telefonu kontrol et</span>`}catch(e){$('wt_res').textContent=e.message}}
+async function restore(){const f=$('rest').files[0];if(!f||!confirm('Mevcut tüm veri yedekteki ile değiştirilecek. Devam?'))return($('rest').value='');
+  const fd=new FormData();fd.append('file',f);toast('Geri yükleniyor…');try{const r=await api('/api/restore',{method:'POST',body:fd});toast(`Geri yüklendi: ${r.people} kişi`);loadPeople()}catch(e){toast(e.message,1)}$('rest').value=''}
+
+// ---------- durum
+async function refresh(force){try{const s=await api('/api/status');
+  const live=s.camera==='canli';const b=$('camBadge');b.className='badge '+(live?'live':'off');b.textContent='Kamera: '+s.camera;
+  $('k_f').textContent=s.fps;$('k_pr').textContent='fps · '+s.provider.replace('ExecutionProvider','');$('camurl').textContent=s.url||'';
+  $('k_p').textContent=s.pending;const np=$('n_pen');np.textContent=s.pending+(s.unknown?' · '+s.unknown:'');np.className='n'+(s.pending?' hot':'');
+  $('t_onay').textContent=s.pending;$('t_bil').textContent=s.unknown;
+  for(const k in s.settings){const i=$('s_'+k);if(!i||(!force&&document.activeElement===i)||(!force&&i.dataset.init))continue;i.dataset.init=1;if(i.type==='checkbox')i.checked=s.settings[k];else i.value=s.settings[k]}
+  modeUI();$('tokset').textContent=s.settings.wa_token_set?'(kayıtlı)':'(yok)';$('whtokset').textContent=s.settings.whapi_token_set?'(kayıtlı)':'(yok)';
+  const a=s.alarms.find(x=>!SEEN_AL.has(x.id));if(a&&$('alarm').style.display!=='flex')showAlarm(a);
+  $('n_kara').className='n'+(s.alarms.length?' red':'')}catch(e){}}
+
+async function boot(){try{ME=await api('/api/me')}catch(e){return}
+  $('login').style.display='none';$('me_n').textContent=ME.ad||ME.user;$('me_r').textContent=RN[ME.rol]+(ME.sinif?' · '+ME.sinif:'');$('me_av').textContent=(ME.ad||ME.user)[0].toUpperCase();
+  document.querySelectorAll('[data-min]').forEach(e=>{if(RL[ME.rol]>=RL[e.dataset.min])e.removeAttribute('data-min')});
+  loadPeople();loadEvents();refresh(true);setInterval(refresh,2000);setInterval(loadEvents,2500);setInterval(loadPeople,20000);
+  api('/api/status').then(s=>{if(s.camera!=='kapali')$('video').src='/api/stream'})}
+boot();
+</script></body></html>
