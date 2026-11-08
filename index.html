@@ -532,6 +532,7 @@ td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:h
   <div class="g2">
   <div>
     <div class="card f" data-min="yonetici"><h2><svg class="i"><use href="#i-scan"/></svg>Tanıma</h2>
+      <div class="row" style="margin:0"><div><label>Aday farkı (1. ile 2. aday arası en az)</label><input id="s_margin" type="number" step="0.01"></div><div><label>Min. kare kalitesi (0-1)</label><input id="s_min_quality" type="number" step="0.05"></div></div>
       <div class="row" style="margin:0"><div><label>Eşleşme eşiği</label><input id="s_threshold" type="number" step="0.01"></div><div><label>Onay alt sınırı</label><input id="s_low_threshold" type="number" step="0.01"></div></div>
       <div class="m">Eşik üstü: tanındı · alt sınır ile eşik arası: onay bekler · altı: bilinmeyen</div>
       <div class="row" style="margin:0"><div><label>Karar için kare (oylama)</label><input id="s_vote_frames" type="number"></div><div><label>Tekrar kayıt arası (sn)</label><input id="s_cooldown" type="number"></div></div>
@@ -593,7 +594,7 @@ const ini=n=>esc((n||'?').split(' ').map(x=>x[0]).slice(0,2).join(''));
 const toast=(t,e)=>{const m=$('msg');m.textContent=t;m.className=e?'e':'';m.style.display='block';clearTimeout(m._t);m._t=setTimeout(()=>m.style.display='none',4000)};
 async function api(p,o={}){const r=await fetch(p,o);const j=await r.json().catch(()=>({}));if(r.status===401&&p!=='/api/login'){$('login').style.display='grid';throw new Error('Giriş gerekli')}if(!r.ok)throw new Error(j.detail||r.statusText);return j}
 const post=(p,b)=>api(p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});
-const LN={ogrenci:'Öğrenci',beyaz:'Beyaz liste',kara:'Kara liste'}, LC={ogrenci:'p-ok',beyaz:'p-b',kara:'p-r'};
+const LN={ogrenci:'Öğrenci',beyaz:'Beyaz liste',kara:'Kara liste',ziyaretci:'Ziyaretçi'}, LC={ogrenci:'p-ok',beyaz:'p-b',kara:'p-r',ziyaretci:'p-v'};
 const RN={yonetici:'Yönetici',mudur_yrd:'Müdür yardımcısı',ogretmen:'Öğretmen'}, RL={ogretmen:1,mudur_yrd:2,yonetici:3};
 let SET={},ME=null,PEOPLE=[],ATT=[],TODAY=[],CUR=null,LIST='ogrenci',PK='onay',MSGS=[],SEEN_AL=new Set(JSON.parse(sessionStorage.getItem('al')||'[]'));
 const today=()=>new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
@@ -627,7 +628,7 @@ async function testImg(file){const f=file||$('testf').files[0];if(!f)return;cons
       <div class="m" style="margin-bottom:8px">${r.faces.length} yüz bulundu · eşik ${th}</div>
       ${r.faces.map((x,i)=>{const pct=Math.max(0,Math.min(100,x.score*100)),col=x.name?(x.liste==='kara'?'var(--r)':x.liste==='beyaz'?'var(--blu)':'var(--ok)'):'var(--w)';
         return `<div class="fr"><div class="ini" style="background:${col}">${i+1}</div><div><b>${x.name?esc(x.name):'Tanınmadı'}</b>${x.name&&x.liste!=='ogrenci'?` <span class="tag ${LC[x.liste]}">${LN[x.liste]}</span>`:''}
-          <div class=m>${x.name?'Eşleşti':'En yakın: '+esc(x.best||'—')}</div></div><div class="sc"><b style="color:${col}">${x.score.toFixed(2)}</b><div class="mt"><i style="width:${pct}%;background:${col}"></i></div></div></div>`}).join('')||'<div class="empty">Yüz bulunamadı</div>'}
+          <div class=m>${x.name?'Eşleşti':'En yakın: '+esc(x.best||'—')+({fark:` · ${esc(x.second||'')} ile çok benzer (${x.score2})`,kalite:' · görüntü kalitesi düşük',esik:' · eşiğin altında'}[x.why]||'')} · kalite ${x.quality}</div></div><div class="sc"><b style="color:${col}">${x.score.toFixed(2)}</b><div class="mt"><i style="width:${pct}%;background:${col}"></i></div></div></div>`}).join('')||'<div class="empty">Yüz bulunamadı</div>'}
     </div></div>`}catch(e){$('testres').innerHTML='';toast(e.message,1)}$('testf').value=''}
 (()=>{const d=$('tdrop');['dragenter','dragover'].forEach(ev=>d.addEventListener(ev,e=>{e.preventDefault();d.classList.add('ov')}));
   ['dragleave','drop'].forEach(ev=>d.addEventListener(ev,e=>{e.preventDefault();d.classList.remove('ov')}));
@@ -675,6 +676,7 @@ async function train(){toast('Eğitiliyor…');try{const r=await post('/api/trai
   let h=`<b>${r.people.length} kişi</b> galeride.`;
   if(r.closest_pair)h+=` En benzer iki kişi: ${esc(r.closest_pair.a)} ↔ ${esc(r.closest_pair.b)} (${r.closest_pair.sim})`;
   const bad=r.people.filter(p=>p.min_sim<0.5);if(bad.length)h+=`<br><span class=wc>Tutarsız foto olabilir: ${bad.map(p=>esc(p.name)+' '+p.min_sim).join(', ')}</span>`;
+  if(r.suspicious?.length)h+=`<br><span style="color:var(--r)"><b>Şüpheli foto (${r.suspicious.length}):</b> ${r.suspicious.slice(0,10).map(x=>`${esc(x.name)}/${esc(x.file)} → ${esc(x.other)} (${x.other_sim})`).join(', ')} — yanlış etiketlenmiş olabilir, kontrol et.</span>`;
   $('trainres').innerHTML=`<div class="help" style="margin-bottom:16px">${h}</div>`;toast('Eğitim tamam');loadPeople()}catch(e){toast(e.message,1)}}
 
 // ---------- kayit
@@ -808,7 +810,7 @@ async function delUser(u){if(!confirm(u+' silinsin mi?'))return;try{await api('/
 async function changePw(){try{await post('/api/password',{old:$('pw_old').value,new:$('pw_new').value});$('pw_old').value=$('pw_new').value='';toast('Şifre değiştirildi')}catch(e){toast(e.message,1)}}
 
 // ---------- ayarlar
-const SK=['ders_baslangic','gelmedi_saat','tatiller','cam_down_sec','wa_template_gec','wa_template_cikis','bot_keyword','det_width','queue_max','threshold','low_threshold','vote_frames','cooldown','det_score','min_face','keep_days','keep_unknown_days','wa_phone_id','wa_token','wa_template','wa_mode','wa_tpl_name','wa_tpl_lang','alarm_tel','wa_verify','wa_provider','whapi_token'];
+const SK=['margin','min_quality','ders_baslangic','gelmedi_saat','tatiller','cam_down_sec','wa_template_gec','wa_template_cikis','bot_keyword','det_width','queue_max','threshold','low_threshold','vote_frames','cooldown','det_score','min_face','keep_days','keep_unknown_days','wa_phone_id','wa_token','wa_template','wa_mode','wa_tpl_name','wa_tpl_lang','alarm_tel','wa_verify','wa_provider','whapi_token'];
 function modeUI(){const w=$('s_wa_provider').value==='whapi';$('whapibox').style.display=w?'':'none';$('metabox').style.display=w?'none':'';$('tplbox').style.display=$('s_wa_mode').value==='template'?'':'none'}
 async function saveSettings(){const d={};for(const k of SK)d[k]=$('s_'+k).value;d.wa_enabled=$('s_wa_enabled').checked;d.hafta_sonu_kapali=$('s_hafta_sonu_kapali').checked;d.bot_enabled=$('s_bot_enabled').checked;
   try{await post('/api/settings',d);$('s_wa_token').value='';$('s_whapi_token').value='';toast('Ayarlar kaydedildi');refresh(true)}catch(e){toast(e.message,1)}}

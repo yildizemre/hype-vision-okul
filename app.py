@@ -59,7 +59,9 @@ DEFAULTS = {
     "ders_baslangic": "08:30", "gelmedi_saat": "08:45", "tatiller": "", "hafta_sonu_kapali": True,
     "cam_down_sec": 60, "bot_enabled": False, "bot_keyword": "durum,nerede",
     "cameras": [],
-    "cluster_threshold": 0.45,  # bilinmeyen yuzleri ayni kisi sayma benzerligi
+    "cluster_threshold": 0.45,
+    "margin": 0.08,       # en iyi aday ile ikinci aday arasinda en az bu fark yoksa "emin degil"
+    "min_quality": 0.35,  # bunun altindaki kareler (bulanik / yandan / kucuk) oylamaya girmez  # bilinmeyen yuzleri ayni kisi sayma benzerligi
 }
 def load_settings():
     d = dict(DEFAULTS)
@@ -129,6 +131,16 @@ def norm_crop(img, kps):
     M, _ = cv2.estimateAffinePartial2D(kps.astype(np.float32), ARC_DST, method=cv2.LMEDS)
     return cv2.warpAffine(img, M, (112, 112), borderValue=0)
 
+def face_quality(crop, fc):
+    """0..1 kalite: keskinlik, onden bakma, yuz boyu, tespit guveni."""
+    kps = fc[4:14].reshape(5, 2); le, re_, nose = kps[0], kps[1], kps[2]
+    ed = np.linalg.norm(re_ - le) + 1e-6
+    front = max(0.0, 1 - abs(nose[0] - (le[0] + re_[0]) / 2) / ed * 2)        # yatay donus
+    tilt = max(0.0, 1 - abs(np.degrees(np.arctan2(re_[1] - le[1], re_[0] - le[0]))) / 35)  # bas egikligi
+    sharp = min(1.0, cv2.Laplacian(cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY), cv2.CV_64F).var() / 120)
+    size = min(1.0, float(fc[2]) / 110)
+    return float(round((0.35 * front + 0.15 * tilt + 0.3 * sharp + 0.2 * size) * min(1.0, float(fc[14]) / 0.85), 3))
+
 def face_thumb(img, fc, size=160):
     """Insanin gorebilecegi, biraz genis kesilmis yuz."""
     x, y, w, h = fc[:4]; cx, cy = x + w / 2, y + h / 2; s = max(w, h) * 1.6
@@ -164,36 +176,95 @@ class Engine:
 E = Engine()
 
 class Gallery:
+    """Her ogrencinin HER fotografi ayri saklanir. Canli yuz her fotografla karsilastirilir;
+    kisi skoru = en iyi fotograf (+ 2. en iyi ile tutarlilik). Karar icin en iyi ve ikinci aday farki da bakilir."""
     def __init__(self):
-        self.names, self.embs = [], np.zeros((0, 512), np.float32)
+        self.names, self.embs = [], np.zeros((0, 512), np.float32)          # kisi merkezleri (yardimci)
+        self.P, self.owner, self.files = np.zeros((0, 512), np.float32), np.zeros(0, np.int32), []
+        self.starts, self.counts = np.zeros(0, np.int64), np.zeros(0, np.int64)
         if GALLERY.exists():
             z = np.load(GALLERY, allow_pickle=False); self.names, self.embs = list(z["names"]), z["embs"]
+            if "P" in z.files:
+                self.P, self.owner = z["P"], z["owner"]; self.files = list(z["files"]) if "files" in z.files else []
+                self._index()
         self.lock = threading.Lock()
+
+    def _index(self):
+        if len(self.owner):
+            self.starts = np.r_[0, np.flatnonzero(np.diff(self.owner)) + 1].astype(np.int64)
+            self.counts = np.diff(np.r_[self.starts, len(self.owner)]).astype(np.int64)
 
     def train(self):
         with self.lock:
-            names, embs, report = [], [], []
+            names, embs, P, owner, files, report = [], [], [], [], [], []
             for d in sorted(PEOPLE.iterdir()):
                 if not d.is_dir(): continue
-                crops = [c for c in (imread_u(p) for p in sorted(d.glob("*.jpg"))) if c is not None]
+                ps = sorted(d.glob("*.jpg")); crops, fs = [], []
+                for f in ps:
+                    c = imread_u(f)
+                    if c is not None: crops.append(c); fs.append(f.name)
                 if not crops: continue
                 e = E.embed(crops); m = e.mean(0); m /= np.linalg.norm(m)
-                names.append(d.name); embs.append(m)
+                k = len(names); names.append(d.name); embs.append(m)
+                P.append(e); owner += [k] * len(e); files += fs
                 report.append({"name": d.name, "photos": len(crops), "min_sim": round(float((e @ m).min()), 3)})
             self.names = names
             self.embs = np.array(embs, np.float32) if embs else np.zeros((0, 512), np.float32)
-            np.savez(GALLERY, names=np.array(names), embs=self.embs)
-            risk = None
+            self.P = np.concatenate(P).astype(np.float32) if P else np.zeros((0, 512), np.float32)
+            self.owner = np.array(owner, np.int32); self.files = files; self._index()
+            np.savez(GALLERY, names=np.array(names), embs=self.embs, P=self.P, owner=self.owner, files=np.array(files))
+            # --- galeri saglik kontrolu
+            risk, pairs, suspicious = None, [], []
             if len(names) > 1:
                 sim = self.embs @ self.embs.T; np.fill_diagonal(sim, -1)
                 i, j = np.unravel_index(sim.argmax(), sim.shape)
                 risk = {"a": names[i], "b": names[j], "sim": round(float(sim[i, j]), 3)}
-            return {"people": report, "closest_pair": risk}
+                iu = np.triu_indices(len(names), 1); v = sim[iu]
+                for t in np.argsort(-v)[:15]:
+                    if v[t] < S["threshold"] - 0.1: break
+                    pairs.append({"a": names[iu[0][t]], "b": names[iu[1][t]], "sim": round(float(v[t]), 3)})
+                # yanlis etiket supheli fotolar: kendi kisisinden cok baskasina benzeyen
+                full = self.P @ self.P.T
+                for k in range(len(self.P)):
+                    own = self.owner[k]; row = full[k].copy(); row[k] = -1
+                    same = row[self.owner == own]; other = row[self.owner != own]
+                    if not len(other): continue
+                    o = int(np.argmax(np.where(self.owner != own, row, -2)))
+                    own_best = float(same.max()) if len(same) else None
+                    if (own_best is None and other.max() >= S["threshold"]) or (own_best is not None and other.max() > own_best):
+                        suspicious.append({"name": names[own], "file": files[k], "own": None if own_best is None else round(own_best, 3),
+                                           "other": names[self.owner[o]], "other_sim": round(float(other.max()), 3)})
+            return {"people": report, "closest_pair": risk, "risky_pairs": pairs, "suspicious": suspicious[:50]}
+
+    def match_full(self, embs):
+        """Her yuz icin: en iyi kisi, skoru, ikinci kisi, skoru."""
+        if len(self.names) == 0 or len(embs) == 0 or len(self.P) == 0:
+            return [{"name": None, "score": 0.0, "name2": None, "score2": 0.0} for _ in range(len(embs))]
+        sim = embs @ self.P.T                                            # (M, foto)
+        t1 = np.maximum.reduceat(sim, self.starts, axis=1)               # kisi basi en iyi foto
+        mask = sim >= t1[:, self.owner] - 1e-6
+        sim2 = np.where(mask, -1.0, sim)
+        t2 = np.maximum.reduceat(sim2, self.starts, axis=1)              # kisi basi 2. en iyi foto
+        multi = self.counts[None, :] > 1
+        score = np.where(multi & (t2 > -1), 0.8 * t1 + 0.2 * np.maximum(t2, t1 - 0.15), t1)
+        out = []
+        for r in score:
+            o = np.argsort(-r)[:2]
+            out.append({"name": self.names[o[0]], "score": float(r[o[0]]),
+                        "name2": self.names[o[1]] if len(o) > 1 else None, "score2": float(r[o[1]]) if len(o) > 1 else 0.0})
+        return out
 
     def match(self, embs):
-        if len(self.names) == 0 or len(embs) == 0: return [(None, 0.0)] * len(embs)
-        sim = embs @ self.embs.T; idx = sim.argmax(1)
-        return [(self.names[i], float(sim[k, i])) for k, i in enumerate(idx)]
+        return [(m["name"], m["score"]) for m in self.match_full(embs)]
+
+def decide(m, q=1.0):
+    """Tek karede kabul: esik + ikinci adayla fark + kalite. Donus: (isim|None, sebep)."""
+    if m["name"] is None: return None, "galeri bos"
+    if q < S.get("min_quality", 0.35): return None, "kalite"
+    if m["score"] < S["threshold"]: return None, "esik"
+    if m["score"] - m["score2"] < S.get("margin", 0.08): return None, "fark"
+    return m["name"], "ok"
+
 G = Gallery()
 def train_bg(): threading.Thread(target=G.train, daemon=True).start()
 
@@ -278,6 +349,11 @@ def log_event(name, score, cam_name, yon="giris", kaynak="kamera", force=False):
         ALARMS.insert(0, {"id": eid, "time": t, "name": name, "not": info.get("not", ""), "cam": cam_name}); del ALARMS[50:]
         wa = wa_send(S["alarm_tel"], name, "alarm", f"⚠ KARA LİSTE: {name} {cam_name} kamerasında görüldü. Saat {t[11:16]}. {info.get('not', '')}", eid, force_text=True)
     elif lst == "beyaz": wa = "-"
+    elif lst == "ziyaretci":
+        wa = "-"
+        if yon == "cikis" and info.get("durum") != "cikti":
+            info["durum"] = "cikti"; info["cikis"] = t[:16]
+            (PEOPLE / name / "info.json").write_text(json.dumps(info, ensure_ascii=False), "utf-8"); INFO_CACHE.pop(name, None)
     elif is_off_day(): wa = "tatil"
     else:
         v = wa_vars(info, name, t)
@@ -359,6 +435,17 @@ def iou(a, b):
     ix = max(0, min(ax + aw, bx + bw) - max(ax, bx)); iy = max(0, min(ay + ah, by + bh) - max(ay, by))
     i = ix * iy; return i / (aw * ah + bw * bh - i + 1e-6)
 
+def vote_result(tr):
+    """Oylama: son N gecerli karenin en az %70'i ayni kisi olmali ve baska bir kisiye HIC oy cikmamis olmali."""
+    n = int(S["vote_frames"])
+    if tr.done or len(tr.votes) < n: return None
+    c = Counter(v[0] for v in tr.votes)
+    top, cnt = c.most_common(1)[0]
+    if not top or cnt < 0.7 * len(tr.votes): return None
+    others = [k for k in c if k and k != top]
+    if others: return None  # ayni izde iki farkli isim -> asla karar verme, onaya dus
+    return top
+
 class Track:
     _n = 0
     def __init__(self, box):
@@ -438,7 +525,7 @@ class Camera:
             used.add(id(tr)); tr.box = box; tr.last = ts; items.append((fc, tr))
         need = [(fc, tr) for fc, tr in items if tr is not None and not tr.done]
         crops = [norm_crop(f, fc[4:14].reshape(5, 2)) for fc, _ in need]
-        res = dict(zip((id(tr) for _, tr in need), zip(crops, G.match(E.embed(crops)))))
+        res = dict(zip((id(tr) for _, tr in need), zip(crops, G.match_full(E.embed(crops)), (face_quality(c, fc) for c, (fc, _) in zip(crops, need)))))
         tc = time.perf_counter()
         vis = f.copy()
         for fc, tr in items:
@@ -446,15 +533,15 @@ class Camera:
             if tr is None:
                 x, y, w, h = map(int, box); cv2.rectangle(vis, (x, y), (x + w, y + h), (150, 150, 150), 1); continue
             if id(tr) in res:
-                crop, (name, sc) = res[id(tr)]
-                ok = name is not None and sc >= S["threshold"]
-                tr.votes.append((name if ok else None, sc)); tr.votes = tr.votes[-15:]; tr.sc = sc
-                if sc > tr.best[0]: tr.best = (sc, name, face_thumb(f, fc), crop)
-                if len(tr.votes) >= S["vote_frames"]:
-                    top, cnt = Counter(v[0] for v in tr.votes).most_common(1)[0]
-                    if top and cnt >= 0.6 * len(tr.votes):
-                        tr.done = True; tr.decided = top
-                        log_event(top, float(np.mean([v[1] for v in tr.votes if v[0] == top])), self.name, self.yon)
+                crop, m, qv = res[id(tr)]; name, sc = m["name"], m["score"]
+                acc, why = decide(m, qv); tr.sc = sc; tr.why = why
+                if why != "kalite":  # kalitesiz kare oy kullanmaz
+                    tr.votes.append((acc, sc)); tr.votes = tr.votes[-15:]
+                    if sc > tr.best[0]: tr.best = (sc, name, face_thumb(f, fc), crop)
+                top = vote_result(tr)
+                if top:
+                    tr.done = True; tr.decided = top
+                    log_event(top, float(np.mean([v[1] for v in tr.votes if v[0] == top])), self.name, self.yon)
             self._draw(vis, box, tr)
         for tr in [t for t in self.tracks if ts - t.last > 1.5]:
             self.finish(tr); self.tracks.remove(tr)
@@ -467,10 +554,12 @@ class Camera:
         x, y, w, h = map(int, box); lab = tr.label(); sc = tr.sc
         if lab:
             lst = liste_of(lab)
-            col = (0, 0, 230) if lst == "kara" else (230, 140, 0) if lst == "beyaz" else (0, 190, 0)
-            pre = "KARA LISTE: " if lst == "kara" else "[B] " if lst == "beyaz" else ""
+            col = (0, 0, 230) if lst == "kara" else (230, 140, 0) if lst == "beyaz" else (200, 70, 160) if lst == "ziyaretci" else (0, 190, 0)
+            pre = "KARA LISTE: " if lst == "kara" else "[B] " if lst == "beyaz" else "[Z] " if lst == "ziyaretci" else ""
             txt = f"{pre}{ascii_name(lab)} {sc:.2f}" + (" OK" if tr.done else f" {len(tr.votes)}/{int(S['vote_frames'])}")
-        else: col = (0, 165, 255); txt = f"? {sc:.2f}"
+        else:
+            col = (0, 165, 255); why = getattr(tr, "why", "")
+            txt = f"? {sc:.2f}" + {"kalite": " (kalite)", "fark": " (benzer var)"}.get(why, "")
         cv2.rectangle(vis, (x, y), (x + w, y + h), col, 4 if lab and liste_of(lab) == "kara" else 2)
         cv2.rectangle(vis, (x, y - 26), (x + max(w, 11 * len(txt)), y), col, -1)
         cv2.putText(vis, txt, (x + 4, y - 7), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
@@ -656,13 +745,15 @@ def status(request: Request):
             "gallery": len(G.names), "settings": pub, "off_day": is_off_day(), "absent": absent,
             "pending": len([r for r in q("SELECT cand FROM pending WHERE kind='onay'") if visible(request, r["cand"])]),
             "unknown": q("SELECT COUNT(*) n FROM pending WHERE kind='bilinmeyen'", one=True)["n"],
-            "alarms": ALARMS[:5], "cam_alerts": CAM_ALERTS[:5]}
+            "alarms": ALARMS[:5], "cam_alerts": CAM_ALERTS[:5],
+            "visit_alerts": [a for a in VISIT_ALERTS if read_info(a["name"]).get("durum") == "iceride"][:5],
+            "visitors_in": sum(1 for d in PEOPLE.iterdir() if d.is_dir() and read_info(d.name).get("liste") == "ziyaretci" and read_info(d.name).get("durum") == "iceride")}
 
 @app.post("/api/settings")
 def settings(request: Request, d: dict):
     need(request, "yonetici")
     for k in ("threshold", "low_threshold", "cooldown", "det_score", "min_face", "vote_frames", "det_width", "queue_max",
-              "keep_days", "keep_unknown_days", "cam_down_sec"):
+              "keep_days", "keep_unknown_days", "cam_down_sec", "margin", "min_quality", "cluster_threshold"):
         if d.get(k) not in (None, ""): S[k] = float(d[k])
     for k in ("wa_phone_id", "wa_template", "wa_template_gec", "wa_template_cikis", "wa_tpl_name", "wa_tpl_lang", "wa_mode",
               "alarm_tel", "wa_verify", "wa_provider", "ders_baslangic", "gelmedi_saat", "tatiller", "bot_keyword"):
@@ -743,7 +834,7 @@ def save_person(request: Request, d: dict):
         q("UPDATE events SET name=? WHERE name=?", (name, old))
     (PEOPLE / name).mkdir(exist_ok=True)
     info = {k: str(d.get(k, "")).strip() for k in ("no", "sinif", "veli_ad", "veli_tel", "not")}
-    info["liste"] = d.get("liste") if d.get("liste") in ("ogrenci", "beyaz", "kara") else "ogrenci"
+    info["liste"] = d.get("liste") if d.get("liste") in ("ogrenci", "beyaz", "kara", "ziyaretci") else "ogrenci"
     (PEOPLE / name / "info.json").write_text(json.dumps(info, ensure_ascii=False), "utf-8")
     INFO_CACHE.pop(name, None)
     if old and old != name: train_bg()
@@ -1359,14 +1450,13 @@ def _analyze(jid, path, every):
                     used.add(id(tr)); tr.box = box; tr.last = ts
                     if not tr.done: need_.append((fc, tr))
                 crops = [norm_crop(f, fc[4:14].reshape(5, 2)) for fc, _ in need_]
-                for (fc, tr), crop, (nm, sc) in zip(need_, crops, G.match(E.embed(crops))):
-                    okk = nm is not None and sc >= S["threshold"]
-                    tr.votes.append((nm if okk else None, sc)); tr.votes = tr.votes[-15:]
+                for (fc, tr), crop, m in zip(need_, crops, G.match_full(E.embed(crops))):
+                    acc, why = decide(m, face_quality(crop, fc)); nm, sc = m["name"], m["score"]
+                    if why == "kalite": continue
+                    tr.votes.append((acc, sc)); tr.votes = tr.votes[-15:]
                     if sc > tr.best[0]: tr.best = (sc, nm, face_thumb(f, fc), crop)
-                    if len(tr.votes) >= S["vote_frames"]:
-                        top, cnt = Counter(v[0] for v in tr.votes).most_common(1)[0]
-                        if top and cnt >= 0.6 * len(tr.votes):
-                            tr.done = True; tr.decided = top; tr.mean = float(np.mean([v[1] for v in tr.votes if v[0] == top]))
+                    top = vote_result(tr)
+                    if top: tr.done = True; tr.decided = top; tr.mean = float(np.mean([v[1] for v in tr.votes if v[0] == top]))
                 for tr in [t for t in tracks if ts - t.last > 1.5]: close(tr); tracks.remove(tr)
                 J["preview"] = None
             i += 1; J["done"] = i
@@ -1413,6 +1503,92 @@ def video_result_add(request: Request, d: dict):
     _save_face(name, img, max(faces, key=lambda x: x[2] * x[3])); train_bg()
     audit(request, "videodan galeriye eklendi", name); return {"ok": True}
 
+# ---- ziyaretciler
+VISIT_ALERTS = []
+
+def visitors_all():
+    out = []
+    for d in sorted(PEOPLE.iterdir()):
+        if d.is_dir() and liste_of(d.name) == "ziyaretci":
+            i = read_info(d.name)
+            out.append({"name": d.name, **i, "photos": sorted(p.name for p in d.glob("*.jpg")),
+                        "gecikti": i.get("durum") == "iceride" and i.get("bitis", "9") < datetime.now().strftime("%Y-%m-%d %H:%M")})
+    return out
+
+def save_info(name, info):
+    (PEOPLE / name / "info.json").write_text(json.dumps(info, ensure_ascii=False), "utf-8"); INFO_CACHE.pop(name, None)
+
+@app.get("/api/visitors")
+def visitors(request: Request):
+    v = visitors_all(); v.sort(key=lambda x: (x.get("durum") != "iceride", x.get("kayit", "")), reverse=False)
+    return {"visitors": v, "alerts": VISIT_ALERTS[:10]}
+
+@app.post("/api/visitors")
+async def visitor_add(request: Request, ad: str = Form(...), tel: str = Form(""), ziyaret: str = Form(""), neden: str = Form(""),
+                      sure: float = Form(2), cam: str = Form(""), file: UploadFile | None = File(None)):
+    """Ziyaretci kaydi: foto (yukleme ya da kameradan son kare) + sureli izin."""
+    name = safe_name(ad)
+    if (PEOPLE / name).exists() and liste_of(name) != "ziyaretci": raise HTTPException(400, "Bu isimde öğrenci/personel kaydı var, farklı yaz")
+    img = None
+    if file is not None and file.filename:
+        img = cv2.imdecode(np.frombuffer(await file.read(), np.uint8), cv2.IMREAD_COLOR)
+    elif SNAP["f"] is not None: img = SNAP["f"]
+    else:
+        c = CAMS.get(cam) or next((x for x in CAMS.values() if x.frame is not None), None)
+        if c is not None:
+            with c.lock: img = None if c.frame is None else c.frame.copy()
+    if img is None: raise HTTPException(400, "Fotoğraf yok: kameradan görüntü al ya da fotoğraf yükle")
+    faces = E.detect(img)
+    if not len(faces): raise HTTPException(400, "Fotoğrafta yüz bulunamadı")
+    (PEOPLE / name).mkdir(exist_ok=True)
+    _save_face(name, img, max(faces, key=lambda r: r[2] * r[3]))
+    now = datetime.now()
+    info = {"liste": "ziyaretci", "tel": tel.strip(), "ziyaret": ziyaret.strip(), "neden": neden.strip(), "durum": "iceride",
+            "kayit": now.strftime("%Y-%m-%d %H:%M"), "bitis": (now + timedelta(hours=max(0.25, min(sure, 24)))).strftime("%Y-%m-%d %H:%M"),
+            "kaydeden": request.state.u["user"]}
+    save_info(name, info); SNAP["f"] = None; G.train()
+    log_event(name, 1.0, "kayıt", "giris", kaynak="ziyaretçi kaydı", force=True)
+    audit(request, "ziyaretçi kaydı", name, f"{info['ziyaret']} · {sure} saat")
+    return {"ok": True, "bitis": info["bitis"]}
+
+@app.post("/api/visitors/{name}/exit")
+def visitor_exit(request: Request, name: str):
+    name = safe_name(name); i = read_info(name)
+    if i.get("liste") != "ziyaretci": raise HTTPException(404)
+    i["durum"] = "cikti"; i["cikis"] = datetime.now().strftime("%Y-%m-%d %H:%M"); save_info(name, i)
+    log_event(name, 1.0, "elle:" + request.state.u["user"], "cikis", kaynak="elle", force=True)
+    audit(request, "ziyaretçi çıkışı", name); return {"ok": True}
+
+@app.post("/api/visitors/{name}/extend")
+def visitor_extend(request: Request, name: str, d: dict):
+    name = safe_name(name); i = read_info(name)
+    if i.get("liste") != "ziyaretci": raise HTTPException(404)
+    base = max(datetime.now(), datetime.strptime(i["bitis"], "%Y-%m-%d %H:%M"))
+    i["bitis"] = (base + timedelta(hours=float(d.get("saat", 1)))).strftime("%Y-%m-%d %H:%M"); i.pop("uyarildi", None); save_info(name, i)
+    VISIT_ALERTS[:] = [a for a in VISIT_ALERTS if a["name"] != name]
+    audit(request, "ziyaret süresi uzatıldı", name, i["bitis"]); return {"ok": True, "bitis": i["bitis"]}
+
+def visitor_watch():
+    """Suresi dolup hala iceride olan ziyaretciyi uyar; cikmis ziyaretcinin verisini 1 gun sonra sil (KVKK)."""
+    while True:
+        try:
+            now = datetime.now(); ns = now.strftime("%Y-%m-%d %H:%M"); changed = False
+            for v in visitors_all():
+                n = v["name"]
+                if v.get("durum") == "iceride" and v.get("bitis", "9") < ns and not v.get("uyarildi"):
+                    i = read_info(n); i["uyarildi"] = ns; save_info(n, i)
+                    VISIT_ALERTS.insert(0, {"name": n, "bitis": v["bitis"], "ziyaret": v.get("ziyaret", ""), "time": ns}); del VISIT_ALERTS[30:]
+                    wa_send(S["alarm_tel"], n, "ziyaretci", f"⚠ Ziyaretçi süresi doldu: {n} ({v.get('ziyaret', '')}) {v['bitis'][11:]} itibarıyla hâlâ içeride görünüyor.", force_text=True)
+                    q("INSERT INTO audit(time,user,action,target,detail) VALUES(?,?,?,?,?)", (now_s(), "sistem", "ziyaretçi süresi doldu", n, v["bitis"]))
+                ref = v.get("cikis") or v.get("bitis") or v.get("kayit")
+                if ref and datetime.strptime(ref, "%Y-%m-%d %H:%M") < now - timedelta(days=1) and (v.get("durum") == "cikti" or ref < (now - timedelta(days=2)).strftime("%Y-%m-%d %H:%M")):
+                    shutil.rmtree(PEOPLE / n, ignore_errors=True); INFO_CACHE.pop(n, None); changed = True
+                    q("INSERT INTO audit(time,user,action,target,detail) VALUES(?,?,?,?,?)", (now_s(), "sistem", "ziyaretçi verisi silindi (KVKK)", n, ""))
+            if changed: G.train()
+        except Exception as e: print("ziyaretci hatasi:", e)
+        time.sleep(60)
+threading.Thread(target=visitor_watch, daemon=True).start()
+
 # ---- test
 @app.post("/api/test")
 async def test_image(file: UploadFile = File(...)):
@@ -1420,15 +1596,19 @@ async def test_image(file: UploadFile = File(...)):
     if img is None: raise HTTPException(400, "okunamadı")
     faces = E.detect(img)
     res = []
-    for fc, (n, s) in zip(faces, G.match(E.embed([norm_crop(img, f[4:14].reshape(5, 2)) for f in faces]))):
-        ok = n is not None and s >= S["threshold"]; x, y, w, h = fc[:4].astype(int)
+    crops = [norm_crop(img, f[4:14].reshape(5, 2)) for f in faces]
+    for fc, crop, m in zip(faces, crops, G.match_full(E.embed(crops))):
+        qv = face_quality(crop, fc); acc, why = decide(m, qv); n, s = m["name"], m["score"]
+        ok = acc is not None; x, y, w, h = fc[:4].astype(int)
         col = (0, 200, 0) if ok else (0, 165, 255)
         cv2.rectangle(img, (x, y), (x + w, y + h), col, 3)
         cv2.putText(img, f"{ascii_name(n) if ok else '?'} {s:.2f}", (x, y - 8), cv2.FONT_HERSHEY_SIMPLEX, 0.8, col, 2)
-        res.append({"name": n if ok else None, "best": n, "score": round(s, 3), "liste": liste_of(n) if ok else None})
+        res.append({"name": n if ok else None, "best": n, "score": round(s, 3), "liste": liste_of(n) if ok else None,
+                    "second": m["name2"], "score2": round(m["score2"], 3), "quality": qv, "why": why})
     return {"faces": res, "image": "data:image/jpeg;base64," + base64.b64encode(cv2.imencode(".jpg", img)[1]).decode()}
 
 apply_cameras()
+if len(G.P) == 0 and any(PEOPLE.iterdir()): threading.Thread(target=G.train, daemon=True).start()
 if q("SELECT 1 FROM pending WHERE kind='bilinmeyen' AND (emb IS NULL OR grp IS NULL) LIMIT 1"):
     threading.Thread(target=recluster, daemon=True).start()
 
