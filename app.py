@@ -830,16 +830,21 @@ def del_camera(request: Request, cid: str):
     audit(request, "kamera silindi", cid); return {"ok": True}
 
 @app.get("/api/stream/{cid}")
-def stream(cid: str):
+async def stream(request: Request, cid: str):
+    """MJPEG akisi. Async: tarayici kapaninca / sayfa yenilenince hemen biter (is parcacigi tutmaz)."""
+    import asyncio
     cam = CAMS.get(cid)
     if not cam: raise HTTPException(404)
-    def gen():
-        last = None
-        while True:
+    async def gen():
+        last = None; idle = 0
+        while not await request.is_disconnected():
             a = cam.annot
             if a is not None and a is not last:
-                last = a; yield b"--f\r\nContent-Type: image/jpeg\r\n\r\n" + a + b"\r\n"
-            time.sleep(0.04)
+                last = a; idle = 0; yield b"--f\r\nContent-Type: image/jpeg\r\n\r\n" + a + b"\r\n"
+            else:
+                idle += 1
+                if idle > 1500: break  # ~60 sn yeni kare yoksa kapat
+            await asyncio.sleep(0.04)
     return StreamingResponse(gen(), media_type="multipart/x-mixed-replace; boundary=f")
 
 SNAP = {"f": None}
