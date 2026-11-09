@@ -44,7 +44,8 @@ DEFAULTS = {
     "cooldown": 300,        # ayni kisi tekrar kayit (sn)
     "det_score": 0.8, "min_face": 60,
     "det_width": 960,      # tespit bu genislikte yapilir (yuz kesimi tam cozunurlukten)
-    "queue_max": 75,       # kuyruk: ~3 sn (25 fps)
+    "queue_max": 75,
+    "max_fps": 12,         # kamera basina saniyede en fazla bu kadar kare islenir (fazlasi atlanir, kuyruk birikmez)       # kuyruk: ~3 sn (25 fps)
     "keep_days": 90,        # gecis/mesaj kayitlari saklama
     "keep_unknown_days": 1, # bilinmeyen/onay fotolari saklama
     "wa_enabled": False, "wa_token": "", "wa_phone_id": "", "wa_verify": "hypevision",
@@ -493,7 +494,7 @@ class Camera:
         self.cfg = cfg; self.frame = None; self.annot = None; self.snap = None
         self.running = False; self.in_fps = 0.0; self.fps = 0.0; self.status = "kapali"; self.tracks = []
         self.lock = threading.Lock(); self.gen = 0; self.last_frame = 0.0; self.started = 0.0
-        self.down = False; self.alerted = False; self._n = 0; self._t0 = time.time()
+        self.down = False; self.alerted = False; self._n = 0; self._t0 = time.time(); self._last_q = 0.0
 
     @property
     def id(self): return self.cfg["id"]
@@ -523,14 +524,17 @@ class Camera:
                 if not ok: self.status = "akis koptu"; break
                 ts = time.time(); self.last_frame = ts
                 with self.lock: self.frame = f
+                n += 1
+                if ts - t0 > 1: self.in_fps = n / (ts - t0); t0, n = ts, 0
+                mf = float(S.get("max_fps", 12) or 0)
+                if mf and ts - self._last_q < 1.0 / mf: continue  # bu kareyi isleme (canli gorunum son kareyi gosterir)
+                self._last_q = ts
                 try: GQ.put_nowait((self, g, ts, f))
                 except queue.Full:
                     try: GQ.get_nowait(); PERF["dropped"] += 1
                     except queue.Empty: pass
                     try: GQ.put_nowait((self, g, ts, f))
                     except queue.Full: pass
-                n += 1
-                if ts - t0 > 1: self.in_fps = n / (ts - t0); t0, n = ts, 0
             cap.release(); time.sleep(1)
 
     def finish(self, tr):
@@ -784,7 +788,7 @@ def status(request: Request):
 def settings(request: Request, d: dict):
     need(request, "yonetici")
     for k in ("threshold", "low_threshold", "cooldown", "det_score", "min_face", "vote_frames", "det_width", "queue_max",
-              "keep_days", "keep_unknown_days", "keep_snap_days", "cam_down_sec", "margin", "min_quality", "cluster_threshold"):
+              "keep_days", "keep_unknown_days", "keep_snap_days", "cam_down_sec", "max_fps", "margin", "min_quality", "cluster_threshold"):
         if d.get(k) not in (None, ""): S[k] = float(d[k])
     for k in ("wa_phone_id", "wa_template", "wa_template_gec", "wa_template_cikis", "wa_tpl_name", "wa_tpl_lang", "wa_mode",
               "alarm_tel", "wa_verify", "wa_provider", "ders_baslangic", "gelmedi_saat", "tatiller", "bot_keyword",
@@ -1963,9 +1967,10 @@ RTSP_TPL = {
     "axis":      ["/axis-media/media.amp", "/axis-media/media.amp?camera={ch}"],
     "tplink":    ["/stream{st1}"],
     "reolink":   ["/h264Preview_0{ch}_{ms}", "/Preview_0{ch}_{ms}"],
-    "genel":     ["/live", "/stream1", "/11", "/live/ch{ch}", "/onvif1", "/videoMain", "/1"],
+    "ipwebcam":  ["/h264.sdp", "/h264_ulaw.sdp", "/h264_aac.sdp", "/h264_opus.sdp"],
+    "genel":     ["/live", "/stream1", "/11", "/live/ch{ch}", "/onvif1", "/videoMain", "/1", "/h264.sdp", "/video"],
 }
-BRAND_ORDER = ["dahua", "hikvision", "uniview", "axis", "tplink", "reolink", "genel"]
+BRAND_ORDER = ["dahua", "hikvision", "uniview", "axis", "tplink", "reolink", "ipwebcam", "genel"]
 
 def build_rtsp(marka, ip, user, pw, ch=1, sub=0, port=554, idx=0):
     marka = marka if marka in RTSP_TPL else "genel"
@@ -2010,6 +2015,18 @@ def camera_test(request: Request, d: dict):
         if ok: return _cam_result(url, f, 0)
         return {"ok": False, "err": f"{url} numaralı webcam açılamadı (başka bir program kullanıyor olabilir)"}
     ip = (d.get("ip") or "").strip(); port = int(d.get("port") or 554)
+    if url.startswith("http") and ("onvif" in url or url.rstrip("/").count("/") <= 2):
+        # ONVIF / web arayuzu adresi yapistirildi: ayni host:port uzerinde bilinen RTSP yollarini dene
+        m = re.match(r"https?://(?:[^@/]*@)?([^:/]+)(?::(\d+))?", url)
+        if m:
+            h, pp = m.group(1), int(m.group(2) or 80)
+            for path in RTSP_TPL["ipwebcam"] + ["/live", "/stream1", "/h264", "/"]:
+                ok, f, fps = try_open(f"rtsp://{h}:{pp}{path}", 4)
+                if ok: r = _cam_result(f"rtsp://{h}:{pp}{path}", f, fps); r["not"] = "ONVIF adresi yerine RTSP görüntü adresi bulundu"; return r
+            for path in ("/video", "/mjpg/video.mjpg", "/videostream.cgi"):
+                ok, f, fps = try_open(f"http://{h}:{pp}{path}", 4)
+                if ok: return _cam_result(f"http://{h}:{pp}{path}", f, fps)
+            return {"ok": False, "err": "Bu bir ONVIF/web adresi; görüntü adresi (RTSP) bulunamadı. Kameranın RTSP adresini girin."}
     if url and not ip:
         m = re.match(r"rtsp://(?:[^@/]*@)?([^:/]+)(?::(\d+))?", url)
         if m: ip, port = m.group(1), int(m.group(2) or 554)
