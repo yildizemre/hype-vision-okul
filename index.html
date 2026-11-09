@@ -407,6 +407,9 @@ td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:h
     <div id="impres"></div></div>
   <div class="card" style="padding:0;overflow:hidden">
     <div class="row" style="padding:14px 14px 4px"><input type="text" id="q" placeholder="Ara: isim, numara, veli…" oninput="renderStudents()"><select id="fs" onchange="renderStudents()" style="max-width:200px"></select></div>
+    <div id="bulkbar" style="display:none;margin:6px 14px 8px;padding:10px 12px;border-radius:12px;background:var(--t);color:#fff;align-items:center;gap:10px;flex-wrap:wrap">
+      <b id="bulkn">0 kişi seçildi</b><span style="flex:1"></span>
+      <button class="btn sm" onclick="bulkDel(0)">Sil</button><button class="btn sm rd" onclick="bulkDel(1)">Mezun / ayrıldı — tüm verisini sil</button><button class="btn sm" style="background:transparent;color:#fff;border-color:#475569" onclick="SEL.clear();renderStudents()">Vazgeç</button></div>
     <div style="overflow-x:auto"><table><thead id="sthead"></thead><tbody id="stbody"></tbody></table></div></div>
 </section>
 
@@ -651,6 +654,12 @@ td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:h
       <label>Geçiş anı CCTV kareleri (gün)</label><input id="s_keep_snap_days" type="number">
       <div class="m" style="margin-top:6px">Süresi dolan kayıtlar her saat otomatik silinir. Canlı görüntü hiç kaydedilmez. Mezun öğrenci için kişi sayfasındaki "kalıcı sil".</div>
       <button class="btn dk" style="margin-top:16px" onclick="saveSettings()">Kaydet</button></div>
+    <div class="card f" data-min="yonetici" style="border-color:#fecaca"><h2 style="color:var(--r)"><svg class="i"><use href="#i-ban"/></svg>Sıfırlama</h2>
+      <div class="m">Yeni dönem ya da yeni okul için temiz başlangıç. <b>Birkaç öğrenci ayrıldıysa sıfırlamaya gerek yok</b> — Öğrenciler listesinden seçip silmen yeterli, model kendiliğinden güncellenir. Kullanıcılar, ayarlar ve kameralar korunur. Sıfırlamadan önce otomatik yedek alınır.</div>
+      <div id="rs_parts" style="margin-top:10px"></div>
+      <label>Onaylamak için <b>SIFIRLA</b> yaz</label><input type="text" id="rs_ok" placeholder="SIFIRLA" autocomplete="off">
+      <button class="btn rd" style="margin-top:12px;width:100%" onclick="doReset()">Seçilenleri sıfırla</button>
+      <div id="rs_bk" class="m" style="margin-top:10px"></div></div>
     <div class="card f" data-min="yonetici"><h2><svg class="i"><use href="#i-down"/></svg>Yedekleme</h2>
       <div class="m">Öğrenciler, fotoğraflar, galeri, kayıtlar, kullanıcılar ve ayarlar tek zip dosyası. Başka PC'ye taşırken de kullanılır.</div>
       <div class="row" style="margin-top:12px"><a class="btn dk fx" href="/api/backup"><svg class="i"><use href="#i-down"/></svg>Yedek indir</a>
@@ -728,7 +737,7 @@ function go(p,l,fromHash){if(l)LIST=l;
   document.querySelectorAll('nav a').forEach(x=>x.classList.toggle('on',x.dataset.p===p&&(!x.dataset.l||x.dataset.l===LIST)));
   document.querySelectorAll('.page').forEach(x=>x.classList.toggle('on',x.id==='p-'+p));
   if(p==='live')renderVids(true);else stopVids();
-  ({att:loadAtt,pending:loadPending,students:loadPeople,enroll:loadPeople,messages:loadMsgs,users:loadUsers,cameras:loadCams,reports:loadReports,broadcast:loadBroadcast,audit:loadAudit,central:loadCentral,visitors:loadVisitors,video:loadPeople})[p]?.()}
+  ({att:loadAtt,pending:loadPending,students:loadPeople,enroll:loadPeople,messages:loadMsgs,users:loadUsers,cameras:loadCams,reports:loadReports,broadcast:loadBroadcast,audit:loadAudit,central:loadCentral,visitors:loadVisitors,settings:loadReset,video:loadPeople})[p]?.()}
 
 // ---------- canli
 let CAMS=[];
@@ -781,18 +790,27 @@ function renderStudents(){
   $('lt').textContent={ogrenci:'Öğrenciler',beyaz:'Beyaz Liste',kara:'Kara Liste'}[LIST];
   $('ld').textContent={ogrenci:'Kayıtlı öğrenciler, veli bilgileri ve tanıma durumu.',beyaz:'Personel ve izinli kişiler. Tanınınca kayıt düşer, veliye mesaj gitmez.',kara:'Girişi yasak kişiler. Kamerada görülünce ekranda alarm çıkar ve yöneticiye mesaj gider.'}[LIST];
   const ogr=LIST==='ogrenci';$('fs').style.display=ogr?'':'none';
-  $('sthead').innerHTML=`<tr><th></th>${ogr?'<th>No</th>':''}<th>Ad Soyad</th>${ogr?'<th>Sınıf</th><th>Veli</th><th>Veli Tel</th>':'<th>Not</th>'}<th>Foto</th><th>Durum</th>${ogr?'<th>Bugün</th>':''}<th></th></tr>`;
+  const canB=RL[ME?.rol]>=2;
+  $('sthead').innerHTML=`<tr>${canB?'<th style="width:34px"><input type="checkbox" id="selall" onchange="selAll(this.checked)"></th>':''}<th></th>${ogr?'<th>No</th>':''}<th>Ad Soyad</th>${ogr?'<th>Sınıf</th><th>Veli</th><th>Veli Tel</th>':'<th>Not</th>'}<th>Foto</th><th>Durum</th>${ogr?'<th>Bugün</th>':''}<th></th></tr>`;
   const q=$('q').value.toLowerCase(),s=$('fs').value;const att=Object.fromEntries(TODAY.map(a=>[a.name,a.geldi]));
   const rows=PEOPLE.filter(p=>p.liste===LIST&&(!ogr||!s||p.sinif===s)&&(!q||[p.name,p.no,p.veli_ad,p.veli_tel,p.not].join(' ').toLowerCase().includes(q)))
    .sort((a,b)=>(a.sinif||'').localeCompare(b.sinif||'')||(+a.no||0)-(+b.no||0)||a.name.localeCompare(b.name));
   const can=RL[ME?.rol]>=2;
-  $('stbody').innerHTML=rows.map(p=>`<tr><td>${p.photos[0]?`<img class=av src="/api/people/${enc(p.name)}/${p.photos[0]}">`:`<div class=ini>${ini(p.name)}</div>`}</td>
+  VROWS=rows;
+  $('stbody').innerHTML=rows.map(p=>`<tr>${canB?`<td><input type="checkbox" ${SEL.has(p.name)?'checked':''} onchange="selOne('${esc(enc(p.name))}',this.checked)"></td>`:''}<td>${p.photos[0]?`<img class=av src="/api/people/${enc(p.name)}/${p.photos[0]}">`:`<div class=ini>${ini(p.name)}</div>`}</td>
    ${ogr?`<td>${esc(p.no)}</td>`:''}<td><b>${esc(p.name)}</b></td>
    ${ogr?`<td><span class=tag>${esc(p.sinif||'—')}</span></td><td>${esc(p.veli_ad)}</td><td class=m>${esc(p.veli_tel)}</td>`:`<td class=m>${esc(p.not)}</td>`}
    <td>${p.photos.length}</td><td>${p.trained?'<span class="tag p-ok">Eğitildi</span>':p.photos.length?'<span class="tag p-w">Eğitilmedi</span>':'<span class="tag p-r">Foto yok</span>'}</td>
    ${ogr?`<td>${att[p.name]?`<span class="tag p-ok">${att[p.name]}</span>`:'<span class=m>—</span>'}</td>`:''}
    <td style="white-space:nowrap;text-align:right">${can?`<button class="btn sm" onclick="edit('${esc(enc(p.name))}')">Düzenle</button>`:''} ${ogr?`<button class="btn sm" title="WhatsApp" onclick="wa('${esc(enc(p.name))}')">${I('msg')}</button>`:''}</td></tr>`).join('')
-   ||`<tr><td colspan=10 class="empty">Kayıt yok.</td></tr>`}
+   ||`<tr><td colspan=11 class="empty">Kayıt yok.</td></tr>`;bulkUI()}
+let SEL=new Set(),VROWS=[];
+function selOne(n,on){n=decodeURIComponent(n);on?SEL.add(n):SEL.delete(n);bulkUI()}
+function selAll(on){VROWS.forEach(p=>on?SEL.add(p.name):SEL.delete(p.name));renderStudents()}
+function bulkUI(){const b=$('bulkbar');b.style.display=SEL.size?'flex':'none';$('bulkn').textContent=`${SEL.size} kişi seçildi`;const a=$('selall');if(a)a.checked=VROWS.length&&VROWS.every(p=>SEL.has(p.name))}
+async function bulkDel(purge){const n=[...SEL];if(!n.length)return;
+  if(!confirm(`${n.length} kişi silinecek${purge?' ve TÜM geçiş / mesaj kayıtları da kalıcı olarak silinecek':' (geçmiş yoklama kayıtları kalır)'}.\n\nSilinenler artık kamerada tanınmaz, model kendiliğinden güncellenir. Geri alınamaz. Devam?`))return;
+  try{const r=await post('/api/people/bulk-delete',{names:n,purge});SEL.clear();toast(`${r.deleted} kişi silindi, model güncellendi`);loadPeople()}catch(e){toast(e.message,1)}}
 function newPerson(l){CUR=null;fill({liste:l||'ogrenci'});go('enroll')}
 function edit(n){pick(decodeURIComponent(n));go('enroll')}
 async function wa(n){const r=await api('/api/wa_link/'+n);if(r.url.includes('wa.me/?'))return toast('Veli telefonu yok',1);window.open(r.url,'_blank')}
@@ -1171,6 +1189,16 @@ function editSchool(o){$('o_id').value=o.id||'';$('o_ad').value=o.ad||'';$('o_ur
 async function saveSchool(){try{await post('/api/central/schools',{id:$('o_id').value,ad:$('o_ad').value,url:$('o_url').value,token:$('o_token').value,insecure:$('o_ins').checked});toast('Okul kaydedildi');editSchool({});loadCentral()}catch(e){toast(e.message,1)}}
 async function delSchool(id){if(!confirm('Okul merkezden kaldırılsın mı?'))return;await api('/api/central/schools/'+id,{method:'DELETE'});loadCentral()}
 setInterval(()=>{if($('p-central').classList.contains('on'))loadCentral()},60000);
+
+// ---------- sifirlama
+async function loadReset(){if(RL[ME?.rol]<3)return;const r=await api('/api/reset/info');const c=r.counts;
+  const lab={model:`${c.model} kişi, ${c.foto} fotoğraf`,gecis:`${c.gecis} kayıt`,bekleyen:`${c.bekleyen} yüz`,mesaj:`${c.mesaj} mesaj`,ziyaretci:`${c.ziyaretci} ziyaretçi`,islem:`${c.islem} kayıt`};
+  $('rs_parts').innerHTML=Object.entries(r.parts).map(([k,v])=>`<label class="chk" style="margin:6px 0;color:var(--t)"><input type="checkbox" class="rsp" value="${k}" ${k!=='islem'?'checked':''}> ${esc(v)} <span class=m>(${lab[k]})</span></label>`).join('');
+  $('rs_bk').innerHTML=r.backups.length?'Otomatik yedekler: '+r.backups.slice(0,5).map(b=>`<a href="/api/reset/backup/${enc(b)}" style="color:#0e7490">${esc(b)}</a>`).join(' · '):''}
+async function doReset(){const parts=[...document.querySelectorAll('.rsp:checked')].map(x=>x.value);if(!parts.length)return toast('Bir şey seç',1);
+  if($('rs_ok').value.trim().toUpperCase()!=='SIFIRLA')return toast('Onay için SIFIRLA yaz',1);
+  if(!confirm('Seçilen veriler silinecek. Önce otomatik yedek alınacak. Devam?'))return;
+  try{const r=await post('/api/reset',{parts,confirm:$('rs_ok').value});$('rs_ok').value='';toast('Sıfırlandı · yedek: '+r.backup);loadReset();loadPeople();loadEvents();refresh()}catch(e){toast(e.message,1)}}
 
 // ---------- hero
 const GUN=new Intl.DateTimeFormat('tr-TR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});

@@ -2097,6 +2097,101 @@ def camera_discover(request: Request):
     for o in out: o["ekli"] = o["ip"] in used
     return {"nets": nets, "cameras": out}
 
+# ================= sifirlama =================
+BACKUPS = DATA / "backups"
+RESET_PARTS = {
+    "model":     "Öğrenciler, fotoğraflar ve tanıma modeli (galeri)",
+    "gecis":     "Geçiş / yoklama kayıtları ve geçiş anı görüntüleri",
+    "bekleyen":  "Onay bekleyen ve bilinmeyen yüzler",
+    "mesaj":     "WhatsApp mesaj geçmişi",
+    "ziyaretci": "Ziyaretçiler",
+    "islem":     "İşlem kaydı (audit)",
+}
+
+def make_backup_zip(path):
+    with DBL: CONN.commit()
+    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as z:
+        for p in PEOPLE.rglob("*"):
+            if p.is_file(): z.write(p, "people/" + p.relative_to(PEOPLE).as_posix())
+        for p in (GALLERY, SETTINGS, DB_PATH):
+            if p.exists(): z.write(p, p.name)
+
+@app.get("/api/reset/info")
+def reset_info(request: Request):
+    need(request, "yonetici")
+    ppl = [d for d in PEOPLE.iterdir() if d.is_dir()]
+    return {"parts": RESET_PARTS, "counts": {
+        "model": sum(1 for d in ppl if liste_of(d.name) != "ziyaretci"),
+        "foto": sum(len(list(d.glob("*.jpg"))) for d in ppl if liste_of(d.name) != "ziyaretci"),
+        "gecis": q("SELECT COUNT(*) n FROM events", one=True)["n"],
+        "bekleyen": q("SELECT COUNT(*) n FROM pending", one=True)["n"],
+        "mesaj": q("SELECT COUNT(*) n FROM messages", one=True)["n"],
+        "ziyaretci": sum(1 for d in ppl if liste_of(d.name) == "ziyaretci"),
+        "islem": q("SELECT COUNT(*) n FROM audit", one=True)["n"]},
+        "backups": sorted((p.name for p in BACKUPS.glob("*.zip")), reverse=True)[:10] if BACKUPS.exists() else []}
+
+@app.post("/api/reset")
+def reset(request: Request, d: dict):
+    """Secilen verileri sil. Once otomatik yedek alinir. Kullanicilar, ayarlar ve kameralar korunur."""
+    need(request, "yonetici")
+    if (d.get("confirm") or "").strip().upper() != "SIFIRLA": raise HTTPException(400, 'Onay için "SIFIRLA" yaz')
+    parts = [p for p in d.get("parts", []) if p in RESET_PARTS]
+    if not parts: raise HTTPException(400, "Sıfırlanacak bir şey seçilmedi")
+    BACKUPS.mkdir(exist_ok=True)
+    bname = f"sifirlama-oncesi-{datetime.now():%Y%m%d-%H%M%S}.zip"; make_backup_zip(BACKUPS / bname)
+    done = []
+    for cam in CAMS.values():
+        for tr in cam.tracks: tr.done = True  # yarim kalan izler eski isimle kayit dusmesin
+        cam.tracks = []
+    LAST_SEEN.clear(); ALARMS.clear(); VISIT_ALERTS.clear()
+    if "model" in parts or "ziyaretci" in parts:
+        for p in list(PEOPLE.iterdir()):
+            if not p.is_dir(): continue
+            is_v = read_info(p.name).get("liste") == "ziyaretci"
+            if ("ziyaretci" in parts and is_v) or ("model" in parts and not is_v): shutil.rmtree(p, ignore_errors=True)
+        INFO_CACHE.clear(); G.train()
+        done += [RESET_PARTS[k] for k in ("model", "ziyaretci") if k in parts]
+    if "gecis" in parts:
+        q("DELETE FROM events"); shutil.rmtree(SNAPS, ignore_errors=True); SNAPS.mkdir(exist_ok=True); done.append(RESET_PARTS["gecis"])
+    if "bekleyen" in parts:
+        q("DELETE FROM pending")
+        for f in (PENDING, UNKNOWN): shutil.rmtree(f, ignore_errors=True); f.mkdir(exist_ok=True)
+        done.append(RESET_PARTS["bekleyen"])
+    if "mesaj" in parts: q("DELETE FROM messages"); done.append(RESET_PARTS["mesaj"])
+    if "islem" in parts: q("DELETE FROM audit"); done.append(RESET_PARTS["islem"])
+    for f in UPLOADS.glob("*"): f.unlink(missing_ok=True)
+    VENROLL.clear()
+    with DBL: CONN.execute("VACUUM")
+    audit(request, "SIFIRLAMA", ", ".join(parts), f"yedek: {bname}")
+    return {"ok": True, "done": done, "backup": bname}
+
+@app.get("/api/reset/backup/{name}")
+def reset_backup_dl(request: Request, name: str):
+    need(request, "yonetici")
+    p = BACKUPS / safe_name(name)
+    if not p.exists(): raise HTTPException(404)
+    return Response(p.read_bytes(), media_type="application/zip", headers={"Content-Disposition": f'attachment; filename="{p.name}"'})
+
+@app.post("/api/people/bulk-delete")
+def people_bulk_delete(request: Request, d: dict):
+    """Toplu silme (ornegin ayrilan / mezun 10 ogrenci). Silinenler bir daha taninmaz; model kendiliginden guncellenir."""
+    need(request, "mudur_yrd")
+    names = [safe_name(n) for n in d.get("names", []) if n]
+    if not names: raise HTTPException(400, "Kimse seçilmedi")
+    purge = bool(d.get("purge")); n_ok = 0
+    for name in names:
+        if not (PEOPLE / name).exists(): continue
+        shutil.rmtree(PEOPLE / name, ignore_errors=True); INFO_CACHE.pop(name, None); n_ok += 1
+        if purge:
+            for r in q("SELECT id FROM events WHERE name=? AND snap IS NOT NULL", (name,)):
+                for suf in ("", "_f"): (SNAPS / f"{r['id']}{suf}.jpg").unlink(missing_ok=True)
+            q("DELETE FROM events WHERE name=?", (name,)); q("DELETE FROM messages WHERE name=?", (name,))
+            for r in q("SELECT id FROM pending WHERE cand=?", (name,)): drop_pending(r["id"])
+    for cam in CAMS.values(): cam.tracks = []
+    G.train()
+    audit(request, "toplu kalıcı silme" if purge else "toplu silme", f"{n_ok} kişi", ", ".join(names)[:300])
+    return {"ok": True, "deleted": n_ok}
+
 # ---- test
 @app.post("/api/test")
 async def test_image(file: UploadFile = File(...)):
