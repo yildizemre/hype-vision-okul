@@ -532,7 +532,7 @@ td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:h
       <div class="help" style="margin-top:10px;font-size:12px"><b>Dahua:</b> varsayılan kullanıcı <b>admin</b>, IP genelde 192.168.1.108. NVR'ye bağlıysa NVR'nin IP'si + kamera kanal no (1, 2, 3…) yazılır. Yüz tanıma için <b>ana akış</b> önerilir.</div>
     </div>
     <div id="cm_url" style="display:none"><label>RTSP adresi</label><input type="text" id="c_url" placeholder="rtsp://kullanici:sifre@192.168.1.64:554/..."></div>
-    <div id="cm_webcam" style="display:none"><label>Webcam</label><select id="c_cam"><option value="0">Bu bilgisayarın webcam'i (0)</option><option value="1">2. kamera / USB (1)</option><option value="2">3. kamera (2)</option></select></div>
+    <div id="cm_webcam" style="display:none"><label>Webcam</label><select id="c_webcam"><option value="0">Bu bilgisayarın webcam'i (0)</option><option value="1">2. kamera / USB (1)</option><option value="2">3. kamera (2)</option></select></div>
     <label>Yön</label><select id="c_yon"><option value="giris">Giriş — veliye "geldi"</option><option value="cikis">Çıkış — veliye "okuldan ayrıldı"</option></select>
     <label class="chk" style="margin-top:14px"><input type="checkbox" id="c_aktif" checked> Aktif</label>
     <div class="row" style="margin-top:16px"><button class="btn" onclick="camTest(0)"><svg class="i"><use href="#i-zap"/></svg>Bağlantıyı test et</button><button class="btn" id="c_auto" onclick="camTest(1)" title="Bilinen tüm marka RTSP yollarını sırayla dener">Otomatik bul</button><span></span></div>
@@ -973,9 +973,9 @@ const RT={dahua:(c,s)=>`/cam/realmonitor?channel=${c}&subtype=${s}`,hikvision:(c
 function kUrl(mask){const ip=$('k_ip').value.trim();if(!ip)return'';const u=$('k_user').value,pw=$('k_pass').value;
   const cred=u?`${encodeURIComponent(u)}:${mask?'••••':encodeURIComponent(pw)}@`:'';return `rtsp://${cred}${ip}:${$('k_port').value||554}${RT[$('k_marka').value]($('k_ch').value||1,$('k_akis').value)}`}
 function kBuild(){$('k_url').textContent=kUrl(true)||'—'}
-function curUrl(){return CMODE==='kolay'?kUrl(false):CMODE==='webcam'?$('c_cam').value:$('c_url').value.trim()}
+function curUrl(){return CMODE==='kolay'?kUrl(false):CMODE==='webcam'?$('c_webcam').value:$('c_url').value.trim()}
 function editCam(c){$('c_id').value=c.id||'';$('c_ad').value=c.ad||'';$('c_yon').value=c.yon||'giris';$('c_aktif').checked=c.aktif!==false;$('ctest').style.display='none';
-  const u=c.url||'';if(/^\d+$/.test(u)){cMode('webcam');$('c_cam').value=u}else if(u){cMode('url');$('c_url').value=u}else{cMode('kolay');$('c_url').value='';$('k_ip').value='';$('k_pass').value=''}kBuild()}
+  const u=c.url||'';if(/^\d+$/.test(u)){cMode('webcam');$('c_webcam').value=u}else if(u){cMode('url');$('c_url').value=u}else{cMode('kolay');$('c_url').value='';$('k_ip').value='';$('k_pass').value=''}kBuild()}
 async function camTest(auto){const url=curUrl();if(!url&&!(auto&&$('k_ip').value))return toast(CMODE==='kolay'?'IP adresini yaz':'Adres boş',1);
   $('ctest').style.display='';$('ctest_b').innerHTML=`<div class="m">${auto?'Bilinen RTSP yolları sırayla deneniyor, 30-60 sn sürebilir…':'Bağlanılıyor…'}</div>`;$('ctest').scrollIntoView({behavior:'smooth',block:'nearest'});
   const b={url:auto?'':url,auto:auto?1:0};if(CMODE==='kolay'||auto)Object.assign(b,{ip:$('k_ip').value.trim(),port:$('k_port').value,user:$('k_user').value,pass:$('k_pass').value,kanal:$('k_ch').value,akis:$('k_akis').value,marka:$('k_marka').value});
