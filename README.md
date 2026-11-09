@@ -10,7 +10,15 @@ Okul kapısındaki IP kameradan öğrencileri yüz tanıma ile tanır, giriş/ç
 
 ## Kurulum — Windows
 
-`BASLAT.bat` dosyasına çift tıkla. İlk seferde ortamı kurar, GPU varsa GPU paketlerini seçer, modelleri indirir (~2 GB) ve http://localhost:8000 adresini açar.
+İlk kurulum: `BASLAT.bat` dosyasına çift tıkla. İlk seferde ortamı kurar, GPU varsa GPU paketlerini seçer, modelleri indirir (~2 GB) ve http://localhost:8000 adresini açar.
+
+Günlük kullanım:
+
+| Dosya | Ne yapar |
+|---|---|
+| `CALISTIR.bat` | Sunucuyu arka planda (küçültülmüş) başlatır, hazır olunca paneli açar. Zaten açıksa sadece paneli açar. |
+| `DURDUR.bat` | Sunucuyu kapatır. |
+| `OTOMATIK_BASLAT.bat` | Windows'a girişte otomatik başlatma + masaüstü kısayolu. Kaldırmak için: `OTOMATIK_BASLAT.bat kaldir` |
 
 ## Kurulum — Ubuntu 22.04 / 24.04
 
