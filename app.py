@@ -477,6 +477,16 @@ class Track:
 GQ = queue.Queue(maxsize=int(S["queue_max"]) * 4)
 PERF = {"tespit": 0.0, "tanima": 0.0, "toplam": 0.0, "fps": 0.0, "dropped": 0, "lag": 0.0}
 
+def open_webcam(i):
+    """USB / dahili webcam: Windows'ta DirectShow (hizli acilir), Linux'ta V4L2; 1280x720 MJPG ister."""
+    import platform
+    be = cv2.CAP_DSHOW if platform.system() == "Windows" else cv2.CAP_V4L2
+    cap = cv2.VideoCapture(i, be)
+    if not cap.isOpened(): cap = cv2.VideoCapture(i)
+    cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"MJPG"))
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280); cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720); cap.set(cv2.CAP_PROP_FPS, 30)
+    return cap
+
 class Camera:
     """Tek bir RTSP kaynagi: okur, ortak kuyruga atar; kendi izlerini ve son goruntusunu tutar."""
     def __init__(self, cfg):
@@ -505,7 +515,7 @@ class Camera:
         url = self.cfg["url"]; src = int(url) if url.isdigit() else url
         t0, n = time.time(), 0
         while self.running and g == self.gen:
-            cap = cv2.VideoCapture(src) if isinstance(src, int) else cv2.VideoCapture(src, cv2.CAP_FFMPEG)
+            cap = open_webcam(src) if isinstance(src, int) else cv2.VideoCapture(src, cv2.CAP_FFMPEG)
             if not cap.isOpened(): self.status = "baglanamadi"; time.sleep(3); continue
             self.status = "canli"
             while self.running and g == self.gen:

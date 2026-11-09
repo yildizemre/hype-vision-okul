@@ -513,7 +513,8 @@ td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:h
   <div class="card f"><h2><svg class="i"><use href="#i-plus"/></svg>Kamera ekle / düzenle</h2>
     <input type="hidden" id="c_id">
     <label>Kamera adı</label><input type="text" id="c_ad" placeholder="Ana Kapı">
-    <label>RTSP adresi</label><input type="text" id="c_url" placeholder="rtsp://kullanici:sifre@192.168.1.64:554/...  · webcam: 0">
+    <label>RTSP adresi</label><input type="text" id="c_url" placeholder="rtsp://kullanici:sifre@192.168.1.64:554/...  ya da webcam için 0">
+    <div class="row" style="margin:8px 0 0"><span class=m>Hızlı:</span><a class="btn sm fx" onclick="$('c_url').value='0';if(!$('c_ad').value)$('c_ad').value='Webcam'">Bu bilgisayarın webcam'i</a><a class="btn sm fx" onclick="$('c_url').value='1';if(!$('c_ad').value)$('c_ad').value='USB Kamera'">2. kamera (USB)</a><span></span></div>
     <label>Yön</label><select id="c_yon"><option value="giris">Giriş — veliye "geldi"</option><option value="cikis">Çıkış — veliye "okuldan ayrıldı"</option></select>
     <label class="chk" style="margin-top:14px"><input type="checkbox" id="c_aktif" checked> Aktif</label>
     <div class="row" style="margin-top:16px"><button class="btn dk" onclick="saveCam()">Kaydet</button><button class="btn" onclick="editCam({})">Temizle</button><span></span></div>
