@@ -7,3 +7,4 @@ opencv-python-headless>=4.10
 onnxruntime>=1.20
 huggingface_hub>=0.24
 openpyxl>=3.1
+reportlab>=4.0

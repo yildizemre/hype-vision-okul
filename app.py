@@ -19,9 +19,9 @@ import uvicorn
 
 ROOT = Path(__file__).parent
 MODELS, DATA = ROOT / "models", ROOT / "data"
-PEOPLE, PENDING, UNKNOWN = DATA / "people", DATA / "pending", DATA / "unknown"
+PEOPLE, PENDING, UNKNOWN, SNAPS = DATA / "people", DATA / "pending", DATA / "unknown", DATA / "snaps"
 GALLERY, SETTINGS, DB_PATH = DATA / "gallery.npz", DATA / "settings.json", DATA / "okul.db"
-for d in (PEOPLE, PENDING, UNKNOWN): d.mkdir(parents=True, exist_ok=True)
+for d in (PEOPLE, PENDING, UNKNOWN, SNAPS): d.mkdir(parents=True, exist_ok=True)
 
 # ================= yardimci =================
 TR = str.maketrans("çğıöşüÇĞİÖŞÜ", "cgiosuCGIOSU")
@@ -60,6 +60,10 @@ DEFAULTS = {
     "cam_down_sec": 60, "bot_enabled": False, "bot_keyword": "durum,nerede",
     "cameras": [],
     "cluster_threshold": 0.45,
+    "keep_snap_days": 7,
+    "okul_adi": "", "rapor_aktif": False, "rapor_gun": 0, "rapor_saat": "08:00", "rapor_tel": "", "rapor_email": "",
+    "smtp_host": "", "smtp_port": 587, "smtp_user": "", "smtp_pass": "", "smtp_from": "",
+    "central_token": "", "okullar": [],  # gecis anindaki CCTV kareleri (operator kontrolu icin)
     "margin": 0.08,       # en iyi aday ile ikinci aday arasinda en az bu fark yoksa "emin degil"
     "min_quality": 0.35,  # bunun altindaki kareler (bulanik / yandan / kucuk) oylamaya girmez  # bilinmeyen yuzleri ayni kisi sayma benzerligi
 }
@@ -84,7 +88,7 @@ CREATE TABLE IF NOT EXISTS users(user TEXT PRIMARY KEY, pw TEXT, rol TEXT, sinif
 CREATE TABLE IF NOT EXISTS tokens(tok TEXT PRIMARY KEY, user TEXT, exp REAL);
 CREATE TABLE IF NOT EXISTS audit(id INTEGER PRIMARY KEY, time TEXT, user TEXT, action TEXT, target TEXT, detail TEXT);
 """)
-for _t, _c in (("events", "yon TEXT DEFAULT 'giris'"), ("events", "gec INTEGER DEFAULT 0"), ("pending", "emb BLOB"), ("pending", "grp TEXT")):
+for _t, _c in (("events", "yon TEXT DEFAULT 'giris'"), ("events", "gec INTEGER DEFAULT 0"), ("pending", "emb BLOB"), ("pending", "grp TEXT"), ("events", "snap TEXT"), ("events", "dogrulama TEXT")):
     try: CONN.execute(f"ALTER TABLE {_t} ADD COLUMN " + _c); CONN.commit()
     except sqlite3.OperationalError: pass
 def q(sql, args=(), one=False):
@@ -336,7 +340,17 @@ LAST_SEEN = {}
 ALARMS = []      # kara liste alarm akisi
 CAM_ALERTS = []  # kamera koptu uyarilari
 
-def log_event(name, score, cam_name, yon="giris", kaynak="kamera", force=False):
+def save_snap(eid, frame, fc, face=None):
+    """Gecis anindaki CCTV karesini (kutu cizili) ve yuz kesitini sakla."""
+    f = frame.copy(); x, y, w, h = map(int, fc[:4])
+    cv2.rectangle(f, (x, y), (x + w, y + h), (0, 220, 0), max(2, f.shape[1] // 400))
+    if f.shape[1] > 1280: f = cv2.resize(f, None, fx=1280 / f.shape[1], fy=1280 / f.shape[1], interpolation=cv2.INTER_AREA)
+    imwrite_u(SNAPS / f"{eid}.jpg", f)
+    if face is None: face = face_thumb(frame, fc, 220)
+    if face is not None: imwrite_u(SNAPS / f"{eid}_f.jpg", face)
+    q("UPDATE events SET snap=? WHERE id=?", (f"{eid}", eid))
+
+def log_event(name, score, cam_name, yon="giris", kaynak="kamera", force=False, snap=None):
     now = time.time(); key = (name, yon)
     if not force and now - LAST_SEEN.get(key, 0) < S["cooldown"]: return None
     LAST_SEEN[key] = now
@@ -345,6 +359,9 @@ def log_event(name, score, cam_name, yon="giris", kaynak="kamera", force=False):
     gec = 1 if (yon == "giris" and lst == "ogrenci" and is_late(t)) else 0
     eid = ins("INSERT INTO events(time,name,score,cam,sinif,liste,wa,kaynak,yon,gec) VALUES(?,?,?,?,?,?,?,?,?,?)",
               (t, name, round(score, 3), cam_name, info.get("sinif", ""), lst, "", kaynak, yon, gec))
+    if snap is not None:
+        try: save_snap(eid, *snap)
+        except Exception as e: print("snap hatasi:", e)
     if lst == "kara":
         ALARMS.insert(0, {"id": eid, "time": t, "name": name, "not": info.get("not", ""), "cam": cam_name}); del ALARMS[50:]
         wa = wa_send(S["alarm_tel"], name, "alarm", f"⚠ KARA LİSTE: {name} {cam_name} kamerasında görüldü. Saat {t[11:16]}. {info.get('not', '')}", eid, force_text=True)
@@ -541,7 +558,7 @@ class Camera:
                 top = vote_result(tr)
                 if top:
                     tr.done = True; tr.decided = top
-                    log_event(top, float(np.mean([v[1] for v in tr.votes if v[0] == top])), self.name, self.yon)
+                    log_event(top, float(np.mean([v[1] for v in tr.votes if v[0] == top])), self.name, self.yon, snap=(f, fc))
             self._draw(vis, box, tr)
         for tr in [t for t in self.tracks if ts - t.last > 1.5]:
             self.finish(tr); self.tracks.remove(tr)
@@ -627,6 +644,10 @@ def cleanup():
             ucut = (datetime.now() - timedelta(days=S["keep_unknown_days"])).strftime("%Y-%m-%d %H:%M:%S")
             for r in q("SELECT id,kind FROM pending WHERE time < ?", (ucut,)): drop_pending(r["id"], r["kind"])
             q("DELETE FROM tokens WHERE exp < ?", (time.time(),))
+            scut = (datetime.now() - timedelta(days=S.get("keep_snap_days", 7))).strftime("%Y-%m-%d")
+            for r in q("SELECT id FROM events WHERE snap IS NOT NULL AND time < ?", (scut,)):
+                for suf in ("", "_f"): (SNAPS / f"{r['id']}{suf}.jpg").unlink(missing_ok=True)
+                q("UPDATE events SET snap=NULL WHERE id=?", (r["id"],))
         except Exception as e: print("temizlik hatasi:", e)
         time.sleep(3600)
 
@@ -639,7 +660,7 @@ threading.Thread(target=cleanup, daemon=True).start()
 # ================= yetki =================
 app = FastAPI()
 ROLES = {"yonetici": 3, "mudur_yrd": 2, "ogretmen": 1}
-OPEN = {"/api/login", "/webhook/whatsapp"}
+OPEN = {"/api/login", "/webhook/whatsapp", "/api/central/summary"}
 
 @app.middleware("http")
 async def auth(request: Request, call_next):
@@ -731,8 +752,8 @@ def logo(f: str):
 
 @app.get("/api/status")
 def status(request: Request):
-    pub = {k: v for k, v in S.items() if k not in ("wa_token", "whapi_token", "cameras")} | \
-          {"wa_token_set": bool(S["wa_token"]), "whapi_token_set": bool(S["whapi_token"])}
+    pub = {k: v for k, v in S.items() if k not in ("wa_token", "whapi_token", "cameras", "smtp_pass", "central_token", "okullar")} | \
+          {"wa_token_set": bool(S["wa_token"]), "whapi_token_set": bool(S["whapi_token"]), "smtp_pass_set": bool(S.get("smtp_pass")), "central_token_set": bool(S.get("central_token"))}
     cams = [{"id": c.id, "ad": c.name, "yon": c.yon, "status": c.status, "aktif": c.cfg.get("aktif", True),
              "in_fps": round(c.in_fps, 1), "fps": round(c.fps, 1), "down": c.down} for c in CAMS.values()]
     absent = None
@@ -753,14 +774,18 @@ def status(request: Request):
 def settings(request: Request, d: dict):
     need(request, "yonetici")
     for k in ("threshold", "low_threshold", "cooldown", "det_score", "min_face", "vote_frames", "det_width", "queue_max",
-              "keep_days", "keep_unknown_days", "cam_down_sec", "margin", "min_quality", "cluster_threshold"):
+              "keep_days", "keep_unknown_days", "keep_snap_days", "cam_down_sec", "margin", "min_quality", "cluster_threshold"):
         if d.get(k) not in (None, ""): S[k] = float(d[k])
     for k in ("wa_phone_id", "wa_template", "wa_template_gec", "wa_template_cikis", "wa_tpl_name", "wa_tpl_lang", "wa_mode",
-              "alarm_tel", "wa_verify", "wa_provider", "ders_baslangic", "gelmedi_saat", "tatiller", "bot_keyword"):
+              "alarm_tel", "wa_verify", "wa_provider", "ders_baslangic", "gelmedi_saat", "tatiller", "bot_keyword",
+              "okul_adi", "rapor_saat", "rapor_tel", "rapor_email", "smtp_host", "smtp_user", "smtp_from"):
         if k in d: S[k] = str(d[k]).strip()
     if d.get("wa_token"): S["wa_token"] = str(d["wa_token"]).strip()
     if d.get("whapi_token"): S["whapi_token"] = str(d["whapi_token"]).strip()
-    for k in ("wa_enabled", "hafta_sonu_kapali", "bot_enabled"):
+    if d.get("smtp_pass"): S["smtp_pass"] = str(d["smtp_pass"])
+    for k in ("rapor_gun", "smtp_port"):
+        if d.get(k) not in (None, ""): S[k] = int(d[k])
+    for k in ("wa_enabled", "hafta_sonu_kapali", "bot_enabled", "rapor_aktif"):
         if k in d: S[k] = bool(d[k])
     save_settings(); audit(request, "ayar değişti", "", ", ".join(k for k in d if "token" not in k)); return {"ok": True}
 
@@ -1211,6 +1236,43 @@ def unknown_recluster(request: Request, d: dict):
     if d.get("threshold"): S["cluster_threshold"] = float(d["threshold"]); save_settings()
     return {"groups": recluster()}
 
+@app.get("/media/snap/{f}")
+def media_snap(f: str):
+    p = SNAPS / safe_name(f)
+    if not p.exists(): raise HTTPException(404)
+    return Response(p.read_bytes(), media_type="image/jpeg", headers={"Cache-Control": "private, max-age=86400"})
+
+@app.get("/api/events/{eid}")
+def event_detail(request: Request, eid: int):
+    e = q("SELECT * FROM events WHERE id=?", (eid,), one=True)
+    if not e or not visible(request, e["name"]): raise HTTPException(404)
+    p = PEOPLE / e["name"]
+    e["photos"] = sorted(x.name for x in p.glob("*.jpg")) if p.exists() else []
+    e["info"] = read_info(e["name"]); return e
+
+@app.post("/api/events/{eid}/verify")
+def event_verify(request: Request, eid: int, d: dict):
+    """Operator kontrolu: dogru / yanlis. Yanlissa gecis silinir, yuz onaya duser; istenirse dogru kisiye yazilir."""
+    e = q("SELECT * FROM events WHERE id=?", (eid,), one=True)
+    if not e or not visible(request, e["name"]): raise HTTPException(404)
+    u = request.state.u["user"]
+    if d.get("ok"):
+        q("UPDATE events SET dogrulama=? WHERE id=?", ("dogru:" + u, eid)); audit(request, "geçiş doğrulandı", e["name"], f"#{eid}"); return {"ok": True}
+    q("DELETE FROM events WHERE id=?", (eid,))
+    fp = SNAPS / f"{eid}_f.jpg"; fr = SNAPS / f"{eid}.jpg"
+    dogru = (d.get("dogru") or "").strip()
+    if dogru:
+        dogru = safe_name(dogru)
+        if not (PEOPLE / dogru).exists(): raise HTTPException(400, "Doğru kişi bulunamadı")
+        log_event(dogru, e["score"] or 0, e["cam"], e["yon"] or "giris", kaynak="düzeltme:" + u, force=True)
+    elif fp.exists():
+        img = imread_u(fp); faces = E.detect(img) if img is not None else []
+        if len(faces):
+            fc = max(faces, key=lambda r: r[2] * r[3]); add_pending("onay", e["name"], e["score"] or 0, img, norm_crop(img, fc[4:14].reshape(5, 2)), e["cam"])
+    for x in (fp, fr): x.unlink(missing_ok=True)
+    audit(request, "yanlış geçiş silindi", e["name"], f"#{eid} {e['time']}" + (f" → {dogru}" if dogru else ""))
+    return {"ok": True}
+
 @app.get("/media/{kind}/{f}")
 def media(kind: str, f: str):
     p = (PENDING if kind == "onay" else UNKNOWN) / safe_name(f)
@@ -1588,6 +1650,294 @@ def visitor_watch():
         except Exception as e: print("ziyaretci hatasi:", e)
         time.sleep(60)
 threading.Thread(target=visitor_watch, daemon=True).start()
+
+# ================= haftalik rapor (PDF) =================
+class _AdminReq:  # raporlari arka planda (istek olmadan) uretmek icin
+    class state: u = {"user": "sistem", "rol": "yonetici", "sinif": "", "ad": "sistem"}
+
+def _pdf_font():
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+    if "HV" in pdfmetrics.getRegisteredFontNames(): return "HV", "HVB"
+    cands = [(ROOT / "fonts" / "DejaVuSans.ttf", ROOT / "fonts" / "DejaVuSans-Bold.ttf"),
+             (Path("C:/Windows/Fonts/arial.ttf"), Path("C:/Windows/Fonts/arialbd.ttf")),
+             (Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"), Path("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf")),
+             (Path("/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf"), Path("/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"))]
+    for r, b in cands:
+        if r.exists():
+            pdfmetrics.registerFont(TTFont("HV", str(r))); pdfmetrics.registerFont(TTFont("HVB", str(b if b.exists() else r)))
+            return "HV", "HVB"
+    return "Helvetica", "Helvetica-Bold"
+
+def build_report_pdf(start, end, sinif=""):
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib import colors
+    from reportlab.lib.units import mm
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image as RLImage
+    from reportlab.lib.styles import ParagraphStyle
+    R = reports(_AdminReq(), start=start, end=end, sinif=sinif)
+    F, FB = _pdf_font()
+    H = ParagraphStyle("h", fontName=FB, fontSize=18, leading=22, textColor=colors.HexColor("#0b2d55"))
+    H2 = ParagraphStyle("h2", fontName=FB, fontSize=12, leading=16, spaceBefore=10, spaceAfter=6, textColor=colors.HexColor("#0f172a"))
+    P = ParagraphStyle("p", fontName=F, fontSize=9.5, leading=13, textColor=colors.HexColor("#475569"))
+    fd = lambda d: datetime.strptime(d, "%Y-%m-%d").strftime("%d.%m.%Y")
+    st = R["students"]; n = len(st)
+    avg = round(sum(s["oran"] for s in st) / n, 1) if n else 0
+    late = sum(s["gec"] for s in st); absent = sum(s["gelmedi"] for s in st)
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=16 * mm, rightMargin=16 * mm, topMargin=14 * mm, bottomMargin=14 * mm,
+                            title="Devam Raporu", author="Hype Vision")
+    el = []
+    logo = ROOT / "logo" / "darklogo.png"
+    if logo.exists(): el += [RLImage(str(logo), width=42 * mm, height=7.4 * mm, hAlign="LEFT"), Spacer(1, 6)]
+    el += [Paragraph(f"{S.get('okul_adi') or 'Okul'} — Devam Raporu", H),
+           Paragraph(f"{fd(R['start'])} – {fd(R['end'])} · {R['school_days']} okul günü · {n} öğrenci{(' · ' + sinif) if sinif else ''}", P), Spacer(1, 10)]
+    def tbl(rows, widths, head=True, zebra=True):
+        t = Table(rows, colWidths=widths, repeatRows=1 if head else 0)
+        sty = [("FONT", (0, 0), (-1, -1), F, 9), ("TEXTCOLOR", (0, 0), (-1, -1), colors.HexColor("#0f172a")),
+               ("VALIGN", (0, 0), (-1, -1), "MIDDLE"), ("TOPPADDING", (0, 0), (-1, -1), 4), ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+               ("LINEBELOW", (0, 0), (-1, -1), 0.3, colors.HexColor("#e7ebf1"))]
+        if head: sty += [("FONT", (0, 0), (-1, 0), FB, 9), ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#f1f5f9")), ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#475569"))]
+        t.setStyle(TableStyle(sty)); return t
+    kpi = Table([[f"%{avg}", str(late), str(absent), str(sum(1 for s in st if s['oran'] < 80))],
+                 ["Ortalama devam", "Geç giriş", "Devamsız gün (toplam)", "Devamı %80 altı"]], colWidths=[44 * mm] * 4)
+    kpi.setStyle(TableStyle([("FONT", (0, 0), (-1, 0), FB, 18), ("FONT", (0, 1), (-1, 1), F, 8.5), ("TEXTCOLOR", (0, 1), (-1, 1), colors.HexColor("#64748b")),
+                             ("TEXTCOLOR", (0, 0), (0, 0), colors.HexColor("#16a34a")), ("TEXTCOLOR", (1, 0), (1, 0), colors.HexColor("#7c3aed")),
+                             ("TEXTCOLOR", (2, 0), (2, 0), colors.HexColor("#d97706")), ("TEXTCOLOR", (3, 0), (3, 0), colors.HexColor("#dc2626")),
+                             ("BOX", (0, 0), (0, 1), 0.6, colors.HexColor("#e7ebf1")), ("BOX", (1, 0), (1, 1), 0.6, colors.HexColor("#e7ebf1")),
+                             ("BOX", (2, 0), (2, 1), 0.6, colors.HexColor("#e7ebf1")), ("BOX", (3, 0), (3, 1), 0.6, colors.HexColor("#e7ebf1")),
+                             ("TOPPADDING", (0, 0), (-1, -1), 6), ("LEFTPADDING", (0, 0), (-1, -1), 8)]))
+    el += [kpi, Paragraph("Sınıflar", H2)]
+    el.append(tbl([["Sınıf", "Öğrenci", "Ortalama devam", "Geç giriş"]] + [[c["sinif"], c["ogrenci"], f"%{c['oran']}", c["gec"]] for c in R["classes"]],
+                  [40 * mm, 35 * mm, 50 * mm, 40 * mm]))
+    el.append(Paragraph("Günlük gelen öğrenci", H2))
+    el.append(tbl([["Gün", "Gelen", "Toplam", "Oran"]] + [[fd(d["day"]), d["gelen"], d["toplam"], f"%{round(100 * d['gelen'] / d['toplam'], 1) if d['toplam'] else 0}"] for d in R["daily"]],
+                  [45 * mm, 35 * mm, 35 * mm, 35 * mm]))
+    lows = sorted([s for s in st if s["gelmedi"]], key=lambda s: (-s["gelmedi"], s["name"]))[:25]
+    el.append(Paragraph("En çok devamsızlık yapanlar", H2))
+    el.append(tbl([["No", "Ad Soyad", "Sınıf", "Gelmedi (gün)", "Devam"]] + [[s["no"], s["name"], s["sinif"], s["gelmedi"], f"%{s['oran']}"] for s in lows] if lows else [["Bu dönemde devamsızlık yok"]],
+                  [20 * mm, 70 * mm, 25 * mm, 30 * mm, 25 * mm] if lows else [170 * mm], head=bool(lows)))
+    lates = sorted([s for s in st if s["gec"]], key=lambda s: (-s["gec"], s["name"]))[:25]
+    el.append(Paragraph("En çok geç kalanlar", H2))
+    el.append(tbl([["No", "Ad Soyad", "Sınıf", "Geç (gün)"]] + [[s["no"], s["name"], s["sinif"], s["gec"]] for s in lates] if lates else [["Bu dönemde geç giriş yok"]],
+                  [20 * mm, 80 * mm, 30 * mm, 40 * mm] if lates else [170 * mm], head=bool(lates)))
+    el += [Spacer(1, 12), Paragraph(f"Hype Vision tarafından {datetime.now():%d.%m.%Y %H:%M} tarihinde otomatik oluşturuldu.", P)]
+    doc.build(el)
+    return buf.getvalue(), R
+
+@app.get("/api/reports/pdf")
+def report_pdf(request: Request, start: str = "", end: str = "", sinif: str = ""):
+    sinif = my_class(request) or sinif
+    data, R = build_report_pdf(start or datetime.now().strftime("%Y-%m-01"), end or today_s(), sinif)
+    fn = f"devam-raporu-{R['start']}_{R['end']}{('-' + sinif) if sinif else ''}.pdf"
+    return Response(data, media_type="application/pdf", headers={"Content-Disposition": f'attachment; filename="{fn}"'})
+
+def wa_send_doc(tel_raw, name, data, filename, caption):
+    tel = wa_phone(tel_raw)
+    if not tel or S["wa_provider"] != "whapi" or not S["whapi_token"]: return "desteklenmiyor"
+    mid = ins("INSERT INTO messages(time,tel,name,kind,text,status) VALUES(?,?,?,?,?,?)", (now_s(), tel, name, "rapor", caption + f" [{filename}]", "gonderiliyor"))
+    body = {"to": tel, "media": "data:application/pdf;name=" + urllib.parse.quote(filename) + ";base64," + base64.b64encode(data).decode(),
+            "filename": filename, "caption": caption}
+    req = urllib.request.Request("https://gate.whapi.cloud/messages/document", json.dumps(body).encode(),
+                                 {"Authorization": "Bearer " + S["whapi_token"], "Content-Type": "application/json", "Accept": "application/json",
+                                  "User-Agent": "HypeVision/1.0 (+okul-giris)"})
+    try:
+        r = json.loads(urllib.request.urlopen(req, timeout=60).read())
+        q("UPDATE messages SET status='gonderildi', wamid=? WHERE id=?", ((r.get("message") or {}).get("id", ""), mid)); return "gonderildi"
+    except urllib.error.HTTPError as e:
+        q("UPDATE messages SET status='hata', err=? WHERE id=?", (e.read().decode("utf-8", "ignore")[:300], mid)); return "hata"
+    except Exception as e:
+        q("UPDATE messages SET status='hata', err=? WHERE id=?", (str(e)[:300], mid)); return "hata"
+
+def mail_send(to, subject, text, data=None, filename=None):
+    import smtplib
+    from email.message import EmailMessage
+    if not (S.get("smtp_host") and to): return "kapali"
+    m = EmailMessage(); m["Subject"] = subject; m["From"] = S.get("smtp_from") or S.get("smtp_user"); m["To"] = to; m.set_content(text)
+    if data: m.add_attachment(data, maintype="application", subtype="pdf", filename=filename)
+    port = int(S.get("smtp_port") or 587)
+    try:
+        with (smtplib.SMTP_SSL(S["smtp_host"], port, timeout=30) if port == 465 else smtplib.SMTP(S["smtp_host"], port, timeout=30)) as sv:
+            if port != 465: sv.starttls()
+            if S.get("smtp_user"): sv.login(S["smtp_user"], S.get("smtp_pass", ""))
+            sv.send_message(m)
+        return "gonderildi"
+    except Exception as e: return "hata: " + str(e)[:120]
+
+def send_weekly(start=None, end=None):
+    if not start:
+        t = datetime.now(); mon = t - timedelta(days=t.weekday() + 7)
+        start, end = mon.strftime("%Y-%m-%d"), (mon + timedelta(days=6)).strftime("%Y-%m-%d")
+    data, R = build_report_pdf(start, end)
+    st = R["students"]; avg = round(sum(s["oran"] for s in st) / len(st), 1) if st else 0
+    fn = f"haftalik-devam-{start}_{end}.pdf"
+    cap = (f"📊 {S.get('okul_adi') or 'Okul'} haftalık devam raporu\n{datetime.strptime(start, '%Y-%m-%d'):%d.%m} – {datetime.strptime(end, '%Y-%m-%d'):%d.%m.%Y}\n"
+           f"Ortalama devam: %{avg} · Geç giriş: {sum(s['gec'] for s in st)} · Devamsız gün: {sum(s['gelmedi'] for s in st)}")
+    res = []
+    for tel in [x.strip() for x in (S.get("rapor_tel") or "").split(",") if x.strip()]:
+        st_ = wa_send_doc(tel, "Haftalık rapor", data, fn, cap)
+        if st_ == "desteklenmiyor": st_ = wa_send(tel, "Haftalık rapor", "rapor", cap, force_text=True)
+        res.append(f"WA {tel}: {st_}")
+    for to in [x.strip() for x in (S.get("rapor_email") or "").split(",") if x.strip()]:
+        res.append(f"E-posta {to}: {mail_send(to, 'Haftalık devam raporu ' + start + ' / ' + end, cap, data, fn)}")
+    q("INSERT INTO audit(time,user,action,target,detail) VALUES(?,?,?,?,?)", (now_s(), "sistem", "haftalık rapor gönderildi", f"{start}/{end}", "; ".join(res)[:300]))
+    return res
+
+def weekly_scheduler():
+    while True:
+        try:
+            t = datetime.now(); wk = t.strftime("%G-%V")
+            if S.get("rapor_aktif") and t.weekday() == int(S.get("rapor_gun", 0)) and t.strftime("%H:%M") >= (S.get("rapor_saat") or "08:00") \
+                    and S.get("rapor_son") != wk:
+                S["rapor_son"] = wk; save_settings(); send_weekly()
+        except Exception as e: print("rapor hatasi:", e)
+        time.sleep(60)
+threading.Thread(target=weekly_scheduler, daemon=True).start()
+
+@app.post("/api/reports/weekly/send")
+def weekly_send_now(request: Request, d: dict):
+    need(request, "yonetici")
+    if not (S.get("rapor_tel") or S.get("rapor_email")): raise HTTPException(400, "Önce rapor alıcısı (telefon ya da e-posta) gir")
+    res = send_weekly(d.get("start") or None, d.get("end") or None); audit(request, "haftalık rapor elle gönderildi", "", "; ".join(res)[:200])
+    return {"result": res}
+
+# ================= e-Okul uyumlu disa aktarma =================
+@app.get("/api/eokul")
+def eokul_export(request: Request, start: str, end: str = "", sinif: str = "", gec_yarim: int = 1):
+    """e-Okul 'Devamsızlık Girişi' ekranina kolay giris icin: sinif basina sayfa, okul no sirasi, gun gun D/Y isaretleri,
+    ozet (ozursuz tam gun / yarim gun). Ayrica 'Gunluk Giris' sayfasi: o gun gelmeyenler sinif sinif."""
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    end = end or start
+    sinif = my_class(request) or sinif
+    R = attendance_range(request, start=start, end=end, sinif=sinif)
+    rows = R["rows"]; days = sorted({r["day"] for r in rows})
+    by_cls = {}
+    for r in rows: by_cls.setdefault(r["sinif"] or "Sınıfsız", {}).setdefault((r["no"], r["name"]), {})[r["day"]] = r
+    wb = openpyxl.Workbook(); wb.remove(wb.active)
+    hf = Font(bold=True, color="FFFFFF"); hfill = PatternFill("solid", fgColor="0B2D55"); thin = Side(style="thin", color="D0D7E2")
+    bd = Border(left=thin, right=thin, top=thin, bottom=thin); ctr = Alignment(horizontal="center", vertical="center")
+    redf = PatternFill("solid", fgColor="FEE2E2"); purf = PatternFill("solid", fgColor="EDE9FE")
+    # 1) gunluk giris sayfasi (tek gun secildiyse en kullanisli olan)
+    ws = wb.create_sheet("Günlük Giriş")
+    ws.append(["Tarih", "Sınıf", "Okul No", "Adı Soyadı", "Devamsızlık Türü", "Süre", "Açıklama"])
+    for day in days:
+        for cls in sorted(by_cls):
+            for (no, name), dd in sorted(by_cls[cls].items(), key=lambda x: (int(x[0][0]) if str(x[0][0]).isdigit() else 10**9, x[0][1])):
+                r = dd.get(day)
+                if not r: continue
+                if r["durum"] == "gelmedi": ws.append([datetime.strptime(day, "%Y-%m-%d").strftime("%d.%m.%Y"), cls, no, name, "Özürsüz", "Tam Gün", ""])
+                elif r["durum"] == "gec" and gec_yarim: ws.append([datetime.strptime(day, "%Y-%m-%d").strftime("%d.%m.%Y"), cls, no, name, "Özürsüz", "Yarım Gün", f"Geç giriş {r['giris']}"])
+    # 2) sinif cizelgeleri
+    for cls in sorted(by_cls):
+        sh = wb.create_sheet(re.sub(r"[\\/*?:\[\]]", "-", cls)[:31])
+        sh.append(["Okul No", "Adı Soyadı"] + [datetime.strptime(d, "%Y-%m-%d").strftime("%d.%m") for d in days] + ["Özürsüz Tam Gün", "Özürsüz Yarım Gün", "Toplam (gün)"])
+        for (no, name), dd in sorted(by_cls[cls].items(), key=lambda x: (int(x[0][0]) if str(x[0][0]).isdigit() else 10**9, x[0][1])):
+            line = [int(no) if str(no).isdigit() else no, name]; tam = yarim = 0
+            for d in days:
+                r = dd.get(d)
+                if r and r["durum"] == "gelmedi": line.append("D"); tam += 1
+                elif r and r["durum"] == "gec" and gec_yarim: line.append("Y"); yarim += 1
+                else: line.append("")
+            sh.append(line + [tam, yarim, tam + yarim * 0.5])
+        for c in sh[1]: c.font = hf; c.fill = hfill; c.alignment = ctr; c.border = bd
+        for row in sh.iter_rows(min_row=2):
+            for c in row:
+                c.border = bd
+                if c.column > 2: c.alignment = ctr
+                if c.value == "D": c.fill = redf
+                if c.value == "Y": c.fill = purf
+        sh.column_dimensions["A"].width = 9; sh.column_dimensions["B"].width = 26
+        for i in range(len(days)): sh.column_dimensions[openpyxl.utils.get_column_letter(3 + i)].width = 6
+        sh.freeze_panes = "C2"
+    for c in ws[1]: c.font = hf; c.fill = hfill; c.alignment = ctr
+    for col, w in zip("ABCDEFG", (12, 8, 9, 26, 16, 11, 20)): ws.column_dimensions[col].width = w
+    ws.freeze_panes = "A2"
+    info = wb.create_sheet("Açıklama")
+    for line in ["Bu dosya e-Okul > Devamsızlık İşlemleri > Günlük Devamsızlık Girişi ekranına hızlı giriş için hazırlanmıştır.",
+                 "D = Özürsüz tam gün devamsızlık (kamera ve yoklamada hiç görülmedi)",
+                 "Y = Geç giriş (okulun yönetmeliğine göre 'yarım gün' ya da 'geç gelme' olarak girilebilir)",
+                 "Özürlü (raporlu / izinli) devamsızlıklar okul tarafından e-Okul'da ayrıca işaretlenmelidir.",
+                 "Öğrenciler e-Okul ekranındaki gibi okul numarası sırasındadır.",
+                 f"Oluşturma: {datetime.now():%d.%m.%Y %H:%M} · Hype Vision"]:
+        info.append([line])
+    info.column_dimensions["A"].width = 120
+    buf = io.BytesIO(); wb.save(buf)
+    audit(request, "e-Okul dışa aktarma", sinif or "tüm okul", f"{start}/{end}")
+    fn = f"eokul-devamsizlik-{start}{('_' + end) if end != start else ''}{('-' + sinif) if sinif else ''}.xlsx"
+    return Response(buf.getvalue(), media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    headers={"Content-Disposition": f'attachment; filename="{fn}"'})
+
+# ================= coklu okul (merkez) =================
+@app.get("/api/central/summary")
+def central_summary(request: Request):
+    """Merkez panelin cektigi ozet. X-Central-Token ile korunur; ogrenci adi/foto icermez (KVKK)."""
+    tok = request.headers.get("x-central-token", "")
+    if not S.get("central_token") or not secrets.compare_digest(tok, S["central_token"]): raise HTTPException(401, "Geçersiz merkez anahtarı")
+    att = attendance(_AdminReq(), day="")
+    tot = len(att); g = sum(1 for a in att if a["geldi"]); l = sum(1 for a in att if a["gec"])
+    cams = [{"ad": c.name, "durum": "koptu" if c.down else c.status} for c in CAMS.values() if c.cfg.get("aktif", True)]
+    cls = {}
+    for a in att:
+        c = cls.setdefault(a.get("sinif") or "—", [0, 0]); c[0] += 1; c[1] += bool(a["geldi"])
+    week = reports(_AdminReq(), start=(datetime.now() - timedelta(days=6)).strftime("%Y-%m-%d"), end=today_s())
+    return {"okul": S.get("okul_adi") or "Okul", "time": now_s(), "off_day": is_off_day(),
+            "toplam": tot, "geldi": g, "gec": l, "gelmedi": tot - g, "oran": round(100 * g / tot, 1) if tot else 0,
+            "kameralar": cams, "kamera_sorun": sum(1 for c in cams if c["durum"] != "canli"),
+            "onay_bekleyen": q("SELECT COUNT(*) n FROM pending WHERE kind='onay'", one=True)["n"],
+            "kara_alarm_bugun": q("SELECT COUNT(*) n FROM events WHERE liste='kara' AND time LIKE ?", (today_s() + "%",), one=True)["n"],
+            "ziyaretci_iceride": sum(1 for v in visitors_all() if v.get("durum") == "iceride"),
+            "siniflar": [{"sinif": k, "toplam": v[0], "geldi": v[1]} for k, v in sorted(cls.items())],
+            "hafta": [{"day": d["day"], "oran": round(100 * d["gelen"] / d["toplam"], 1) if d["toplam"] else 0} for d in week["daily"]],
+            "surum": "hypevision-okul"}
+
+@app.get("/api/central")
+def central(request: Request):
+    need(request, "yonetici")
+    import concurrent.futures as cf
+    def fetch(o):
+        url = o["url"].rstrip("/") + "/api/central/summary"
+        try:
+            req = urllib.request.Request(url, headers={"X-Central-Token": o.get("token", ""), "User-Agent": "HypeVision-Merkez/1.0"})
+            ctx = None
+            if url.startswith("https") and o.get("insecure"):
+                import ssl; ctx = ssl._create_unverified_context()
+            r = json.loads(urllib.request.urlopen(req, timeout=8, context=ctx).read()); r["ok"] = True
+        except urllib.error.HTTPError as e: r = {"ok": False, "err": f"HTTP {e.code}"}
+        except Exception as e: r = {"ok": False, "err": str(e)[:120]}
+        r["_id"] = o["id"]; r["_ad"] = o.get("ad") or r.get("okul") or o["url"]; r["_url"] = o["url"]
+        return r
+    okullar = S.get("okullar", [])
+    with cf.ThreadPoolExecutor(max_workers=8) as ex: res = list(ex.map(fetch, okullar))
+    ok = [r for r in res if r["ok"]]
+    tot = sum(r["toplam"] for r in ok); g = sum(r["geldi"] for r in ok)
+    return {"schools": res, "total": {"okul": len(okullar), "erisilen": len(ok), "toplam": tot, "geldi": g, "gec": sum(r["gec"] for r in ok),
+                                      "oran": round(100 * g / tot, 1) if tot else 0, "kamera_sorun": sum(r["kamera_sorun"] for r in ok),
+                                      "onay_bekleyen": sum(r["onay_bekleyen"] for r in ok), "kara": sum(r["kara_alarm_bugun"] for r in ok)}}
+
+@app.post("/api/central/schools")
+def central_save(request: Request, d: dict):
+    need(request, "yonetici")
+    url = (d.get("url") or "").strip().rstrip("/")
+    if not url.startswith(("http://", "https://")): raise HTTPException(400, "Adres http:// ya da https:// ile başlamalı")
+    lst = S.setdefault("okullar", []); sid = d.get("id") or secrets.token_hex(4)
+    o = {"id": sid, "ad": (d.get("ad") or "").strip(), "url": url, "token": (d.get("token") or "").strip(), "insecure": bool(d.get("insecure"))}
+    i = next((k for k, x in enumerate(lst) if x["id"] == sid), None)
+    if i is None: lst.append(o)
+    else:
+        if not o["token"]: o["token"] = lst[i].get("token", "")
+        lst[i] = o
+    save_settings(); audit(request, "merkeze okul eklendi", o["ad"] or url); return {"ok": True}
+
+@app.delete("/api/central/schools/{sid}")
+def central_del(request: Request, sid: str):
+    need(request, "yonetici"); S["okullar"] = [x for x in S.get("okullar", []) if x["id"] != sid]; save_settings(); return {"ok": True}
+
+@app.post("/api/central/token")
+def central_token(request: Request):
+    """Bu okulun merkeze baglanmasi icin anahtar uret."""
+    need(request, "yonetici"); S["central_token"] = secrets.token_urlsafe(24); save_settings()
+    audit(request, "merkez anahtarı üretildi"); return {"token": S["central_token"]}
 
 # ---- test
 @app.post("/api/test")

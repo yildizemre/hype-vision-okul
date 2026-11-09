@@ -119,6 +119,21 @@ th.s{cursor:pointer}th.s:hover{color:var(--t)}
 .grp .strip div:hover span{display:block}
 .grp .more{display:grid;place-items:center;background:#f1f5f9;border-radius:9px;font-weight:700;color:var(--m);aspect-ratio:1;font-size:13px}
 .ggrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
+.modal{position:fixed;inset:0;background:rgba(2,6,23,.72);backdrop-filter:blur(4px);z-index:25;display:none;align-items:center;justify-content:center;padding:24px}
+.modal.on{display:flex;animation:mf .18s ease}@keyframes mf{from{opacity:0}}
+.mbox{background:#fff;border-radius:20px;width:min(1280px,100%);max-height:94vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.4)}
+.mhd{display:flex;align-items:center;gap:8px;padding:16px 18px;border-bottom:1px solid var(--b)}
+.mbd{display:grid;grid-template-columns:minmax(0,1fr) 340px;min-height:0;flex:1}@media(max-width:900px){.mbd{grid-template-columns:1fr;overflow:auto}}
+.mcctv{position:relative;background:#0b1220;display:grid;place-items:center;min-height:300px}.mcctv img{max-width:100%;max-height:78vh;display:block;cursor:zoom-in}
+.mcctv img.z{max-height:none;cursor:zoom-out}.mcctv{overflow:auto}
+.mlab{position:absolute;left:12px;top:12px;background:rgba(15,23,42,.75);color:#fff;font-size:12px;font-weight:600;padding:4px 10px;border-radius:99px}
+.mside{padding:16px;display:flex;flex-direction:column;gap:6px;overflow:auto}
+.cmp{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center}.cmp>div{text-align:center}.cmp img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:14px;background:#e2e8f0;display:block}
+.cmp span{font-size:11px;color:var(--m);font-weight:600}.cmp .vs{font-size:20px;font-weight:800;padding:8px 10px;border-radius:12px;background:var(--okbg);color:var(--ok)}
+#evm_refs img{width:54px;height:54px;cursor:pointer}#evm_refs img.on{outline:3px solid var(--a);outline-offset:-3px}
+.ev{cursor:pointer;transition:background .12s}.ev:hover{background:#f8fafc}
+.ev .pair{display:flex;flex:0 0 auto}.ev .pair img,.ev .pair .ini{width:40px;height:40px;border-radius:10px;object-fit:cover;border:2px solid #fff;background:#e2e8f0}.ev .pair>*+*{margin-left:-10px}
+.vchk{font-size:11px;color:var(--ok);font-weight:700}
 .legend{display:flex;gap:14px;margin-top:10px;font-size:12px;color:var(--m);flex-wrap:wrap}.legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px}
 table{width:100%;border-collapse:collapse}th{text-align:left;color:var(--m);font-weight:600;font-size:12px;padding:10px;border-bottom:1px solid var(--b);background:#fafbfc}
 td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:hover td{background:#fafcff}
@@ -226,6 +241,8 @@ td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:h
 <symbol id="i-mega" viewBox="0 0 24 24"><path d="M3 11v2a1 1 0 0 0 1 1h3l5 4V6L7 10H4a1 1 0 0 0-1 1z"/><path d="M16 8a5 5 0 0 1 0 8M19 5a9 9 0 0 1 0 14"/></symbol>
 <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></symbol>
 <symbol id="i-film" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M7 3v18M17 3v18M2 9h5M2 15h5M17 9h5M17 15h5"/></symbol>
+<symbol id="i-badge" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M8 17c1-2 2.5-3 4-3s3 1 4 3M10 3v2h4V3"/></symbol>
+<symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 4 10 15 15 0 0 1-4 10 15 15 0 0 1-4-10 15 15 0 0 1 4-10z"/></symbol>
 <symbol id="i-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="5.5"/><path d="M21 2l-9.6 9.6M15.5 7.5l3 3L22 7l-3-3"/></symbol>
 </defs></svg>
 <script>const I=n=>`<svg class="i"><use href="#i-${n}"/></svg>`</script>
@@ -288,6 +305,7 @@ td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:h
     <a data-p="students" data-l="ogrenci"><svg class="i"><use href="#i-users"/></svg>Öğrenciler<span class="n" id="n_ogrenci">0</span></a>
     <a data-p="students" data-l="beyaz"><svg class="i"><use href="#i-shield"/></svg>Beyaz Liste<span class="n" id="n_beyaz">0</span></a>
     <a data-p="students" data-l="kara"><svg class="i"><use href="#i-ban"/></svg>Kara Liste<span class="n" id="n_kara">0</span></a>
+    <a data-p="visitors"><svg class="i"><use href="#i-badge"/></svg>Ziyaretçiler<span class="n" id="n_vis">0</span></a>
     <a data-p="enroll" data-min="mudur_yrd"><svg class="i"><use href="#i-scan"/></svg>Yüz Kaydet</a>
     <a data-p="video" data-min="mudur_yrd"><svg class="i"><use href="#i-film"/></svg>Video Analiz</a>
     <div class="sec">Raporlar & Veli</div>
@@ -297,6 +315,7 @@ td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:h
     <div class="sec">Sistem</div>
     <a data-p="cameras" data-min="mudur_yrd"><svg class="i"><use href="#i-cam"/></svg>Kameralar<span class="n" id="n_cam">0</span></a>
     <a data-p="users" data-min="yonetici"><svg class="i"><use href="#i-key"/></svg>Kullanıcılar</a>
+    <a data-p="central" data-min="yonetici"><svg class="i"><use href="#i-globe"/></svg>Okullar (Merkez)</a>
     <a data-p="audit" data-min="yonetici"><svg class="i"><use href="#i-list"/></svg>İşlem Kaydı</a>
     <a data-p="settings"><svg class="i"><use href="#i-set"/></svg>Ayarlar</a>
   </nav>
@@ -350,7 +369,7 @@ td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:h
     <div class="fi"><label>Sınıf</label><select id="as" onchange="loadAtt()"></select></div>
     <div class="fi" style="min-width:200px"><label>Öğrenci</label><input list="stlist" id="aname" placeholder="Tümü — isim yaz" onchange="loadAtt()"></div>
     <div class="fi"><label>Durum</label><select id="adur" onchange="loadAtt()"><option value="">Tümü</option><option value="geldi">Zamanında</option><option value="gec">Geç</option><option value="gelmedi">Gelmedi</option></select></div>
-    <div class="fi" style="min-width:0"><label>&nbsp;</label><div style="display:flex;gap:6px"><button class="btn sm" onclick="aClear()">Temizle</button><button class="btn sm dk" onclick="exportAtt()"><svg class="i"><use href="#i-down"/></svg>CSV</button></div></div>
+    <div class="fi" style="min-width:0"><label>&nbsp;</label><div style="display:flex;gap:6px"><button class="btn sm" onclick="aClear()">Temizle</button><button class="btn sm dk" onclick="exportAtt()"><svg class="i"><use href="#i-down"/></svg>CSV</button><button class="btn sm" title="e-Okul devamsızlık girişi için Excel" onclick="eOkul($('aday').value,AMODE==='aralik'?$('aend').value:$('aday').value,$('as').value)"><svg class="i"><use href="#i-down"/></svg>e-Okul</button></div></div>
   </div>
   <div class="quick" id="a_quick" style="margin:-10px 0 16px;display:none"><a onclick="aQuick(0)">Bugün</a><a onclick="aQuick('w')">Bu hafta</a><a onclick="aQuick('m')">Bu ay</a><a onclick="aQuick(7)">Son 7 gün</a><a onclick="aQuick(30)">Son 30 gün</a></div>
   <div id="a_off"></div>
@@ -442,6 +461,51 @@ td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:h
     <div style="overflow-x:auto"><table><thead><tr><th></th><th>Videoda</th><th>Kişi</th><th>Skor</th><th>Kare</th><th>Sonuç</th><th></th></tr></thead><tbody id="va_body"></tbody></table></div></div>
 </section>
 
+<!-- ZIYARETCILER -->
+<section class="page" id="p-visitors">
+  <div class="ph"><div><h1>Ziyaretçiler</h1><p>Ziyaretçinin fotoğrafını çek, kimi ziyaret ettiğini yaz, süreli izin ver. Süre dolup hâlâ içerideyse uyarı çıkar. Çıkan ziyaretçinin verisi 1 gün sonra otomatik silinir.</p></div></div>
+  <div class="grid">
+    <div>
+      <div class="stats" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+        <div class="st"><div class="ic c-v"><svg class="i"><use href="#i-badge"/></svg></div><b id="v_in">0</b><span>Şu an içeride</span></div>
+        <div class="st"><div class="ic c-r"><svg class="i"><use href="#i-clock"/></svg></div><b id="v_late">0</b><span>Süresi doldu</span></div>
+        <div class="st"><div class="ic c-blu"><svg class="i"><use href="#i-check"/></svg></div><b id="v_today">0</b><span>Bugün toplam</span></div></div>
+      <div class="card" style="padding:0;overflow:hidden"><div style="overflow-x:auto"><table><thead><tr><th></th><th>Ziyaretçi</th><th>Ziyaret edilen</th><th>Giriş</th><th>Kalan süre</th><th>Durum</th><th></th></tr></thead><tbody id="vbody"></tbody></table></div></div>
+    </div>
+    <div class="card f"><h2><svg class="i"><use href="#i-plus"/></svg>Yeni ziyaretçi</h2>
+      <div class="vid" style="aspect-ratio:4/3"><img id="v_snap" alt=""><div class="ph0" id="v_ph"><div><div>Fotoğraf yok</div><div class=m>Kameradan çek ya da yükle</div></div></div></div>
+      <div class="row" style="margin-top:10px"><select id="v_cam" style="flex:1"></select><button class="btn dk" onclick="vSnap()"><svg class="i"><use href="#i-cam"/></svg>Çek</button>
+        <label class="btn fx"><input type="file" id="v_file" accept="image/*" hidden onchange="vFile()"><svg class="i"><use href="#i-up"/></svg></label></div>
+      <label>Ad Soyad *</label><input type="text" id="v_ad">
+      <label>Telefon</label><input type="text" id="v_tel" placeholder="05xx…">
+      <label>Kimi ziyaret ediyor *</label><input type="text" id="v_kim" list="v_kimlist" placeholder="Öğretmen / idare / veli görüşmesi…"><datalist id="v_kimlist"></datalist>
+      <label>Ziyaret nedeni</label><input type="text" id="v_neden" placeholder="Veli görüşmesi, teslimat, tamir…">
+      <label>İzin süresi</label><div class="seg" id="v_sure" style="display:flex"><a data-h="0.5">30 dk</a><a data-h="1">1 sa</a><a data-h="2" class="on">2 sa</a><a data-h="4">4 sa</a><a data-h="8">Gün</a></div>
+      <button class="btn gr" style="margin-top:16px;width:100%" onclick="vAdd()"><svg class="i"><use href="#i-check"/></svg>Kaydet ve izin ver</button>
+    </div>
+  </div>
+</section>
+
+<!-- MERKEZ -->
+<section class="page" id="p-central">
+  <div class="ph"><div><h1>Okullar (Merkez)</h1><p>Birden fazla okulu tek ekrandan izle. Her okul sadece özet sayılar gönderir; öğrenci adı ya da fotoğrafı merkeze gelmez (KVKK).</p></div><span class="sp"></span>
+    <span class="m" id="c_time"></span><button class="btn" onclick="loadCentral()"><svg class="i"><use href="#i-zap"/></svg>Yenile</button></div>
+  <div class="stats" style="grid-template-columns:repeat(5,minmax(0,1fr))">
+    <div class="st"><div class="ic c-blu"><svg class="i"><use href="#i-globe"/></svg></div><b id="c_ok">0/0</b><span>Erişilen okul</span></div>
+    <div class="st"><div class="ic c-ok"><svg class="i"><use href="#i-check"/></svg></div><b id="c_or">%0</b><span id="c_ors">bugünkü devam</span></div>
+    <div class="st"><div class="ic c-v"><svg class="i"><use href="#i-clock"/></svg></div><b id="c_gec">0</b><span>Geç giriş</span></div>
+    <div class="st"><div class="ic c-r"><svg class="i"><use href="#i-cam"/></svg></div><b id="c_cam">0</b><span>Kamera sorunu</span></div>
+    <div class="st"><div class="ic c-w"><svg class="i"><use href="#i-ban"/></svg></div><b id="c_kara">0</b><span>Kara liste alarmı</span></div></div>
+  <div class="grid"><div class="ggrid" id="c_grid" style="align-content:start"></div>
+    <div><div class="card f"><h2><svg class="i"><use href="#i-plus"/></svg>Okul ekle</h2><input type="hidden" id="o_id">
+      <label>Okul adı</label><input type="text" id="o_ad" placeholder="Atatürk İlkokulu">
+      <label>Sunucu adresi</label><input type="text" id="o_url" placeholder="http://10.0.5.20:8000 ya da https://okul1.ornek.com">
+      <label>Merkez anahtarı <span class=m>(o okulun Ayarlar → Merkez bağlantısı)</span></label><input type="password" id="o_token">
+      <label class="chk" style="margin-top:12px"><input type="checkbox" id="o_ins"> Sertifika kontrolünü atla (kendi imzalı HTTPS)</label>
+      <div class="row" style="margin-top:14px"><button class="btn dk" onclick="saveSchool()">Kaydet</button><button class="btn" onclick="editSchool({})">Temizle</button><span></span></div></div>
+    <div class="help">Merkez paneli, okul sunucularına ağ üzerinden erişebilmeli (aynı VPN / kurum ağı ya da Cloudflare Tunnel). Okullar birbirini görmez.</div></div></div>
+</section>
+
 <!-- KAMERALAR -->
 <section class="page" id="p-cameras">
   <div class="ph"><div><h1>Kameralar</h1><p>Tüm kameralar tek GPU kuyruğunda sırayla işlenir. Giriş kamerası "geldi", çıkış kamerası "ayrıldı" kaydı üretir.</p></div></div>
@@ -460,7 +524,9 @@ td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:h
 <section class="page" id="p-reports">
   <div class="ph"><div><h1>Raporlar</h1><p id="r_sub">Devam, geç kalanlar ve sınıf karşılaştırması.</p></div><span class="sp"></span>
     <button class="btn" onclick="exportReport()"><svg class="i"><use href="#i-down"/></svg>Excel (CSV)</button>
-    <button class="btn dk" onclick="window.print()"><svg class="i"><use href="#i-down"/></svg>PDF / Yazdır</button></div>
+    <button class="btn" onclick="rPdf()"><svg class="i"><use href="#i-down"/></svg>PDF rapor</button>
+    <button class="btn" onclick="eOkul($('r_s').value,$('r_e').value,$('r_cls').value)"><svg class="i"><use href="#i-down"/></svg>e-Okul</button>
+    <button class="btn dk" onclick="window.print()"><svg class="i"><use href="#i-down"/></svg>Yazdır</button></div>
   <div class="fbar noprint">
     <div class="fi"><label>Başlangıç</label><input type="date" id="r_s" onchange="loadReports()"></div>
     <div class="fi"><label>Bitiş</label><input type="date" id="r_e" onchange="loadReports()"></div>
@@ -547,8 +613,25 @@ td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:h
       <label>Tatil günleri (bu günlerde veliye mesaj gitmez) — her satıra bir tarih, YYYY-AA-GG</label><textarea id="s_tatiller" rows="4" placeholder="2026-11-10&#10;2026-12-31"></textarea>
       <label>Kamera koptu uyarısı (sn)</label><input id="s_cam_down_sec" type="number">
       <button class="btn dk" style="margin-top:16px" onclick="saveSettings()">Kaydet</button></div>
+    <div class="card f" data-min="yonetici"><h2><svg class="i"><use href="#i-chart"/></svg>Okul ve haftalık rapor</h2>
+      <label>Okul adı (raporlarda görünür)</label><input type="text" id="s_okul_adi" placeholder="Atatürk Ortaokulu">
+      <label class="chk" style="margin-top:14px;color:var(--t)"><input type="checkbox" id="s_rapor_aktif"> Haftalık devam raporunu otomatik gönder (geçen haftanın PDF'i)</label>
+      <div class="row" style="margin:0"><div><label>Gün</label><select id="s_rapor_gun"><option value="0">Pazartesi</option><option value="1">Salı</option><option value="2">Çarşamba</option><option value="3">Perşembe</option><option value="4">Cuma</option><option value="5">Cumartesi</option><option value="6">Pazar</option></select></div>
+        <div><label>Saat</label><input type="time" id="s_rapor_saat" style="width:100%;border:1px solid var(--b);border-radius:10px;padding:9px 12px"></div></div>
+      <label>WhatsApp alıcıları (virgülle) — PDF eki olarak gider (Whapi)</label><input type="text" id="s_rapor_tel" placeholder="05xx…, 05xx…">
+      <label>E-posta alıcıları (virgülle)</label><input type="text" id="s_rapor_email" placeholder="mudur@okul.k12.tr">
+      <details style="margin-top:10px"><summary class="m" style="cursor:pointer">E-posta (SMTP) ayarları</summary>
+        <div class="row" style="margin:0"><div><label>SMTP sunucu</label><input type="text" id="s_smtp_host" placeholder="smtp.gmail.com"></div><div style="max-width:100px"><label>Port</label><input type="number" id="s_smtp_port"></div></div>
+        <div class="row" style="margin:0"><div><label>Kullanıcı</label><input type="text" id="s_smtp_user"></div><div><label>Şifre <span class=m id="smtpset"></span></label><input type="password" id="s_smtp_pass" placeholder="değiştirmek için yaz"></div></div>
+        <label>Gönderen adresi</label><input type="text" id="s_smtp_from"></details>
+      <div class="row" style="margin-top:16px"><button class="btn dk fx" onclick="saveSettings()">Kaydet</button><button class="btn fx" onclick="sendWeekly()"><svg class="i"><use href="#i-mega"/></svg>Şimdi gönder (test)</button><span id="wk_res" class="m"></span></div></div>
+    <div class="card f" data-min="yonetici"><h2><svg class="i"><use href="#i-globe"/></svg>Merkez bağlantısı</h2>
+      <div class="m">Bu okulu bir merkez paneline (okullar zinciri / ilçe) bağlamak için anahtar üret ve merkezdeki "Okul ekle" formuna bu sunucunun adresiyle birlikte gir. Merkeze sadece özet sayılar gider.</div>
+      <div class="row" style="margin-top:12px"><button class="btn dk fx" onclick="genCentral()"><svg class="i"><use href="#i-key"/></svg>Anahtar üret</button><span class="m" id="ctokset"></span></div>
+      <input type="text" id="ctok" readonly style="display:none;font-family:ui-monospace,monospace" onclick="this.select()"></div>
     <div class="card f" data-min="yonetici"><h2><svg class="i"><use href="#i-shield"/></svg>KVKK · Veri saklama</h2>
       <div class="row" style="margin:0"><div><label>Geçiş ve mesaj kayıtları (gün)</label><input id="s_keep_days" type="number"></div><div><label>Bilinmeyen / onay fotoğrafları (gün)</label><input id="s_keep_unknown_days" type="number"></div></div>
+      <label>Geçiş anı CCTV kareleri (gün)</label><input id="s_keep_snap_days" type="number">
       <div class="m" style="margin-top:6px">Süresi dolan kayıtlar her saat otomatik silinir. Canlı görüntü hiç kaydedilmez. Mezun öğrenci için kişi sayfasındaki "kalıcı sil".</div>
       <button class="btn dk" style="margin-top:16px" onclick="saveSettings()">Kaydet</button></div>
     <div class="card f" data-min="yonetici"><h2><svg class="i"><use href="#i-down"/></svg>Yedekleme</h2>
@@ -586,6 +669,21 @@ td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:h
 </section>
 </main></div>
 
+<div id="evm" class="modal" onclick="if(event.target===this)closeEv()">
+  <div class="mbox">
+    <div class="mhd"><div><b id="evm_t" style="font-size:18px"></b><div class="m" id="evm_s"></div></div><span class="sp"></span>
+      <button class="btn sm" onclick="evNav(-1)" title="Önceki (←)">‹</button><button class="btn sm" onclick="evNav(1)" title="Sonraki (→)">›</button><button class="btn sm" onclick="closeEv()" title="Kapat (Esc)">✕</button></div>
+    <div class="mbd">
+      <div class="mcctv"><img id="evm_img" alt=""><div class="mlab">CCTV · geçiş anı</div></div>
+      <div class="mside">
+        <div class="cmp"><div><img id="evm_face"><span>Kameradaki yüz</span></div><div class="vs" id="evm_sc">0.00</div><div><img id="evm_ref"><span>Kayıtlı fotoğraf</span></div></div>
+        <div class="thumbs" id="evm_refs" style="margin:10px 0"></div>
+        <div id="evm_info" class="m" style="line-height:1.8"></div>
+        <div id="evm_act" style="margin-top:auto"></div>
+      </div>
+    </div>
+  </div>
+</div>
 <div id="msg"></div>
 <script>
 const $=id=>document.getElementById(id), enc=encodeURIComponent;
@@ -605,14 +703,14 @@ async function doLogin(e){e.preventDefault();$('lerr').textContent='';$('lbtn').
 async function logout(){await post('/api/logout',{});location.reload()}
 
 document.querySelectorAll('nav a').forEach(a=>a.onclick=()=>go(a.dataset.p,a.dataset.l));
-const PT={live:'Canlı İzleme',att:'Yoklama',pending:'Onay Bekleyen',students:'Öğrenciler',enroll:'Yüz Kaydet',video:'Video Analiz',reports:'Raporlar',broadcast:'Toplu Duyuru',messages:'Mesajlar',cameras:'Kameralar',users:'Kullanıcılar',audit:'İşlem Kaydı',settings:'Ayarlar'};
+const PT={live:'Canlı İzleme',att:'Yoklama',pending:'Onay Bekleyen',students:'Öğrenciler',enroll:'Yüz Kaydet',visitors:'Ziyaretçiler',video:'Video Analiz',reports:'Raporlar',broadcast:'Toplu Duyuru',messages:'Mesajlar',cameras:'Kameralar',users:'Kullanıcılar',audit:'İşlem Kaydı',central:'Okullar (Merkez)',settings:'Ayarlar'};
 window.addEventListener('hashchange',()=>{const [p,l]=location.hash.slice(1).split('/');if(PT[p]&&ME)go(p,l,1)});
 function go(p,l,fromHash){if(l)LIST=l;
   const t=p==='students'?{ogrenci:'Öğrenciler',beyaz:'Beyaz Liste',kara:'Kara Liste'}[LIST]:PT[p];document.title=(t?t+' · ':'')+'Hype Vision';
   if(!fromHash)history.replaceState(null,'','#'+p+(p==='students'?'/'+LIST:''));
   document.querySelectorAll('nav a').forEach(x=>x.classList.toggle('on',x.dataset.p===p&&(!x.dataset.l||x.dataset.l===LIST)));
   document.querySelectorAll('.page').forEach(x=>x.classList.toggle('on',x.id==='p-'+p));
-  ({att:loadAtt,pending:loadPending,students:loadPeople,enroll:loadPeople,messages:loadMsgs,users:loadUsers,cameras:loadCams,reports:loadReports,broadcast:loadBroadcast,audit:loadAudit,video:loadPeople})[p]?.()}
+  ({att:loadAtt,pending:loadPending,students:loadPeople,enroll:loadPeople,messages:loadMsgs,users:loadUsers,cameras:loadCams,reports:loadReports,broadcast:loadBroadcast,audit:loadAudit,central:loadCentral,visitors:loadVisitors,video:loadPeople})[p]?.()}
 
 // ---------- canli
 let CAMS=[];
@@ -635,9 +733,10 @@ async function testImg(file){const f=file||$('testf').files[0];if(!f)return;cons
   d.addEventListener('drop',e=>{const f=e.dataTransfer.files[0];if(f)testImg(f)});
   document.addEventListener('paste',e=>{if(!$('p-live').classList.contains('on'))return;const f=[...(e.clipboardData?.files||[])].find(x=>x.type.startsWith('image/'));if(f)testImg(f)})})();
 const waTag=w=>!w||w==='-'?'':`<span class="tag ${w==='gonderildi'||w==='iletildi'||w==='okundu'?'p-ok':w==='hata'?'p-r':''}" style="font-size:11px">WA: ${esc(w)}</span>`;
-async function loadEvents(){const ev=await api('/api/events?limit=10');
-  $('ev').innerHTML=ev.map(e=>`<div class="ev ${e.liste==='kara'?'kara':''}"><img class=av src="/api/people/${enc(e.name)}/_" onerror="this.outerHTML='<div class=ini>${ini(e.name)}</div>'">
-    <div class="x"><b>${esc(e.name)}</b> ${e.liste!=='ogrenci'?`<span class="tag ${LC[e.liste]}">${LN[e.liste]}</span>`:''}${e.gec?'<span class="tag p-v">GEÇ</span>':''}<div class=m>${esc(e.sinif||'—')} · ${esc(e.cam||'')} · ${e.kaynak==='kamera'?'skor '+e.score:esc(e.kaynak)} ${waTag(e.wa)}</div></div>
+let EVL=[];
+async function loadEvents(){const ev=await api('/api/events?limit=10');EVL=ev;
+  $('ev').innerHTML=ev.map(e=>`<div class="ev ${e.liste==='kara'?'kara':''}" onclick="openEv(${e.id})" title="Kontrol için tıkla"><div class="pair">${e.snap?`<img src="/media/snap/${e.snap}_f.jpg" title="Kameradaki yüz">`:''}<img src="/api/people/${enc(e.name)}/_" title="Kayıtlı fotoğraf" onerror="this.outerHTML='<div class=ini>${ini(e.name)}</div>'"></div>
+    <div class="x"><b>${esc(e.name)}</b> ${e.liste!=='ogrenci'?`<span class="tag ${LC[e.liste]}">${LN[e.liste]}</span>`:''}${e.gec?'<span class="tag p-v">GEÇ</span>':''}${e.dogrulama?' <span class="vchk">✓ kontrol edildi</span>':''}<div class=m>${esc(e.sinif||'—')} · ${esc(e.cam||'')} · ${e.kaynak==='kamera'?'skor '+e.score:esc(e.kaynak)} ${waTag(e.wa)}</div></div>
     <span class="tag ${e.liste==='kara'?'p-r':e.yon==='cikis'?'p-b':'p-ok'}">${e.yon==='cikis'?'↗ ':''}${e.time.slice(11,16)}</span></div>`).join('')||`<div class="empty">Henüz geçiş yok</div>`}
 
 // ---------- alarm
@@ -810,10 +909,10 @@ async function delUser(u){if(!confirm(u+' silinsin mi?'))return;try{await api('/
 async function changePw(){try{await post('/api/password',{old:$('pw_old').value,new:$('pw_new').value});$('pw_old').value=$('pw_new').value='';toast('Şifre değiştirildi')}catch(e){toast(e.message,1)}}
 
 // ---------- ayarlar
-const SK=['margin','min_quality','ders_baslangic','gelmedi_saat','tatiller','cam_down_sec','wa_template_gec','wa_template_cikis','bot_keyword','det_width','queue_max','threshold','low_threshold','vote_frames','cooldown','det_score','min_face','keep_days','keep_unknown_days','wa_phone_id','wa_token','wa_template','wa_mode','wa_tpl_name','wa_tpl_lang','alarm_tel','wa_verify','wa_provider','whapi_token'];
+const SK=['okul_adi','rapor_gun','rapor_saat','rapor_tel','rapor_email','smtp_host','smtp_port','smtp_user','smtp_pass','smtp_from','keep_snap_days','margin','min_quality','ders_baslangic','gelmedi_saat','tatiller','cam_down_sec','wa_template_gec','wa_template_cikis','bot_keyword','det_width','queue_max','threshold','low_threshold','vote_frames','cooldown','det_score','min_face','keep_days','keep_unknown_days','wa_phone_id','wa_token','wa_template','wa_mode','wa_tpl_name','wa_tpl_lang','alarm_tel','wa_verify','wa_provider','whapi_token'];
 function modeUI(){const w=$('s_wa_provider').value==='whapi';$('whapibox').style.display=w?'':'none';$('metabox').style.display=w?'none':'';$('tplbox').style.display=$('s_wa_mode').value==='template'?'':'none'}
-async function saveSettings(){const d={};for(const k of SK)d[k]=$('s_'+k).value;d.wa_enabled=$('s_wa_enabled').checked;d.hafta_sonu_kapali=$('s_hafta_sonu_kapali').checked;d.bot_enabled=$('s_bot_enabled').checked;
-  try{await post('/api/settings',d);$('s_wa_token').value='';$('s_whapi_token').value='';toast('Ayarlar kaydedildi');refresh(true)}catch(e){toast(e.message,1)}}
+async function saveSettings(){const d={};for(const k of SK)d[k]=$('s_'+k).value;d.wa_enabled=$('s_wa_enabled').checked;d.hafta_sonu_kapali=$('s_hafta_sonu_kapali').checked;d.bot_enabled=$('s_bot_enabled').checked;d.rapor_aktif=$('s_rapor_aktif').checked;
+  try{await post('/api/settings',d);$('s_wa_token').value='';$('s_whapi_token').value='';$('s_smtp_pass').value='';toast('Ayarlar kaydedildi');refresh(true)}catch(e){toast(e.message,1)}}
 async function waTest(){$('wt_res').textContent='Gönderiliyor…';try{const r=await post('/api/wa_test',{tel:$('wt_tel').value});
   $('wt_res').innerHTML=r.status==='hata'?`<span style="color:var(--r)">Hata: ${esc(r.err)}</span>`:`<span style="color:var(--ok)">✓ ${esc(r.status)} — telefonu kontrol et</span>`}catch(e){$('wt_res').textContent=e.message}}
 async function restore(){const f=$('rest').files[0];if(!f||!confirm('Mevcut tüm veri yedekteki ile değiştirilecek. Devam?'))return($('rest').value='');
@@ -950,6 +1049,78 @@ function vaRender(force){if(!VJ?.results)return;const R=VJ.results;
 async function vaAdd(i){const n=$('va_in_'+i).value.trim();if(!n)return toast('Kişi seç',1);try{await post('/api/video/result/add',{job:VJ.id,i,name:n});toast('Galeriye eklendi: '+n);const b=$('va_in_'+i).nextElementSibling;b.textContent='✓ Eklendi';b.disabled=true;b.classList.add('gr')}catch(e){toast(e.message,1)}}
 function vaCsv(){if(!VJ?.results)return;dl(`video-analiz-${VJ.file}.csv`,'Başlangıç;Bitiş;Kişi;Skor;Kare;Sonuç\n'+VJ.results.map(r=>csvRow([vt(r.t0),vt(r.t1),r.kind==='tanindi'?r.name:'Kişi '+(r.grp||'?'),String(r.score).replace('.',','),r.frames,VK[r.kind][1]])).join('\n'))}
 
+// ---------- gecis kontrol popup
+let EVC=null;
+async function openEv(id){let e;try{e=await api('/api/events/'+id)}catch(x){return toast(x.message,1)}EVC=e;
+  $('evm_t').textContent=e.name;$('evm_s').textContent=`${e.time.slice(0,16).replace(' ',' · ')} · ${e.cam||''} · ${e.yon==='cikis'?'Çıkış':'Giriş'}`;
+  const im=$('evm_img');im.classList.remove('z');im.onclick=()=>im.classList.toggle('z');
+  if(e.snap){im.src=`/media/snap/${e.snap}.jpg`;im.style.display='';$('evm_face').src=`/media/snap/${e.snap}_f.jpg`}else{im.style.display='none';$('evm_face').removeAttribute('src')}
+  const ph=e.photos||[];$('evm_ref').src=ph[0]?`/api/people/${enc(e.name)}/${ph[0]}`:'';
+  $('evm_refs').innerHTML=ph.map((f,i)=>`<img src="/api/people/${enc(e.name)}/${f}" class="${i?'':'on'}" onclick="$('evm_ref').src=this.src;document.querySelectorAll('#evm_refs img').forEach(x=>x.classList.remove('on'));this.classList.add('on')">`).join('');
+  const sc=$('evm_sc');sc.textContent=e.kaynak==='kamera'?(+e.score).toFixed(2):'elle';sc.style.background=e.score>=0.55?'var(--okbg)':'var(--wbg)';sc.style.color=e.score>=0.55?'var(--ok)':'var(--w)';
+  const i=e.info||{};
+  $('evm_info').innerHTML=`<b style="color:var(--t)">${esc(e.name)}</b> ${e.liste!=='ogrenci'?`<span class="tag ${LC[e.liste]}">${LN[e.liste]}</span>`:''}<br>Sınıf: <b>${esc(i.sinif||'—')}</b> · No: <b>${esc(i.no||'—')}</b><br>Veli: ${esc(i.veli_ad||'—')} ${esc(i.veli_tel||'')}<br>Kaynak: ${esc(e.kaynak)} · WhatsApp: ${esc(e.wa||'—')}${e.gec?'<br><span class="tag p-v">Geç giriş</span>':''}${e.dogrulama?`<br><span class="vchk">✓ ${esc(e.dogrulama.replace('dogru:','kontrol eden: '))}</span>`:''}`;
+  $('evm_act').innerHTML=e.snap||e.kaynak==='kamera'?`<div class="m" style="margin-bottom:8px">Kameradaki yüz kayıtlı öğrenciyle aynı kişi mi?</div>
+    <div class="row" style="margin:0"><button class="btn gr" onclick="evVerify(1)"><svg class="i"><use href="#i-check"/></svg>Doğru</button><button class="btn rd" onclick="evWrong()">Yanlış kişi</button></div>
+    <div id="evm_fix" style="display:none;margin-top:10px"><input list="stlist" id="evm_dogru" placeholder="Doğru öğrenci (boş = bilinmiyor)"><div class="row" style="margin:8px 0 0"><button class="btn dk sm" onclick="evVerify(0)">Kaydı düzelt</button><span class=m>Yanlış kayıt silinir${''}</span></div></div>`:'';
+  fillStudentLists();$('evm').classList.add('on')}
+function closeEv(){$('evm').classList.remove('on')}
+function evNav(d){if(!EVC)return;const i=EVL.findIndex(x=>x.id===EVC.id);const n=EVL[i+d];if(n)openEv(n.id)}
+function evWrong(){$('evm_fix').style.display='';$('evm_dogru').focus()}
+async function evVerify(ok){try{await post(`/api/events/${EVC.id}/verify`,ok?{ok:1}:{dogru:$('evm_dogru').value});toast(ok?'Doğrulandı':'Kayıt düzeltildi');closeEv();loadEvents();loadPeople()}catch(e){toast(e.message,1)}}
+document.addEventListener('keydown',e=>{if(!$('evm').classList.contains('on'))return;if(e.key==='Escape')closeEv();if(e.key==='ArrowLeft')evNav(-1);if(e.key==='ArrowRight')evNav(1)});
+
+// ---------- ziyaretciler
+let VFILE=null,VIS=[];
+document.querySelectorAll('#v_sure a').forEach(a=>a.onclick=()=>{document.querySelectorAll('#v_sure a').forEach(x=>x.classList.toggle('on',x===a))});
+const vSure=()=>+document.querySelector('#v_sure a.on').dataset.h;
+function vLeft(b){const ms=new Date(b.replace(' ','T'))-Date.now();if(ms<=0)return{t:'Süre doldu',late:1};const m=Math.round(ms/60000);return{t:m>=60?`${Math.floor(m/60)} sa ${m%60} dk`:`${m} dk`,late:0,warn:m<=15}}
+async function loadVisitors(){const r=await api('/api/visitors');VIS=r.visitors;renderVisitors();
+  const opts=CAMS.filter(c=>c.aktif).map(c=>`<option value="${c.id}">${esc(c.ad)}</option>`).join('');if($('v_cam').dataset.o!==opts){$('v_cam').innerHTML=opts||'<option value="">Kamera yok</option>';$('v_cam').dataset.o=opts}
+  $('v_kimlist').innerHTML=PEOPLE.filter(p=>p.liste==='beyaz').map(p=>`<option value="${esc(p.name)}">${esc(p.not||'')}</option>`).join('')+'<option value="İdare"><option value="Rehberlik"><option value="Muhasebe">'}
+function renderVisitors(){const t=today();const inn=VIS.filter(v=>v.durum==='iceride');
+  $('v_in').textContent=inn.length;$('v_late').textContent=inn.filter(v=>vLeft(v.bitis).late).length;$('v_today').textContent=VIS.filter(v=>(v.kayit||'').startsWith(t)).length;
+  $('vbody').innerHTML=VIS.map(v=>{const L=vLeft(v.bitis),io=v.durum==='iceride';
+    return `<tr style="${io&&L.late?'background:var(--rbg)':''}"><td>${v.photos[0]?`<img class=av src="/api/people/${enc(v.name)}/${v.photos[0]}">`:`<div class=ini>${ini(v.name)}</div>`}</td>
+    <td><b>${esc(v.name)}</b><div class=m>${esc(v.tel||'')} ${v.neden?'· '+esc(v.neden):''}</div></td><td>${esc(v.ziyaret||'—')}</td>
+    <td class=m>${(v.kayit||'').slice(11)}<br>${(v.kayit||'').slice(5,10).split('-').reverse().join('.')}</td>
+    <td>${io?`<span class="tag ${L.late?'p-r':L.warn?'p-w':'p-ok'}">${L.t}</span><div class=m>bitiş ${v.bitis.slice(11)}</div>`:'<span class=m>—</span>'}</td>
+    <td>${io?'<span class="tag p-v">İçeride</span>':`<span class="tag">Çıktı ${(v.cikis||'').slice(11)}</span>`}</td>
+    <td style="text-align:right;white-space:nowrap">${io?`<button class="btn sm" onclick="vExt('${esc(enc(v.name))}')">+1 sa</button> <button class="btn sm dk" onclick="vExit('${esc(enc(v.name))}')">Çıkış yaptı</button>`:''}</td></tr>`}).join('')||'<tr><td colspan=7 class=empty>Kayıtlı ziyaretçi yok</td></tr>'}
+async function vSnap(){try{const r=await fetch('/api/snapshot?cam='+$('v_cam').value+'&t='+Date.now(),{cache:'no-store'});if(!r.ok)throw new Error((await r.json()).detail);VFILE=null;$('v_snap').src=URL.createObjectURL(await r.blob());$('v_ph').style.display='none'}catch(e){toast(e.message,1)}}
+function vFile(){const f=$('v_file').files[0];if(!f)return;VFILE=f;$('v_snap').src=URL.createObjectURL(f);$('v_ph').style.display='none';$('v_file').value=''}
+async function vAdd(){const ad=$('v_ad').value.trim(),kim=$('v_kim').value.trim();if(!ad||!kim)return toast('Ad Soyad ve ziyaret edilen kişi gerekli',1);
+  if($('v_ph').style.display!=='none')return toast('Önce fotoğraf çek ya da yükle',1);
+  const fd=new FormData();fd.append('ad',ad);fd.append('tel',$('v_tel').value);fd.append('ziyaret',kim);fd.append('neden',$('v_neden').value);fd.append('sure',vSure());fd.append('cam',$('v_cam').value);if(VFILE)fd.append('file',VFILE);
+  try{const r=await api('/api/visitors',{method:'POST',body:fd});toast(`${ad} kaydedildi · izin ${r.bitis.slice(11)}'e kadar`);for(const k of['v_ad','v_tel','v_kim','v_neden'])$(k).value='';VFILE=null;$('v_snap').removeAttribute('src');$('v_ph').style.display='';loadVisitors();loadPeople()}catch(e){toast(e.message,1)}}
+async function vExit(n){await post(`/api/visitors/${n}/exit`,{});toast('Çıkış işlendi');loadVisitors();refresh()}
+async function vExt(n){const r=await post(`/api/visitors/${n}/extend`,{saat:1});toast('Süre uzatıldı: '+r.bitis.slice(11));loadVisitors();refresh()}
+setInterval(()=>{if($('p-visitors').classList.contains('on'))renderVisitors()},30000);
+
+// ---------- pdf / e-okul / haftalik
+function rPdf(){const q=new URLSearchParams({start:$('r_s').value,end:$('r_e').value,sinif:$('r_cls').value});location.href='/api/reports/pdf?'+q}
+function eOkul(s,e,c){if(!s)return toast('Tarih seç',1);const q=new URLSearchParams({start:s,end:e||s,sinif:c||''});location.href='/api/eokul?'+q;toast('e-Okul dosyası hazırlanıyor…')}
+async function sendWeekly(){$('wk_res').textContent='Gönderiliyor…';try{await saveSettings();const r=await post('/api/reports/weekly/send',{});$('wk_res').textContent=r.result.join(' · ')||'Alıcı yok'}catch(e){$('wk_res').textContent=e.message}}
+async function genCentral(){if(!confirm('Yeni anahtar üretilsin mi? Varsa eski anahtar geçersiz olur.'))return;const r=await post('/api/central/token',{});$('ctok').style.display='';$('ctok').value=r.token;$('ctok').select();toast('Anahtar üretildi — kopyalayıp merkeze gir');refresh(true)}
+
+// ---------- merkez
+async function loadCentral(){let r;$('c_time').textContent='Okullar sorgulanıyor…';try{r=await api('/api/central')}catch(e){return toast(e.message,1)}const T=r.total;
+  $('c_ok').textContent=`${T.erisilen}/${T.okul}`;$('c_or').textContent='%'+T.oran;$('c_ors').textContent=`bugünkü devam · ${T.geldi}/${T.toplam}`;$('c_gec').textContent=T.gec;$('c_cam').textContent=T.kamera_sorun;$('c_kara').textContent=T.kara;
+  $('c_time').textContent='Güncellendi '+new Date().toLocaleTimeString('tr-TR');
+  $('c_grid').innerHTML=r.schools.map(o=>o.ok?`<div class="grp"><div class="hd"><b style="font-size:15px">${esc(o._ad)}</b><span style="flex:1"></span>${o.off_day?'<span class=tag>Tatil</span>':''}<span class="tag ${o.kamera_sorun?'p-r':'p-ok'}">${o.kameralar.length-o.kamera_sorun}/${o.kameralar.length} kamera</span></div>
+      <div style="display:flex;align-items:baseline;gap:10px"><b style="font-size:30px;color:${o.oran<80?'var(--w)':'var(--ok)'}">%${o.oran}</b><span class=m>${o.geldi}/${o.toplam} öğrenci · ${o.gec} geç · ${o.gelmedi} görülmedi</span></div>
+      <div class="hbar" style="margin:0"><span class="t"><i style="width:${o.oran}%"></i></span></div>
+      <div class="bars" style="height:46px;padding-top:4px">${o.hafta.map(d=>`<div style="height:${Math.max(3,d.oran)}%" data-t="${d.day.slice(8)}.${d.day.slice(5,7)}: %${d.oran}"></div>`).join('')}</div>
+      <div class=m>${o.onay_bekleyen?`<span class="tag p-w">${o.onay_bekleyen} onay bekliyor</span> `:''}${o.kara_alarm_bugun?`<span class="tag p-r">${o.kara_alarm_bugun} kara liste alarmı</span> `:''}${o.ziyaretci_iceride?`<span class="tag p-v">${o.ziyaretci_iceride} ziyaretçi içeride</span> `:''}${o.kameralar.filter(c=>c.durum!=='canli').map(c=>`<span class="tag p-r">${esc(c.ad)}: ${esc(c.durum)}</span>`).join(' ')}</div>
+      <div class="row" style="margin:0"><a class="btn sm" href="${esc(o._url)}" target="_blank">Panele git ↗</a><span></span><button class="btn sm" onclick='editSchool(${JSON.stringify({id:o._id,ad:o._ad,url:o._url}).replace(/'/g,"&#39;")})'>Düzenle</button><button class="btn sm danger" onclick="delSchool('${o._id}')">Sil</button></div></div>`
+    :`<div class="grp" style="border-color:#fecaca;background:var(--rbg)"><div class="hd"><b>${esc(o._ad)}</b><span style="flex:1"></span><span class="tag p-r">Erişilemiyor</span></div><div class=m>${esc(o._url)} · ${esc(o.err)}</div>
+      <div class="row" style="margin:0"><span></span><button class="btn sm" onclick='editSchool(${JSON.stringify({id:o._id,ad:o._ad,url:o._url}).replace(/'/g,"&#39;")})'>Düzenle</button><button class="btn sm danger" onclick="delSchool('${o._id}')">Sil</button></div></div>`).join('')
+    ||'<div class="empty card" style="grid-column:1/-1">Henüz okul eklenmedi. Sağdaki formdan okul sunucularını ekle.</div>'}
+function editSchool(o){$('o_id').value=o.id||'';$('o_ad').value=o.ad||'';$('o_url').value=o.url||'';$('o_token').value='';$('o_ins').checked=false}
+async function saveSchool(){try{await post('/api/central/schools',{id:$('o_id').value,ad:$('o_ad').value,url:$('o_url').value,token:$('o_token').value,insecure:$('o_ins').checked});toast('Okul kaydedildi');editSchool({});loadCentral()}catch(e){toast(e.message,1)}}
+async function delSchool(id){if(!confirm('Okul merkezden kaldırılsın mı?'))return;await api('/api/central/schools/'+id,{method:'DELETE'});loadCentral()}
+setInterval(()=>{if($('p-central').classList.contains('on'))loadCentral()},60000);
+
 // ---------- hero
 const GUN=new Intl.DateTimeFormat('tr-TR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
 function tick(){const n=new Date();$('h_clock').innerHTML=`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}<small>:${String(n.getSeconds()).padStart(2,'0')}</small>`;$('h_date').textContent=GUN.format(n)}
@@ -973,12 +1144,14 @@ async function refresh(force){try{const s=await api('/api/status');
   let bn=down.map(c=>`<div class="banner r"><svg class="i"><use href="#i-cam"/></svg><span><b>${esc(c.ad)}</b> kamerasından görüntü gelmiyor. Kablo / elektrik / ağ bağlantısını kontrol edin.</span></div>`).join('');
   const AK='absent_'+(s.absent?.day||'');let dis=false;try{dis=!!localStorage.getItem(AK)}catch(e){}
   if(s.absent&&!dis)bn+=`<div class="banner w"><svg class="i"><use href="#i-q"/></svg><span>Saat ${s.absent.saat} geçti: <b>${s.absent.count} öğrenci</b> henüz görülmedi. Yoklamadan teyit edin.</span><span class=sp></span><button class="btn sm" onclick="go('att')">Yoklamaya git</button><button class="btn sm" onclick="try{localStorage.setItem('${AK}',1)}catch(e){};refresh()">Kapat</button></div>`;
+  for(const a of (s.visit_alerts||[]))bn+=`<div class="banner r"><svg class="i"><use href="#i-badge"/></svg><span>Ziyaretçi <b>${esc(a.name)}</b> (${esc(a.ziyaret||'')}) için izin süresi ${a.bitis.slice(11)}'de doldu, hâlâ içeride görünüyor.</span><span class=sp></span><button class="btn sm" onclick="go('visitors')">Ziyaretçiler</button></div>`;
+  $('n_vis').textContent=s.visitors_in||0;$('n_vis').className='n'+((s.visit_alerts||[]).length?' red':s.visitors_in?' hot':'');
   if(s.off_day)bn+=`<div class="banner" style="background:#f1f5f9;color:#475569;border:1px solid var(--b)"><svg class="i"><use href="#i-clock"/></svg>Bugün tatil / hafta sonu — veliye otomatik mesaj gönderilmiyor.</div>`;
   $('banners').innerHTML=bn;heroStats(s);b.style.background='rgba(255,255,255,.12)';b.style.color='#fff';$('a_off').innerHTML=s.absent?`<div class="banner w"><svg class="i"><use href="#i-q"/></svg>${s.absent.count} öğrenci saat ${s.absent.saat} itibarıyla görülmedi.</div>`:'';
   $('k_p').textContent=s.pending;const np=$('n_pen');np.textContent=s.pending+(s.unknown?' · '+s.unknown:'');np.className='n'+(s.pending?' hot':'');
   $('t_onay').textContent=s.pending;$('t_bil').textContent=s.unknown;
   for(const k in s.settings){const i=$('s_'+k);if(!i||(!force&&document.activeElement===i)||(!force&&i.dataset.init))continue;i.dataset.init=1;if(i.type==='checkbox')i.checked=s.settings[k];else i.value=s.settings[k]}
-  SET=s.settings;modeUI();$('tokset').textContent=s.settings.wa_token_set?'(kayıtlı)':'(yok)';$('whtokset').textContent=s.settings.whapi_token_set?'(kayıtlı)':'(yok)';
+  SET=s.settings;modeUI();$('tokset').textContent=s.settings.wa_token_set?'(kayıtlı)':'(yok)';$('whtokset').textContent=s.settings.whapi_token_set?'(kayıtlı)':'(yok)';$('smtpset').textContent=s.settings.smtp_pass_set?'(kayıtlı)':'';$('ctokset').textContent=s.settings.central_token_set?'Anahtar mevcut (yeniden üretirsen eskisi geçersiz olur)':'Henüz anahtar yok';
   const a=s.alarms.find(x=>!SEEN_AL.has(x.id));if(a&&$('alarm').style.display!=='flex')showAlarm(a);
   $('n_kara').className='n'+(s.alarms.length?' red':'')}catch(e){}}
 
