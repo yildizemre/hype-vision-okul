@@ -1954,6 +1954,149 @@ def central_token(request: Request):
     need(request, "yonetici"); S["central_token"] = secrets.token_urlsafe(24); save_settings()
     audit(request, "merkez anahtarı üretildi"); return {"token": S["central_token"]}
 
+# ================= kamera sihirbazi: RTSP olusturma, test, ag taramasi =================
+import socket as _sock
+RTSP_TPL = {
+    "dahua":     ["/cam/realmonitor?channel={ch}&subtype={st}"],
+    "hikvision": ["/Streaming/Channels/{ch}0{st1}", "/h264/ch{ch}/{ms}/av_stream"],
+    "uniview":   ["/unicast/c{ch}/s{st}/live", "/media/video{st1}"],
+    "axis":      ["/axis-media/media.amp", "/axis-media/media.amp?camera={ch}"],
+    "tplink":    ["/stream{st1}"],
+    "reolink":   ["/h264Preview_0{ch}_{ms}", "/Preview_0{ch}_{ms}"],
+    "genel":     ["/live", "/stream1", "/11", "/live/ch{ch}", "/onvif1", "/videoMain", "/1"],
+}
+BRAND_ORDER = ["dahua", "hikvision", "uniview", "axis", "tplink", "reolink", "genel"]
+
+def build_rtsp(marka, ip, user, pw, ch=1, sub=0, port=554, idx=0):
+    marka = marka if marka in RTSP_TPL else "genel"
+    path = RTSP_TPL[marka][idx].format(ch=int(ch), st=int(sub), st1=int(sub) + 1, ms="sub" if sub else "main")
+    cred = f"{urllib.parse.quote(user, safe='')}:{urllib.parse.quote(pw, safe='')}@" if user else ""
+    return f"rtsp://{cred}{ip.strip()}:{int(port)}{path}"
+
+def tcp_open(ip, port, t=1.5):
+    try:
+        with _sock.create_connection((ip, int(port)), timeout=t): return True
+    except OSError: return False
+
+def try_open(url, timeout=7):
+    """RTSP'yi zaman asimli ac, bir kare oku. Donus: (ok, frame|None)."""
+    res = {}
+    def run():
+        try:
+            cap = cv2.VideoCapture(url, cv2.CAP_FFMPEG, [cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, timeout * 1000, cv2.CAP_PROP_READ_TIMEOUT_MSEC, timeout * 1000])
+            ok = cap.isOpened(); f = None
+            if ok:
+                for _ in range(3):
+                    ok, f = cap.read()
+                    if ok: break
+            res["v"] = (bool(ok and f is not None), f, cap.get(cv2.CAP_PROP_FPS) if ok else 0); cap.release()
+        except Exception: res["v"] = (False, None, 0)
+    th = threading.Thread(target=run, daemon=True); th.start(); th.join(timeout + 3)
+    return res.get("v", (False, None, 0))
+
+def _cam_result(url, f, fps):
+    sm = f if f.shape[1] <= 960 else cv2.resize(f, None, fx=960 / f.shape[1], fy=960 / f.shape[1])
+    faces = E.detect(sm)
+    return {"ok": True, "url": url, "safe_url": re.sub(r"//[^@/]*@", "//***@", url), "w": int(f.shape[1]), "h": int(f.shape[0]),
+            "fps": round(float(fps or 0), 1), "faces": len(faces), "img": b64jpg(sm, 80)}
+
+@app.post("/api/cameras/test")
+def camera_test(request: Request, d: dict):
+    """Tek adresi dene; ya da marka/IP/kullanici/sifre/kanal ile otomatik dene (bilinen tum yollar)."""
+    need(request, "mudur_yrd")
+    url = (d.get("url") or "").strip()
+    if url.isdigit():
+        cap = open_webcam(int(url)); ok, f = cap.read() if cap.isOpened() else (False, None); cap.release()
+        if ok: return _cam_result(url, f, 0)
+        return {"ok": False, "err": f"{url} numaralı webcam açılamadı (başka bir program kullanıyor olabilir)"}
+    ip = (d.get("ip") or "").strip(); port = int(d.get("port") or 554)
+    if url and not ip:
+        m = re.match(r"rtsp://(?:[^@/]*@)?([^:/]+)(?::(\d+))?", url)
+        if m: ip, port = m.group(1), int(m.group(2) or 554)
+    if ip:
+        if not tcp_open(ip, port, 2):
+            if tcp_open(ip, 80, 1.5) or tcp_open(ip, 443, 1.5):
+                return {"ok": False, "err": f"{ip} cihazı ağda var ama RTSP portu ({port}) kapalı. Kamera arayüzünden RTSP'yi açın ya da portu kontrol edin."}
+            return {"ok": False, "err": f"{ip} adresine ulaşılamıyor. IP yanlış, kamera kapalı ya da sunucu ile aynı ağda değil."}
+    if url:
+        ok, f, fps = try_open(url)
+        if ok: return _cam_result(url, f, fps)
+        if not d.get("auto"): return {"ok": False, "err": "RTSP portu açık ama görüntü alınamadı: kullanıcı adı / şifre, kanal ya da yol yanlış olabilir. 'Otomatik bul' ile dene."}
+    if not ip: return {"ok": False, "err": "IP adresi gerekli"}
+    marka = d.get("marka") or "genel"; ch = int(d.get("kanal") or 1); sub = int(d.get("akis") or 0)
+    order = [marka] + [b for b in BRAND_ORDER if b != marka] if d.get("auto") else [marka]
+    tried = []
+    for b in order:
+        for i in range(len(RTSP_TPL[b])):
+            u = build_rtsp(b, ip, d.get("user", ""), d.get("pass", ""), ch, sub, port, i)
+            if u in tried: continue
+            tried.append(u)
+            ok, f, fps = try_open(u, 5)
+            if ok: r = _cam_result(u, f, fps); r["marka"] = b; r["denenen"] = len(tried); return r
+    return {"ok": False, "err": f"{len(tried)} farklı RTSP yolu denendi, görüntü alınamadı. Kullanıcı adı/şifreyi ve kanal numarasını kontrol et.",
+            "denenen": [re.sub(r"//[^@/]*@", "//***@", u) for u in tried]}
+
+@app.post("/api/cameras/build")
+def camera_build(request: Request, d: dict):
+    need(request, "mudur_yrd")
+    return {"url": build_rtsp(d.get("marka", "dahua"), d.get("ip", ""), d.get("user", ""), d.get("pass", ""),
+                              d.get("kanal") or 1, d.get("akis") or 0, d.get("port") or 554)}
+
+def _local_nets():
+    ips = set()
+    try:
+        for inf in _sock.getaddrinfo(_sock.gethostname(), None, _sock.AF_INET): ips.add(inf[4][0])
+    except Exception: pass
+    try:
+        s_ = _sock.socket(_sock.AF_INET, _sock.SOCK_DGRAM); s_.connect(("8.8.8.8", 80)); ips.add(s_.getsockname()[0]); s_.close()
+    except Exception: pass
+    return sorted({".".join(i.split(".")[:3]) for i in ips if not i.startswith(("127.", "169.254."))})
+
+def onvif_probe(wait=3.0):
+    """ONVIF WS-Discovery: agdaki IP kameralar kendini bildirir (marka/model/IP)."""
+    msg = ('<?xml version="1.0" encoding="UTF-8"?><e:Envelope xmlns:e="http://www.w3.org/2003/05/soap-envelope" '
+           'xmlns:w="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:d="http://schemas.xmlsoap.org/ws/2005/04/discovery" '
+           'xmlns:dn="http://www.onvif.org/ver10/network/wsdl"><e:Header><w:MessageID>uuid:' + secrets.token_hex(16) +
+           '</w:MessageID><w:To e:mustUnderstand="true">urn:schemas-xmlsoap-org:ws:2005:04:discovery</w:To>'
+           '<w:Action e:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2005/04/discovery/Probe</w:Action></e:Header>'
+           '<e:Body><d:Probe><d:Types>dn:NetworkVideoTransmitter</d:Types></d:Probe></e:Body></e:Envelope>').encode()
+    found = {}
+    try:
+        s_ = _sock.socket(_sock.AF_INET, _sock.SOCK_DGRAM, _sock.IPPROTO_UDP)
+        s_.setsockopt(_sock.IPPROTO_IP, _sock.IP_MULTICAST_TTL, 2); s_.settimeout(0.5)
+        for _ in range(2): s_.sendto(msg, ("239.255.255.250", 3702))
+        end = time.time() + wait
+        while time.time() < end:
+            try: data, addr = s_.recvfrom(65535)
+            except _sock.timeout: continue
+            t = data.decode("utf-8", "ignore")
+            scopes = " ".join(re.findall(r"<[^>]*Scopes[^>]*>([^<]*)<", t))
+            name = re.search(r"onvif://www\.onvif\.org/name/([^\s]+)", scopes); hw = re.search(r"onvif://www\.onvif\.org/hardware/([^\s]+)", scopes)
+            mk = (urllib.parse.unquote(name.group(1)) if name else "")
+            model = urllib.parse.unquote(hw.group(1)) if hw else ""
+            low = (mk + " " + model + " " + scopes).lower()
+            marka = next((b for b in ("dahua", "hikvision", "uniview", "axis", "tplink", "reolink") if b in low or (b == "hikvision" and "hik" in low) or (b == "uniview" and "unv" in low)), "")
+            found[addr[0]] = {"ip": addr[0], "ad": mk, "model": model, "marka": marka, "kaynak": "ONVIF"}
+        s_.close()
+    except Exception as e: print("onvif hata:", e)
+    return found
+
+@app.get("/api/cameras/discover")
+def camera_discover(request: Request):
+    """Agdaki kameralari bul: once ONVIF, sonra yerel /24 aginda 554 (RTSP) portu acik cihazlar."""
+    need(request, "mudur_yrd")
+    import concurrent.futures as cf
+    found = onvif_probe(3.0)
+    nets = _local_nets(); cand = [f"{n}.{i}" for n in nets[:3] for i in range(1, 255)]
+    with cf.ThreadPoolExecutor(max_workers=128) as ex:
+        for ip, ok in zip(cand, ex.map(lambda ip: tcp_open(ip, 554, 0.4), cand)):
+            if ok and ip not in found: found[ip] = {"ip": ip, "ad": "", "model": "", "marka": "", "kaynak": "RTSP portu açık"}
+            elif ok: found[ip]["rtsp"] = True
+    used = {re.sub(r"rtsp://(?:[^@/]*@)?([^:/]+).*", r"\1", c.get("url", "")) for c in cams_cfg()}
+    out = sorted(found.values(), key=lambda x: tuple(int(p) for p in x["ip"].split(".")))
+    for o in out: o["ekli"] = o["ip"] in used
+    return {"nets": nets, "cameras": out}
+
 # ---- test
 @app.post("/api/test")
 async def test_image(file: UploadFile = File(...)):

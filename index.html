@@ -508,16 +508,32 @@ td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}tbody tr:h
 
 <!-- KAMERALAR -->
 <section class="page" id="p-cameras">
-  <div class="ph"><div><h1>Kameralar</h1><p>Tüm kameralar tek GPU kuyruğunda sırayla işlenir. Giriş kamerası "geldi", çıkış kamerası "ayrıldı" kaydı üretir.</p></div></div>
-  <div class="grid"><div class="card" style="padding:0;overflow:hidden"><table><thead><tr><th>Kamera</th><th>Yön</th><th>Durum</th><th>Gelen / işlenen fps</th><th></th></tr></thead><tbody id="cbody"></tbody></table></div>
+  <div class="ph"><div><h1>Kameralar</h1><p>Tüm kameralar tek GPU kuyruğunda sırayla işlenir. Giriş kamerası "geldi", çıkış kamerası "ayrıldı" kaydı üretir.</p></div><span class="sp"></span>
+    <button class="btn" onclick="discover()"><svg class="i"><use href="#i-scan"/></svg>Ağda kamera ara</button></div>
+  <div class="grid"><div>
+    <div class="card" style="padding:0;overflow:hidden"><table><thead><tr><th>Kamera</th><th>Yön</th><th>Durum</th><th>Gelen / işlenen fps</th><th></th></tr></thead><tbody id="cbody"></tbody></table></div>
+    <div class="card" id="disc" style="display:none"><h2><svg class="i"><use href="#i-scan"/></svg>Ağda bulunan kameralar<span class="sp"></span><span class="m" id="disc_s"></span></h2><div id="disc_l"></div></div>
+    <div class="card" id="ctest" style="display:none"><h2><svg class="i"><use href="#i-check"/></svg>Bağlantı testi</h2><div id="ctest_b"></div></div>
+  </div>
   <div class="card f"><h2><svg class="i"><use href="#i-plus"/></svg>Kamera ekle / düzenle</h2>
     <input type="hidden" id="c_id">
     <label>Kamera adı</label><input type="text" id="c_ad" placeholder="Ana Kapı">
-    <label>RTSP adresi</label><input type="text" id="c_url" placeholder="rtsp://kullanici:sifre@192.168.1.64:554/...  ya da webcam için 0">
-    <div class="row" style="margin:8px 0 0"><span class=m>Hızlı:</span><a class="btn sm fx" onclick="$('c_url').value='0';if(!$('c_ad').value)$('c_ad').value='Webcam'">Bu bilgisayarın webcam'i</a><a class="btn sm fx" onclick="$('c_url').value='1';if(!$('c_ad').value)$('c_ad').value='USB Kamera'">2. kamera (USB)</a><span></span></div>
+    <div class="seg" id="c_mode" style="display:flex;margin-top:12px"><a data-m="kolay" class="on" onclick="cMode('kolay')">Kolay kurulum</a><a data-m="url" onclick="cMode('url')">RTSP adresi</a><a data-m="webcam" onclick="cMode('webcam')">Webcam</a></div>
+    <div id="cm_kolay">
+      <label>Marka</label><select id="k_marka" onchange="kBuild()"><option value="dahua">Dahua (ve Imou, IMOU NVR)</option><option value="hikvision">Hikvision (ve HiLook, HiWatch)</option><option value="uniview">Uniview (UNV)</option><option value="axis">Axis</option><option value="tplink">TP-Link VIGI / Tapo</option><option value="reolink">Reolink</option><option value="genel">Diğer / bilmiyorum</option></select>
+      <div class="row" style="margin:0"><div><label>IP adresi</label><input type="text" id="k_ip" placeholder="192.168.1.108" oninput="kBuild()"></div><div style="max-width:90px"><label>Port</label><input type="number" id="k_port" value="554" oninput="kBuild()"></div></div>
+      <div class="row" style="margin:0"><div><label>Kullanıcı adı</label><input type="text" id="k_user" value="admin" oninput="kBuild()" autocomplete="off"></div><div><label>Şifre</label><input type="password" id="k_pass" oninput="kBuild()" autocomplete="new-password"></div></div>
+      <div class="row" style="margin:0"><div><label>Kanal <span class=m>(NVR'de kamera no)</span></label><input type="number" id="k_ch" value="1" min="1" oninput="kBuild()"></div>
+        <div><label>Akış</label><select id="k_akis" onchange="kBuild()"><option value="0">Ana akış (yüksek kalite)</option><option value="1">Alt akış (düşük)</option></select></div></div>
+      <div class="m" style="margin-top:8px;word-break:break-all">Oluşan adres: <code id="k_url">—</code></div>
+      <div class="help" style="margin-top:10px;font-size:12px"><b>Dahua:</b> varsayılan kullanıcı <b>admin</b>, IP genelde 192.168.1.108. NVR'ye bağlıysa NVR'nin IP'si + kamera kanal no (1, 2, 3…) yazılır. Yüz tanıma için <b>ana akış</b> önerilir.</div>
+    </div>
+    <div id="cm_url" style="display:none"><label>RTSP adresi</label><input type="text" id="c_url" placeholder="rtsp://kullanici:sifre@192.168.1.64:554/..."></div>
+    <div id="cm_webcam" style="display:none"><label>Webcam</label><select id="c_cam"><option value="0">Bu bilgisayarın webcam'i (0)</option><option value="1">2. kamera / USB (1)</option><option value="2">3. kamera (2)</option></select></div>
     <label>Yön</label><select id="c_yon"><option value="giris">Giriş — veliye "geldi"</option><option value="cikis">Çıkış — veliye "okuldan ayrıldı"</option></select>
     <label class="chk" style="margin-top:14px"><input type="checkbox" id="c_aktif" checked> Aktif</label>
-    <div class="row" style="margin-top:16px"><button class="btn dk" onclick="saveCam()">Kaydet</button><button class="btn" onclick="editCam({})">Temizle</button><span></span></div>
+    <div class="row" style="margin-top:16px"><button class="btn" onclick="camTest(0)"><svg class="i"><use href="#i-zap"/></svg>Bağlantıyı test et</button><button class="btn" id="c_auto" onclick="camTest(1)" title="Bilinen tüm marka RTSP yollarını sırayla dener">Otomatik bul</button><span></span></div>
+    <div class="row" style="margin-top:8px"><button class="btn dk" onclick="saveCam()">Kaydet</button><button class="btn" onclick="editCam({})">Temizle</button><span></span></div>
     <div class="m">Kamera Ayarlar'daki süre kadar görüntü vermezse panelde kırmızı uyarı çıkar ve yöneticiye WhatsApp gider.</div></div></div>
 </section>
 
@@ -711,11 +727,18 @@ function go(p,l,fromHash){if(l)LIST=l;
   if(!fromHash)history.replaceState(null,'','#'+p+(p==='students'?'/'+LIST:''));
   document.querySelectorAll('nav a').forEach(x=>x.classList.toggle('on',x.dataset.p===p&&(!x.dataset.l||x.dataset.l===LIST)));
   document.querySelectorAll('.page').forEach(x=>x.classList.toggle('on',x.id==='p-'+p));
+  if(p==='live')renderVids(true);else stopVids();
   ({att:loadAtt,pending:loadPending,students:loadPeople,enroll:loadPeople,messages:loadMsgs,users:loadUsers,cameras:loadCams,reports:loadReports,broadcast:loadBroadcast,audit:loadAudit,central:loadCentral,visitors:loadVisitors,video:loadPeople})[p]?.()}
 
 // ---------- canli
 let CAMS=[];
-function renderVids(){const sel=$('camsel').value;const list=CAMS.filter(c=>c.aktif&&(!sel||c.id===sel));const box=$('vids');box.className='vgrid'+(list.length<=1?' one':'');
+// Canli akislari sadece Canli Izleme acikken tut: tarayici ayni sunucuya en fazla 6 baglanti acar,
+// arka planda kalan MJPEG akislari yeni akisi bekletir (siyah ekran).
+function stopVids(){const b=$('vids');b.querySelectorAll('img').forEach(i=>{i.src='data:,'});b.innerHTML='';b.dataset.k=''}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)stopVids();else if($('p-live').classList.contains('on'))renderVids(true)});
+setInterval(()=>{if(document.hidden||!$('p-live').classList.contains('on'))return;
+  document.querySelectorAll('#vids img').forEach(i=>{if(i.complete&&!i.naturalWidth&&Date.now()-(+i.dataset.t||0)>8000){i.dataset.t=Date.now();i.src=i.src.replace(/t=\d+/,'t='+Date.now())}})},5000);
+function renderVids(force){if(!$('p-live').classList.contains('on'))return;if(force)$('vids').dataset.k='';const sel=$('camsel').value;const list=CAMS.filter(c=>c.aktif&&(!sel||c.id===sel));const box=$('vids');box.className='vgrid'+(list.length<=1?' one':'');
   const want=list.map(c=>c.id).join(',');if(box.dataset.k!==want){box.dataset.k=want;
     box.innerHTML=list.map(c=>`<div class="vid" id="v_${c.id}"><img src="/api/stream/${c.id}?t=${Date.now()}" onload="this.nextElementSibling.style.display='none'"><div class="ph0"><div><div>${esc(c.ad)}</div><div class=m>bağlanıyor…</div></div></div><div class="cap"><span>${esc(c.ad)}</span><span>${c.yon==='cikis'?'ÇIKIŞ':'GİRİŞ'}</span><span class=st></span></div></div>`).join('')
       ||`<div class="vid"><div class="ph0"><div><div>Aktif kamera yok</div><div class=m>Kameralar sayfasından RTSP ekle</div></div></div></div>`}
@@ -925,8 +948,34 @@ async function loadCams(){const cs=await api('/api/cameras');
   $('cbody').innerHTML=cs.map(c=>`<tr><td><b>${esc(c.ad)}</b><div class=m>${esc(c.url_short)}</div></td><td><span class="tag ${c.yon==='cikis'?'p-b':'p-ok'}">${c.yon==='cikis'?'Çıkış':'Giriş'}</span></td>
    <td>${!c.aktif?'<span class=tag>Pasif</span>':c.down?'<span class="tag p-r">Görüntü yok</span>':c.status==='canli'?'<span class="tag p-ok">Canlı</span>':`<span class="tag p-w">${esc(c.status)}</span>`}</td><td class=m>${c.in_fps} / ${c.fps}</td>
    <td style="text-align:right;white-space:nowrap"><button class="btn sm" onclick='editCam(${JSON.stringify(c).replace(/'/g,"&#39;")})'>Düzenle</button> <button class="btn sm danger" onclick="delCam('${c.id}','${esc(c.ad)}')">Sil</button></td></tr>`).join('')||`<tr><td colspan=5 class=empty>Kamera yok. Sağdan ekle.</td></tr>`}
-function editCam(c){$('c_id').value=c.id||'';$('c_ad').value=c.ad||'';$('c_url').value=c.url||'';$('c_yon').value=c.yon||'giris';$('c_aktif').checked=c.aktif!==false}
-async function saveCam(){try{await post('/api/cameras',{id:$('c_id').value,ad:$('c_ad').value,url:$('c_url').value,yon:$('c_yon').value,aktif:$('c_aktif').checked});toast('Kamera kaydedildi');editCam({});loadCams();refresh()}catch(e){toast(e.message,1)}}
+let CMODE='kolay';
+function cMode(m){CMODE=m;document.querySelectorAll('#c_mode a').forEach(a=>a.classList.toggle('on',a.dataset.m===m));for(const k of['kolay','url','webcam'])$('cm_'+k).style.display=k===m?'':'none';$('c_auto').style.display=m==='webcam'?'none':''}
+const RT={dahua:(c,s)=>`/cam/realmonitor?channel=${c}&subtype=${s}`,hikvision:(c,s)=>`/Streaming/Channels/${c}0${+s+1}`,uniview:(c,s)=>`/unicast/c${c}/s${s}/live`,axis:()=>'/axis-media/media.amp',tplink:(c,s)=>`/stream${+s+1}`,reolink:(c,s)=>`/h264Preview_0${c}_${+s?'sub':'main'}`,genel:()=>'/live'};
+function kUrl(mask){const ip=$('k_ip').value.trim();if(!ip)return'';const u=$('k_user').value,pw=$('k_pass').value;
+  const cred=u?`${encodeURIComponent(u)}:${mask?'••••':encodeURIComponent(pw)}@`:'';return `rtsp://${cred}${ip}:${$('k_port').value||554}${RT[$('k_marka').value]($('k_ch').value||1,$('k_akis').value)}`}
+function kBuild(){$('k_url').textContent=kUrl(true)||'—'}
+function curUrl(){return CMODE==='kolay'?kUrl(false):CMODE==='webcam'?$('c_cam').value:$('c_url').value.trim()}
+function editCam(c){$('c_id').value=c.id||'';$('c_ad').value=c.ad||'';$('c_yon').value=c.yon||'giris';$('c_aktif').checked=c.aktif!==false;$('ctest').style.display='none';
+  const u=c.url||'';if(/^\d+$/.test(u)){cMode('webcam');$('c_cam').value=u}else if(u){cMode('url');$('c_url').value=u}else{cMode('kolay');$('c_url').value='';$('k_ip').value='';$('k_pass').value=''}kBuild()}
+async function camTest(auto){const url=curUrl();if(!url&&!(auto&&$('k_ip').value))return toast(CMODE==='kolay'?'IP adresini yaz':'Adres boş',1);
+  $('ctest').style.display='';$('ctest_b').innerHTML=`<div class="m">${auto?'Bilinen RTSP yolları sırayla deneniyor, 30-60 sn sürebilir…':'Bağlanılıyor…'}</div>`;$('ctest').scrollIntoView({behavior:'smooth',block:'nearest'});
+  const b={url:auto?'':url,auto:auto?1:0};if(CMODE==='kolay'||auto)Object.assign(b,{ip:$('k_ip').value.trim(),port:$('k_port').value,user:$('k_user').value,pass:$('k_pass').value,kanal:$('k_ch').value,akis:$('k_akis').value,marka:$('k_marka').value});
+  if(CMODE==='url'&&auto)b.url=$('c_url').value.trim();
+  try{const r=await post('/api/cameras/test',b);
+    if(r.ok){if(r.marka&&CMODE==='kolay'){$('k_marka').value=r.marka;kBuild()}if(CMODE!=='kolay'||r.marka){if(CMODE!=='webcam'){cMode('url');$('c_url').value=r.url}}
+      $('ctest_b').innerHTML=`<img src="${r.img}" style="width:100%;border-radius:12px;display:block"><div class="row" style="margin:10px 0 0"><span class="tag p-ok">✓ Bağlandı</span><span class=m>${r.w}×${r.h}${r.fps?' · '+r.fps+' fps':''} · ${r.faces} yüz görüldü${r.marka?' · '+r.marka+' yolu bulundu ('+r.denenen+' deneme)':''}</span><span></span></div>
+        <div class=m style="margin-top:6px;word-break:break-all">${esc(r.safe_url)}</div>${r.w<1280?'<div class="warn" style="margin-top:8px">Çözünürlük düşük. Yüz tanıma için ana akış (1080p) önerilir.</div>':''}
+        <button class="btn gr" style="margin-top:10px;width:100%" onclick="saveCam()"><svg class="i"><use href="#i-check"/></svg>Bu kamerayı kaydet</button>`}
+    else $('ctest_b').innerHTML=`<div class="banner r" style="margin:0"><svg class="i"><use href="#i-ban"/></svg><span>${esc(r.err)}</span></div>${r.denenen?`<details style="margin-top:8px"><summary class=m>Denenen adresler (${r.denenen.length})</summary><div class=m style="word-break:break-all">${r.denenen.map(esc).join('<br>')}</div></details>`:''}`}
+  catch(e){$('ctest_b').innerHTML=`<div class="banner r" style="margin:0">${esc(e.message)}</div>`}}
+async function saveCam(){const url=curUrl();if(!$('c_ad').value.trim())return toast('Kamera adı yaz',1);if(!url)return toast(CMODE==='kolay'?'IP adresini yaz':'Adres boş',1);
+  try{await post('/api/cameras',{id:$('c_id').value,ad:$('c_ad').value,url,yon:$('c_yon').value,aktif:$('c_aktif').checked});toast('Kamera kaydedildi');editCam({});loadCams();refresh()}catch(e){toast(e.message,1)}}
+async function discover(){$('disc').style.display='';$('disc_s').textContent='Ağ taranıyor (ONVIF + RTSP portu), ~10 sn…';$('disc_l').innerHTML='';
+  try{const r=await api('/api/cameras/discover');$('disc_s').textContent=`${r.cameras.length} cihaz · ağ: ${r.nets.map(n=>n+'.x').join(', ')}`;
+    $('disc_l').innerHTML=r.cameras.map(c=>`<div class="ev" style="cursor:default"><div class="ini" style="background:${c.marka?'var(--navy)':'#94a3b8'}">${c.marka?esc(c.marka[0].toUpperCase()):'?'}</div><div class="x"><b>${esc(c.ip)}</b> ${c.ekli?'<span class="tag p-ok">ekli</span>':''}<div class=m>${esc([c.marka,c.ad,c.model].filter(Boolean).join(' · ')||'Bilinmeyen cihaz')} · ${esc(c.kaynak)}</div></div>
+      <button class="btn sm" onclick="pickCam('${esc(c.ip)}','${esc(c.marka||'')}')">Seç</button></div>`).join('')||'<div class="empty">Kamera bulunamadı. Kameralar sunucuyla aynı ağda (aynı switch / VLAN) olmalı.</div>'}
+  catch(e){$('disc_s').textContent=e.message}}
+function pickCam(ip,marka){cMode('kolay');$('k_ip').value=ip;if(marka)$('k_marka').value=marka;if(!$('c_ad').value)$('c_ad').value='Kamera '+ip.split('.').pop();kBuild();$('k_pass').focus();toast('IP seçildi — şifreyi yazıp "Bağlantıyı test et"e bas')}
 async function delCam(id,ad){if(!confirm(ad+' kamerası silinsin mi?'))return;await api('/api/cameras/'+id,{method:'DELETE'});loadCams();refresh()}
 
 // ---------- toplu kayit
